@@ -1,5 +1,17 @@
 
-export const INVENTORY = [
+export interface InventoryItem {
+    id: number;
+    name: string;
+    category: string;
+    stock: number;
+    price: number;
+    replacementCost: number;
+    maintenance: number;
+    image: string;
+    color: string;
+}
+
+export const INVENTORY: InventoryItem[] = [
     { id: 1, name: 'Gold Chiavari Chair', category: 'Chairs', stock: 120, price: 15, replacementCost: 150, maintenance: 0, image: '🪑', color: 'text-amber-500' },
     { id: 2, name: 'Round Table (10-seater)', category: 'Tables', stock: 20, price: 50, replacementCost: 400, maintenance: 0, image: '⚪', color: 'text-slate-400' },
     { id: 3, name: 'Premium Silverware Set', category: 'Cutlery', stock: 150, price: 5, replacementCost: 80, maintenance: 5, image: '🍴', color: 'text-slate-300' },

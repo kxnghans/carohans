@@ -3,8 +3,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Icons, InventoryIcons } from '../../lib/icons';
 import { formatCurrency } from '../../utils/helpers';
-import { INVENTORY } from '../../lib/mockData';
+import { InventoryItem } from '../../lib/mockData';
 import { IconColorPicker } from './IconColorPicker';
+
+// Extended interface for internal table use (includes editing flags)
+interface TableItem extends InventoryItem {
+  isNew?: boolean;
+  order?: number;
+}
+
+interface CartItem {
+  id: number;
+  qty: number;
+  [key: string]: any;
+}
 
 export const InventoryTable = ({
   data,
@@ -16,18 +28,18 @@ export const InventoryTable = ({
   cart,
   showOrderColumn = true
 }: {
-  data: typeof INVENTORY,
+  data: InventoryItem[],
   isAdmin?: boolean,
   isEditMode?: boolean,
   onDelete?: (id: number) => void,
-  setInventory?: any,
-  onAddToCart?: (item: any, qty: number) => void,
-  cart?: any,
+  setInventory?: React.Dispatch<React.SetStateAction<InventoryItem[]>>,
+  onAddToCart?: (item: InventoryItem, qty: number) => void,
+  cart?: CartItem[],
   showOrderColumn?: boolean
 }) => {
   const { Minus, Plus, Trash2 } = Icons;
   const [editingCell, setEditingCell] = useState<{ id: number, field: string } | null>(null);
-  const [editValue, setEditValue] = useState<any>(null);
+  const [editValue, setEditValue] = useState<string | number | undefined>(undefined);
   const [showDiscardWarning, setShowDiscardWarning] = useState(false);
   const [pendingDiscardId, setPendingDiscardId] = useState<number | null>(null);
   
@@ -36,9 +48,10 @@ export const InventoryTable = ({
 
   // ... (rest of the component state/hooks remain same)
 
-  const RenderItemIcon = ({ item, className = "text-2xl" }: { item: any, className?: string }) => {
+  const RenderItemIcon = ({ item, className = "text-2xl" }: { item: TableItem, className?: string }) => {
     if (item.image?.startsWith('icon:')) {
       const iconKey = item.image.replace('icon:', '');
+      // @ts-expect-error - dynamic icon lookup
       const IconComp = InventoryIcons[iconKey];
       return IconComp ? <IconComp className={`${className.replace('text-2xl', 'w-6 h-6')} ${item.color || 'text-slate-600'}`} /> : <span>📦</span>;
     }
@@ -47,7 +60,7 @@ export const InventoryTable = ({
 
   const handleIconChange = (id: number, { image, color }: { image: string, color: string }) => {
     if (!setInventory) return;
-    setInventory((prev: any) => prev.map((item: any) => 
+    setInventory((prev) => prev.map((item) => 
       item.id === id ? { ...item, image, color } : item
     ));
   };
@@ -69,7 +82,7 @@ export const InventoryTable = ({
     }
   }, [isEditMode]);
 
-  const startEditing = (id: number, field: string, value: any) => {
+  const startEditing = (id: number, field: string, value: string | number) => {
     if (!isAdmin || !isEditMode) return;
     setEditingCell({ id, field });
     setEditValue(value);
@@ -95,16 +108,16 @@ export const InventoryTable = ({
 
   const handleSave = () => {
     if (!editingCell || !setInventory) return;
-    setInventory((prev: any) => prev.map((item: any) => 
+    setInventory((prev) => prev.map((item) => 
       item.id === editingCell.id ? { ...item, [editingCell.field]: editValue } : item
     ));
     setEditingCell(null);
-    setEditValue(null);
+    setEditValue(undefined);
   };
 
   const handleAddItem = (index: number) => {
     if (!setInventory || !isEditMode) return;
-    const newItem = {
+    const newItem: TableItem = {
       // eslint-disable-next-line react-hooks/purity
       id: Date.now(),
       name: "Enter Name",
@@ -114,25 +127,27 @@ export const InventoryTable = ({
       stock: 0,
       image: "📦",
       order: 0,
-      isNew: true
+      isNew: true,
+      maintenance: 0,
+      color: "text-slate-600"
     };
     
-    setInventory((prev: any[]) => {
+    setInventory((prev) => {
       const newData = [...prev];
       newData.splice(index + 1, 0, newItem);
       return newData;
     });
   };
 
-  const handleRowBlur = (e: React.FocusEvent<HTMLTableRowElement>, item: any) => {
+  const handleRowBlur = (e: React.FocusEvent<HTMLTableRowElement>, item: TableItem) => {
     // Only apply logic for new items and if in edit mode
-    if (!item.isNew || !isAdmin || !isEditMode) return;
+    if (!item.isNew || !isAdmin || !isEditMode || !setInventory) return;
 
     // Check if focus is moving outside the row
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
        // Allow time for cell save to commit to state/ref
        setTimeout(() => {
-           const currentItem = dataRef.current.find((i: any) => i.id === item.id);
+           const currentItem = dataRef.current.find((i) => i.id === item.id);
            if (!currentItem) return; 
 
            // Validation Rules
@@ -143,7 +158,15 @@ export const InventoryTable = ({
                setShowDiscardWarning(true);
            } else {
                // Auto-commit: Remove isNew flag
-               setInventory((prev: any) => prev.map((i: any) => i.id === currentItem.id ? { ...i, isNew: false } : i));
+               // Cast to any to allow removing 'isNew' if it was part of the type, or just return item as is but updated
+               setInventory((prev) => prev.map((i) => {
+                   if (i.id === currentItem.id) {
+                       // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                       const { isNew, ...rest } = i as TableItem; 
+                       return rest as InventoryItem; 
+                   }
+                   return i;
+               }));
            }
        }, 200);
     }
@@ -153,7 +176,7 @@ export const InventoryTable = ({
     if (e.key === 'Enter') handleSave();
     if (e.key === 'Escape') {
       setEditingCell(null);
-      setEditValue(null);
+      setEditValue(undefined);
     }
   };
 
@@ -177,8 +200,7 @@ export const InventoryTable = ({
         </thead>
         <tbody className="divide-y divide-slate-100">
           {data.map((item, index) => {
-            // @ts-ignore - isNew doesn't exist on standard type
-            const isNew = item.isNew;
+            const isNew = (item as TableItem).isNew;
             
             return (
               <React.Fragment key={item.id}>
@@ -199,8 +221,8 @@ export const InventoryTable = ({
                         </div>
                         {activePickerId === item.id && (
                           <IconColorPicker 
-                            currentIcon={item.image}
-                            currentColor={item.color}
+                            currentIcon={item.image || "📦"}
+                            currentColor={item.color || ""}
                             onChange={(data) => handleIconChange(item.id, data)}
                             onClose={() => setActivePickerId(null)}
                           />
@@ -209,7 +231,7 @@ export const InventoryTable = ({
                       {isFieldEditing(item.id, 'name') ? (
                         <input
                           className="border border-indigo-500 ring-2 ring-indigo-100 rounded px-2 py-1 text-sm w-full outline-none"
-                          value={editValue}
+                          value={editValue as string}
                           onChange={(e) => setEditValue(e.target.value)}
                           onBlur={handleSave}
                           onKeyDown={handleKeyDown}
@@ -230,7 +252,7 @@ export const InventoryTable = ({
                     {isFieldEditing(item.id, 'category') ? (
                       <input
                         className="border border-indigo-500 ring-2 ring-indigo-100 rounded px-2 py-1 text-sm w-full outline-none"
-                        value={editValue}
+                        value={editValue as string}
                         onChange={(e) => setEditValue(e.target.value)}
                         onBlur={handleSave}
                         onKeyDown={handleKeyDown}
@@ -251,7 +273,7 @@ export const InventoryTable = ({
                       <input
                         className="border border-indigo-500 ring-2 ring-indigo-100 rounded px-2 py-1 text-sm w-20 text-right outline-none"
                         type="number"
-                        value={editValue}
+                        value={editValue as number}
                         onChange={(e) => setEditValue(Number(e.target.value))}
                         onBlur={handleSave}
                         onKeyDown={handleKeyDown}
@@ -272,7 +294,7 @@ export const InventoryTable = ({
                       <input
                         className="border border-indigo-500 ring-2 ring-indigo-100 rounded px-2 py-1 text-sm w-20 text-right outline-none"
                         type="number"
-                        value={editValue}
+                        value={editValue as number}
                         onChange={(e) => setEditValue(Number(e.target.value))}
                         onBlur={handleSave}
                         onKeyDown={handleKeyDown}
@@ -293,7 +315,7 @@ export const InventoryTable = ({
                       <input
                         className="border border-indigo-500 ring-2 ring-indigo-100 rounded px-2 py-1 text-sm w-16 text-center outline-none"
                         type="number"
-                        value={editValue}
+                        value={editValue as number}
                         onChange={(e) => setEditValue(Number(e.target.value))}
                         onBlur={handleSave}
                         onKeyDown={handleKeyDown}
@@ -315,17 +337,17 @@ export const InventoryTable = ({
                           <button
                             onClick={() => onAddToCart && onAddToCart(item, -1)}
                             className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors disabled:opacity-50"
-                            disabled={!cart?.find((c: any) => c.id === item.id)}
+                            disabled={!cart?.find((c: CartItem) => c.id === item.id)}
                           >
                             <Minus className="w-3 h-3" />
                           </button>
                           <input
                             type="number"
                             className="w-16 text-center text-sm font-bold bg-white border border-slate-200 rounded-md focus:outline-indigo-500 py-1"
-                            value={cart?.find((c: any) => c.id === item.id)?.qty || 0}
+                            value={cart?.find((c: CartItem) => c.id === item.id)?.qty || 0}
                             onChange={(e) => {
                               const newVal = parseInt(e.target.value) || 0;
-                              const currentVal = cart?.find((c: any) => c.id === item.id)?.qty || 0;
+                              const currentVal = cart?.find((c: CartItem) => c.id === item.id)?.qty || 0;
                               const delta = newVal - currentVal;
                               if (delta !== 0 && onAddToCart) onAddToCart(item, delta);
                             }}
@@ -419,7 +441,9 @@ export const InventoryTable = ({
               <div className="flex gap-3 justify-end">
                 <button 
                   onClick={() => {
-                      setInventory((prev: any) => prev.filter((i: any) => i.id !== pendingDiscardId));
+                      if (setInventory) {
+                          setInventory((prev) => prev.filter((i) => i.id !== pendingDiscardId));
+                      }
                       setShowDiscardWarning(false);
                       setPendingDiscardId(null);
                   }}
