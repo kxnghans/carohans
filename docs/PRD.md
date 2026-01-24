@@ -1,194 +1,98 @@
-Master Product Requirement Document: CaroHans Ventures ERMS
+# Master Product Requirement Document: CaroHans Ventures ERMS
 
-Project: Event Rental Management System (ERMS)
+**Project:** Event Rental Management System (ERMS)
+**Business Name:** CaroHans Ventures
+**Location:** Accra, Ghana
+**Currency:** ¢ (Ghana Cedi)
+**Version:** 2.0 (Next.js App Router Refactor + Advanced Features)
 
-Business Name: CaroHans Ventures
+---
 
-Location: Accra, Ghana
+## 1. Executive Summary & Success Metrics
 
-Currency: ¢ (Ghana Cedi)
+### 1.1 Product Vision
+To provide CaroHans Ventures with a robust web application that manages the full rental lifecycle. The system features a clear separation between a high-performance **Admin Dashboard** for internal operations and a mobile-optimized **Client Portal** for external requests.
 
-Version: 1.4 (Added Admin POS & Invoice Generator)
+### 1.2 Success Metrics
+*   **Efficiency:** Reduce return processing and fee calculation time to < 5 minutes per order.
+*   **Accuracy:** Eliminate manual calculation errors for late fees and missing item charges via automated billing logic.
+*   **Inventory Control:** Real-time synchronization of stock levels across all routes.
+*   **User Adoption:** 100% of internal staff using the system for inventory edits and order approvals.
 
-1. Executive Summary & Success Metrics
+---
 
-1.1 Product Vision
+## 2. Architecture & Tech Stack
 
-To provide CaroHans Ventures with a robust web application that manages the full rental lifecycle. The system allows clients in Accra to request items (tables, chairs, silverware, etc.) via mobile while providing the Admin with a data-rich laptop dashboard to track inventory, approve orders, and manage automated billing for late returns or damages.
+*   **Framework:** Next.js 15+ (App Router)
+*   **State Management:** React Context API (`AppProvider`) for global persistent state (Inventory, Orders, Customers).
+*   **Styling:** Tailwind CSS 4.0
+*   **Icons:** Material Design Icons (`@mui/icons-material`) via centralized registry.
+*   **Deployment:** Vercel (recommended)
 
-1.2 Success Metrics
+---
 
-Efficiency: Reduce return processing and fee calculation time to < 5 minutes per order.
+## 3. User Personas
 
-Accuracy: Eliminate manual calculation errors for late fees and missing item charges.
+| Persona | Role | Primary Interface |
+| :--- | :--- | :--- |
+| **Admin** | Owner/Manager | `/admin/*` (Laptop/Desktop) |
+| **Client** | Customer | `/portal/*` (Mobile-First) |
 
-Control: 100% accuracy in date-based availability, accounting for holidays and maintenance.
+---
 
-2. User Personas & Device Optimization
+## 4. Admin Dashboard Requirements (`/admin`)
 
-Persona
+### 4.1 Overview & Logistics
+*   **Live Operations:** Dashboard showing today's pickups, returns, and overdue items.
+*   **Order Status Management:** Filterable view of all orders (Pending, Approved, Active, Overdue, Completed).
+*   **Status Transitions:** Admin can manually move orders through the lifecycle (e.g., Dispatch, Process Return).
 
-Primary Device
+### 4.2 Inventory Management (`/admin/inventory`)
+*   **Edit Mode:** A toggleable mode that enables inline editing of names, categories, and prices.
+*   **Add SKU:** Dedicated "Click to add new SKU" row at the bottom of the table.
+*   **Draft Validation:** New items must have a valid Name, Category, Price, and Replacement Cost. Click-away validation triggers a "Discard or Keep Editing" prompt.
+*   **Visual Customization:** Integrated **Icon & Color Picker** for every item. Supports Material Icons and Emojis with custom Tailwind text colors.
+*   **Delete Logic:** One-click deletion with session-based "Don't ask again" preference.
+*   **POS Flow (New Order):** Inline customer and date selection that switches the table into "Selection Mode" for rapid order creation.
 
-Goal
+### 4.3 Advanced Calendar (`/admin/calendar`)
+*   **Global Blackouts:** Ability to block dates business-wide (e.g., holidays).
+*   **Split Layout:** Calendar view on the left, "Smart Grouped" list of blocked periods on the right.
+*   **Selection Modes:** Toggle between "Individual Day" and "Range Selection" modes.
+*   **Grouped Visualization:** Consecutive blocked dates are automatically displayed as ranges (e.g., "Dec 24 - Jan 02") in the management list.
 
-The Client
+### 4.4 Business Intelligence (`/admin/bi`)
+*   **Revenue Trends:** Area charts showing monthly revenue growth.
+*   **Customer Segments:** Pie charts breaking down the customer base (Corporate, Weddings, etc.).
+*   **Key Metrics:** Real-time calculation of Total Revenue, Average Order Value, and Lifetime Customers.
 
-Mobile Phone
+---
 
-Browse catalog, submit requests, and track rental status in real-time.
+## 5. Client Portal Requirements (`/portal`)
 
-The Staff
+### 5.1 Rental Catalog (`/portal/inventory`)
+*   **Shopping Experience:** Clients can browse the catalog and add items to a persistent cart.
+*   **Availability:** Calendar interaction to select Pickup and Return dates.
+*   **Checkout:** Seamless "Review Order" flow generating a digital invoice/quote request.
 
-Tablet/Laptop
+### 5.2 My Orders (`/portal/orders`)
+*   **History:** Clients can view their past and current rental requests with status tracking.
 
-Fast check-out/check-in, counting items, and flagging damages.
+### 5.3 Profile (`/portal/profile`)
+*   **Self-Service:** Update contact information (WhatsApp, Email) and default delivery address.
 
-The Owner (Admin)
+---
 
-Laptop/Desktop
+## 6. Business Logic & Fees
 
-Full control over inventory, BI reports, calendar overrides, and fee overrides.
+### 6.1 Automated Billing
+*   **Late Fees:** Calculated as `Daily Rate * Days Late * Quantity`.
+*   **Replacement Fees:** Triggered by damage flags or missing item counts during return processing.
 
-3. Core Functional Requirements
+---
 
-3.1 Inventory Management
-
-Item Database: Name, Category, SKU, Daily Rate (¢), Replacement Cost (¢), and Total Physical Stock.
-
-Dynamic Stock Logic: Available Stock = Total Stock - (Sum of Booked/Active Quantities) - (Maintenance/Buffer)
-
-Audit Log: Track who changed stock levels or blocked dates.
-
-3.2 Calendar & Blackout Management (NEW)
-
-The Admin requires the ability to override the standard availability logic by "blacking out" dates.
-
-3.2.1 Global Blackouts (Business-Wide)
-
-Continuous Blocking: Ability to select a date range (e.g., Dec 24 - Jan 2) where the entire shop is marked "Closed." No new orders can be requested for these dates.
-
-Intermittent Blocking: A calendar view where Admin can click specific, non-consecutive days (e.g., every Tuesday for maintenance) to disable bookings.
-
-Client View: Dates are greyed out and unselectable in the booking picker.
-
-3.2.2 Item-Specific Blackouts (SKU-Level)
-
-Maintenance Holds: Block specific items (e.g., "Silverware Set A") for a week for deep cleaning/polishing without affecting the rest of the inventory.
-
-Buffer Management: Manually reduce available quantity for specific high-demand weekends without changing total physical stock.
-
-3.2.3 Conflict Resolution
-
-If an Admin attempts to block a date that already has a "Booked" or "Active" rental, the system must trigger a warning: "Conflict: 3 orders are already scheduled for this period. View Orders or Force Block?"
-
-3.3 Order Lifecycle & Status Management
-
-3.3.1 The Workflow
-
-Quote/Request → [Approval Required/Auto] → Booked → Active → Completed
-                                            ↓
-                                        Cancelled
-
-
-3.3.2 Approval Logic
-
-Toggle Settings: Admin can set items to "Auto-Approve" or "Approval Required."
-
-3.4 Client Experience (Mobile-First)
-
-Visual Catalog: Responsive grid of rental items with clear pricing in ¢.
-
-Smart Date Picker: Respects both Global and Item-specific blackout dates in real-time.
-
-Data Capture Onboarding: Mandatory Name, Phone (WhatsApp), Email, and Event Location.
-
-4. The Return Process & Fee Engine (Critical)
-
-4.1 Automated Calculation Logic
-
-A. Late Fees:
-if actual_return > scheduled_return: Late Fee = daily_rate * late_days * qty_rented
-
-B. Missing/Damaged Fees:
-Replacement Charge = missing_qty * item.replacement_cost
-
-4.2 Check-In Workflow (Staff/Admin)
-
-Identify Order: Search by Order # or Customer Phone.
-
-Item Count: Staff enters "Quantity Returned" per line item.
-
-Damage Toggle: Triggers replacement cost automatically.
-
-Admin Override: Ability to waive fees with a mandatory reason note.
-
-5. Business Intelligence & Reporting
-
-5.1 Owner Dashboard (Laptop)
-
-Calendar Quick-View: A master calendar showing:
-
-Confirmed Pickups/Returns.
-
-Blackout Dates (Global & Item-specific).
-
-Inventory "Heatmap" (Red = 0% available, Green = 100% available).
-
-Quick Actions: "Block Dates," "View Overdue," "Create New Booking."
-
-Revenue Breakdown: Monthly comparison of Base Revenue vs. Fee Revenue.
-
-6. Technical & Security Requirements
-
-6.1 Authentication & RBAC
-
-Admin Role: Access to the Calendar Manager to add/remove blackout dates.
-
-Staff Role: Can view the calendar but cannot add/remove blackout dates.
-
-Client Role: Restricted to viewing available dates only.
-
-6.2 UX Standards
-
-Calendar UI: Drag-to-select for continuous dates; single-click for intermittent dates.
-
-Visual Cues: Different colors for Global Blackouts (e.g., Red) vs. Item Maintenance (e.g., Orange).
-
-7. Open Questions & Roadmap
-
-Item
-
-Status
-
-Priority
-
-Tax (VAT/NHIL)
-
-TBD - Manual entry or auto?
-
-Medium
-
-WhatsApp API
-
-Phase 2 - Auto-notifications
-
-High
-
-Partial Days
-
-Does blocking a date block the whole day or just specific hours?
-
-Low
-
-8. Appendix: Sample Scenario (Blackout)
-
-Scenario: CaroHans Ventures is closing for a private family event on March 15th.
-
-Admin goes to Calendar Manager.
-
-Selects "Global Blackout."
-
-Clicks March 15th.
-
-System Action: All items show ¢0 available for that date. Any client trying to book a range that includes March 15th receives a message: "We are closed on March 15th. Please adjust your dates."
+## 7. UX Standards & Design System
+*   **Interactive Elements:** Consistent use of custom `Button` and `Card` components.
+*   **Feedback:** Global `NotificationToast` for success/error messages.
+*   **Visual Hierarchy:** Use of bold typography and subtle shadows to differentiate UI sections.
+*   **Empty States:** Detailed "No Records Found" views with clear calls-to-action.
