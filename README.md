@@ -77,3 +77,27 @@ pnpm start
 ```
 
 The application will be available at [http://localhost:3000](http://localhost:3000).
+
+## Deployment (Cloudflare Pages)
+
+This project is configured for deployment on Cloudflare Pages using `@cloudflare/next-on-pages`.
+
+### Configuration
+
+Ensure your Cloudflare Pages project settings are configured as follows:
+
+-   **Framework Preset:** None / Custom
+-   **Build command:** `pnpm run build:pages`
+-   **Build output directory:** `apps/web/.vercel/output/static`
+-   **Node.js Version:** >= 18
+
+### Manual Deployment
+
+To deploy manually using Wrangler:
+
+```bash
+pnpm run build:pages
+pnpm run deploy
+```
+
+*Note: `pnpm run deploy` executes `wrangler pages deploy apps/web/.vercel/output/static`.*
