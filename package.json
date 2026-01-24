@@ -2,7 +2,9 @@
   "name": "carohans-erms",
   "private": true,
   "scripts": {
-    "build": "turbo run build",
+    "build": "turbo run pages:build",
+    "build:pages": "turbo run pages:build",
+    "deploy": "wrangler pages deploy apps/web/.vercel/output/static",
     "dev": "turbo run dev",
     "start": "turbo run start",
     "lint": "turbo run lint",
