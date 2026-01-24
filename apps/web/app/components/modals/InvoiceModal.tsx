@@ -7,6 +7,14 @@ import { formatCurrency } from '../../utils/helpers';
 
 export const InvoiceModal = ({ isOpen, onClose, cart, customer, onConfirm, total }: any) => {
   const { Printer, X, Check } = Icons;
+  const [invoiceId, setInvoiceId] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setInvoiceId(Math.floor(Math.random() * 10000));
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -33,7 +41,7 @@ export const InvoiceModal = ({ isOpen, onClose, cart, customer, onConfirm, total
             </div>
             <div className="text-right">
               <h3 className="font-bold text-slate-400 text-xs uppercase tracking-wider mb-2">Invoice Details</h3>
-              <p className="font-bold text-slate-900">#{Math.floor(Math.random() * 10000)}</p>
+              <p className="font-bold text-slate-900">#{invoiceId}</p>
               <p className="text-emerald-600 font-bold text-sm bg-emerald-50 px-2 py-0.5 rounded inline-block mt-1">Draft</p>
             </div>
           </div>
