@@ -10,8 +10,10 @@
     "test": "turbo run test"
   },
   "devDependencies": {
-    "turbo": "latest",
-    "prettier": "latest"
+    "@cloudflare/next-on-pages": "^1.13.16",
+    "eslint-plugin-next-on-pages": "^1.13.16",
+    "prettier": "latest",
+    "turbo": "latest"
   },
   "packageManager": "pnpm@9.15.4",
   "engines": {

@@ -105,7 +105,8 @@ export const InventoryTable = ({
   const handleAddItem = (index: number) => {
     if (!setInventory || !isEditMode) return;
     const newItem = {
-      id: Math.floor(Math.random() * 100000),
+      // eslint-disable-next-line react-hooks/purity
+      id: Date.now(),
       name: "Enter Name",
       category: "Uncategorized",
       price: 0,
