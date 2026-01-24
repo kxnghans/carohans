@@ -1,9 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  turbo: {
-    root: "../../",
-  },
+  transpilePackages: [],
 };
 
 export default nextConfig;
