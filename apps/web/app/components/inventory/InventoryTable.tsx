@@ -15,7 +15,6 @@ interface TableItem extends InventoryItem {
 interface CartItem {
   id: number;
   qty: number;
-  [key: string]: any;
 }
 
 export const InventoryTable = ({
@@ -51,7 +50,6 @@ export const InventoryTable = ({
   const RenderItemIcon = ({ item, className = "text-2xl" }: { item: TableItem, className?: string }) => {
     if (item.image?.startsWith('icon:')) {
       const iconKey = item.image.replace('icon:', '');
-      // @ts-expect-error - dynamic icon lookup
       const IconComp = InventoryIcons[iconKey];
       return IconComp ? <IconComp className={`${className.replace('text-2xl', 'w-6 h-6')} ${item.color || 'text-slate-600'}`} /> : <span>📦</span>;
     }
