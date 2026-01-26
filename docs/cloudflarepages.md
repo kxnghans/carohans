@@ -66,7 +66,7 @@ The deployment pipeline is managed via `pnpm` and `turbo`.
 | Command | Script | Description |
 | :--- | :--- | :--- |
 | **Build** | `pnpm build:pages` | Runs `turbo run pages:build`. This triggers `opennextjs-cloudflare build` in the `web` app. |
-| **Deploy** | `pnpm deploy` | Runs `wrangler deploy`. **Required** for OpenNext/Workers deployments. |
+| **Deploy** | `pnpm deploy` | Runs `wrangler deploy -c apps/web/wrangler.toml`. Deploys the OpenNext worker using the specific config file. |
 
 ### `apps/web/package.json`
 | Command | Script | Description |
