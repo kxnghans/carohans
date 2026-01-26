@@ -97,12 +97,28 @@ Since the application runs on the **Edge Runtime**, standard Node.js APIs (like 
 
 ## 6. Troubleshooting
 
-### 6.1 Build Errors: `experimental.turbopack`
-**Error:** `Type error: Object literal may only specify known properties, and 'turbopack' does not exist in type 'ExperimentalConfig'.`
+### 6.1 Build Errors: Monorepo Resolution
+**Error:** `Next.js inferred your workspace root, but it may not be correct.`
 
-**Cause:** The `turbopack` option in `experimental` is only valid for development mode (`next dev --turbo`) and is not recognized by the production build worker in Next.js 16.
+**Cause:** The default build process may fail to correctly identify the monorepo root in a workspace setup, especially when `next-on-pages` triggers a secondary build.
 
-**Fix:** Remove the `turbopack` block from `next.config.ts` for production deployments.
+**Fix:** explicitly configure the `turbo` root in `next.config.ts`. Note: In Next.js 16, the key is `turbo`, not `turbopack`.
+
+```typescript
+import type { NextConfig } from "next";
+import path from "path";
+
+const nextConfig: NextConfig = {
+  transpilePackages: [],
+  experimental: {
+    turbo: {
+      root: path.resolve(__dirname, "../../"),
+    },
+  },
+};
+
+export default nextConfig;
+```
 
 ### 6.2 Module Resolution: `fs` or `path`
 **Error:** `Module not found: Can't resolve 'fs'`
