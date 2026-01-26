@@ -4,7 +4,7 @@
   "scripts": {
     "build": "turbo run build",
     "build:pages": "turbo run pages:build",
-    "deploy": "echo 'Deployment handled by Cloudflare Pages'",
+    "deploy": "wrangler deploy -c apps/web/wrangler.toml",
     "dev": "turbo run dev",
     "start": "turbo run start",
     "lint": "turbo run lint",

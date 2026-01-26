@@ -20,17 +20,17 @@ The application uses the **Next.js App Router**. To run on Cloudflare's global e
 
 ## 2. Configuration
 
-### 2.1 `wrangler.toml` (Root)
-Governs the Cloudflare deployment. Points to the OpenNext output.
+### 2.1 `apps/web/wrangler.toml`
+Governs the Cloudflare deployment for the web application.
 
 ```toml
 name = "carohans"
 compatibility_date = "2024-09-23"
-main = "apps/web/.open-next/worker.js"
+main = ".open-next/worker.js"
 compatibility_flags = ["nodejs_compat"]
 
 [assets]
-directory = "apps/web/.open-next/assets"
+directory = ".open-next/assets"
 binding = "ASSETS"
 ```
 
@@ -66,7 +66,7 @@ The deployment pipeline is managed via `pnpm` and `turbo`.
 | Command | Script | Description |
 | :--- | :--- | :--- |
 | **Build** | `pnpm build:pages` | Runs `turbo run pages:build`. This triggers `opennextjs-cloudflare build` in the `web` app. |
-| **Deploy** | `pnpm deploy` | Echoes a message. Deployment is handled automatically by Cloudflare when connected to Git. |
+| **Deploy** | `pnpm deploy` | Runs `wrangler deploy`. **Required** for OpenNext/Workers deployments. |
 
 ### `apps/web/package.json`
 | Command | Script | Description |
@@ -87,15 +87,15 @@ To deploy the application manually from your local machine:
     ```
 2.  **Deploy to Cloudflare:**
     ```bash
-    npx wrangler deploy
+    pnpm deploy
     ```
 
-### 4.2 CI/CD (Git Integration)
-When connecting the repository directly to Cloudflare via the dashboard:
+### 4.2 CI/CD (Workers Builds)
+When using Cloudflare **Workers Builds** (recommended for OpenNext):
 
-1.  **Build Command:** `pnpm build:pages`
-2.  **Build Output Directory:** `apps/web/.open-next/assets` (for Assets) or simply rely on the `wrangler.toml` configuration.
-3.  **Root Directory:** `/` (Leave as default)
+1.  **Build Command:** `pnpm run build:pages`
+2.  **Deploy Command:** `pnpm run deploy`
+3.  **Path:** `/`
 4.  **Environment Variables:** Add any required keys (e.g., `NEXT_PUBLIC_...`) in the Cloudflare settings.
 
 ---
