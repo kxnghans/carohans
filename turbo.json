@@ -8,7 +8,7 @@
     },
     "pages:build": {
       "dependsOn": ["build"],
-      "outputs": [".vercel/**"]
+      "outputs": [".next/**", "!.next/cache/**", ".open-next/**"]
     },
     "lint": {},
     "dev": {

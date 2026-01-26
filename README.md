@@ -80,24 +80,17 @@ The application will be available at [http://localhost:3000](http://localhost:30
 
 ## Deployment (Cloudflare Pages)
 
-This project is configured for deployment on Cloudflare Pages using `@cloudflare/next-on-pages`.
+This project is configured for deployment on Cloudflare using **OpenNext** (`@opennextjs/cloudflare`).
 
-### Configuration
-
-Ensure your Cloudflare Pages project settings are configured as follows:
-
--   **Framework Preset:** None / Custom
+### Cloudflare Configuration
 -   **Build command:** `pnpm run build:pages`
--   **Build output directory:** `apps/web/.vercel/output/static`
--   **Node.js Version:** >= 18
+-   **Build output directory:** `apps/web/.open-next`
+-   **Compatibility date:** `2024-09-23`
+-   **Compatibility flags:** `nodejs_compat`
 
 ### Manual Deployment
-
-To deploy manually using Wrangler:
-
+While deployment is automated via Git, you can manually deploy using:
 ```bash
-pnpm run build:pages
-pnpm run deploy
+pnpm build:pages
+npx wrangler deploy
 ```
-
-*Note: `pnpm run deploy` executes `wrangler pages deploy apps/web/.vercel/output/static`.*

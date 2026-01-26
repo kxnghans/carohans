@@ -11,7 +11,7 @@
 *   **Language:** TypeScript
 *   **Styling:** Tailwind CSS 4, CSS Variables, Lucide React, Material UI (@mui/material, @mui/icons-material)
 *   **Charts:** Recharts
-*   **Deployment:** Cloudflare Pages (via `@cloudflare/next-on-pages`)
+*   **Deployment:** Cloudflare (via OpenNext `@opennextjs/cloudflare`)
 
 ## Directory Structure
 
@@ -22,7 +22,7 @@
     *   `app/components`: Shared UI components.
     *   `lib/`: Utilities and mock data.
 *   `docs`: Documentation (PRD, test notes).
-*   `turbo.json`: Turborepo pipeline configuration.
+*   `turbo.json`: Turbopack pipeline configuration.
 
 ## Key Commands
 
@@ -32,8 +32,8 @@ Run these commands from the **root directory**:
 | :--- | :--- |
 | `pnpm dev` | Starts the development server (`next dev`). Accessible at `http://localhost:3000`. |
 | `pnpm build` | Standard Next.js build (`next build`). |
-| `pnpm build:pages` | Builds for Cloudflare Pages using `next-on-pages`. Output: `.vercel/output/static`. |
-| `pnpm deploy` | Deploys the Pages build to Cloudflare using Wrangler. |
+| `pnpm build:pages` | Builds for Cloudflare using OpenNext. Output: `.open-next`. |
+| `pnpm deploy` | Deployment is handled automatically via Git integration. |
 | `pnpm lint` | Runs ESLint. |
 | `pnpm format` | Formats code with Prettier. |
 
@@ -48,6 +48,6 @@ Run these commands from the **root directory**:
 
 ## Deployment
 
-The application is deployed to **Cloudflare Pages**.
+The application is deployed to **Cloudflare**.
 *   **Runtime:** Edge runtime compatibility is required.
-*   **Build Tool:** `@cloudflare/next-on-pages` transforms the Next.js build.
+*   **Build Tool:** `@opennextjs/cloudflare` transforms the Next.js build.
