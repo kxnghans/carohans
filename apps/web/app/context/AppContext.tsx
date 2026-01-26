@@ -3,25 +3,19 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
 import { INVENTORY, ORDERS, CUSTOMERS } from '../lib/mockData';
 import { calculateMetrics } from '../utils/helpers';
-
-interface PortalFormData {
-  name: string;
-  phone: string;
-  email: string;
-  start: string;
-  end: string;
-}
+import { InventoryItem, Order, Customer, CartItem, PortalFormData, Metrics } from '../types';
+import { createOrder } from '../services/orderService';
 
 interface AppContextType {
-  inventory: typeof INVENTORY;
-  setInventory: React.Dispatch<React.SetStateAction<typeof INVENTORY>>;
-  orders: typeof ORDERS;
-  setOrders: React.Dispatch<React.SetStateAction<typeof ORDERS>>;
-  customers: typeof CUSTOMERS;
-  setCustomers: React.Dispatch<React.SetStateAction<typeof CUSTOMERS>>;
-  cart: any[];
-  setCart: React.Dispatch<React.SetStateAction<any[]>>;
-  metrics: any;
+  inventory: InventoryItem[];
+  setInventory: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
+  orders: Order[];
+  setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
+  customers: Customer[];
+  setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
+  cart: CartItem[];
+  setCart: React.Dispatch<React.SetStateAction<CartItem[]>>;
+  metrics: Metrics;
   showNotification: (msg: string, type?: string) => void;
   notification: { msg: string; type: string } | null;
   portalFormData: PortalFormData;
@@ -32,10 +26,10 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [inventory, setInventory] = useState(INVENTORY);
-  const [orders, setOrders] = useState(ORDERS);
-  const [customers, setCustomers] = useState(CUSTOMERS);
-  const [cart, setCart] = useState<any[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>(INVENTORY);
+  const [orders, setOrders] = useState<Order[]>(ORDERS as Order[]);
+  const [customers, setCustomers] = useState<Customer[]>(CUSTOMERS);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [notification, setNotification] = useState<{ msg: string; type: string } | null>(null);
   const [portalFormData, setPortalFormData] = useState<PortalFormData>({ 
     name: 'Kwame Mensah', 
@@ -45,7 +39,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     end: '' 
   });
 
-  const metrics = useMemo(() => calculateMetrics(orders), [orders]);
+  const metrics = useMemo(() => calculateMetrics(orders) as Metrics, [orders]);
 
   const showNotification = (msg: string, type = 'success') => {
     setNotification({ msg, type });
@@ -53,18 +47,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const submitOrder = (details: PortalFormData) => {
-    const newOrder = {
-      id: Math.floor(Math.random() * 10000),
-      customerName: details.name,
-      phone: details.phone,
-      email: details.email || 'no-email@provided.com',
-      status: 'Pending',
-      items: cart.map(i => ({ itemId: i.id, qty: i.qty })),
-      startDate: details.start,
-      endDate: details.end,
-      totalAmount: cart.reduce((sum, i) => sum + (i.price * i.qty * 2), 0),
-      depositPaid: false
-    };
+    const newOrder = createOrder(details, cart, inventory);
     setOrders(prev => [newOrder, ...prev]);
     setCart([]);
     showNotification("Order Request Sent!");

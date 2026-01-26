@@ -5,8 +5,15 @@ import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
 import { getStatusColor } from '../../utils/helpers';
 import { INVENTORY } from '../../lib/mockData';
+import { Order } from '../../types';
 
-export const OrderAdminCard = ({ order, updateStatus, onInvoice }: any) => {
+interface OrderAdminCardProps {
+  order: Order;
+  updateStatus: (id: number, status: string) => void;
+  onInvoice: (order: Order) => void;
+}
+
+export const OrderAdminCard = ({ order, updateStatus, onInvoice }: OrderAdminCardProps) => {
   const { Printer, ChevronRight } = Icons;
   const [showDetails, setShowDetails] = useState(false);
 

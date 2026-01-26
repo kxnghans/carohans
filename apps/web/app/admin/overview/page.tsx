@@ -11,6 +11,7 @@ import { InventoryTable } from '../../components/inventory/InventoryTable';
 import { InvoiceModal } from '../../components/modals/InvoiceModal';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { Order, Customer, InventoryItem, Metrics, CartItem } from '../../types';
 
 export default function AdminOverviewPage() {
   const { Truck, LayoutDashboard, ClipboardList, AlertOctagon, Check, Search, Plus, X, ChevronRight } = Icons;
@@ -19,10 +20,10 @@ export default function AdminOverviewPage() {
   // Local state for filters and POS flow
   const [orderFilter, setOrderFilter] = useState('All');
   const [createOrderStep, setCreateOrderStep] = useState<'none' | 'select-customer' | 'shop' | 'review'>('none');
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
-  const [posCart, setPosCart] = useState<any[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [posCart, setPosCart] = useState<(InventoryItem & { qty: number })[]>([]);
   const [posDates, setPosDates] = useState({ start: '', end: '' });
-  const [viewingInvoice, setViewingInvoice] = useState<any>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<(Order & { cart: any[], customer: any }) | null>(null);
 
   const metrics = useMemo(() => calculateMetrics(orders), [orders]);
 
@@ -31,9 +32,9 @@ export default function AdminOverviewPage() {
     return orders.filter(o => o.status === orderFilter);
   }, [orders, orderFilter]);
 
-  const handleOrderInvoice = (order: any) => {
+  const handleOrderInvoice = (order: Order) => {
     // Reconstruct the cart items for the InvoiceModal
-    const reconstructedCart = order.items.map((item: any) => {
+    const reconstructedCart = order.items.map((item) => {
       const inventoryItem = inventory.find(i => i.id === item.itemId);
       return {
         ...inventoryItem,
@@ -57,7 +58,7 @@ export default function AdminOverviewPage() {
     showNotification(`Order #${orderId} marked as ${newStatus}`);
   };
 
-  const addToPosCart = (item: any, qty: number) => {
+  const addToPosCart = (item: InventoryItem, qty: number) => {
     setPosCart(prev => {
       const existing = prev.find(i => i.id === item.id);
       if (existing) {
@@ -72,7 +73,7 @@ export default function AdminOverviewPage() {
 
   const submitAdminOrder = () => {
     if (!selectedCustomer) return;
-    const newOrder = {
+    const newOrder: Order = {
       id: Math.floor(Math.random() * 10000),
       customerName: selectedCustomer.name,
       phone: selectedCustomer.phone,
@@ -84,7 +85,7 @@ export default function AdminOverviewPage() {
       totalAmount: posCart.reduce((sum, i) => sum + (i.price * i.qty * 2), 0),
       depositPaid: false
     };
-    setOrders([newOrder, ...orders]);
+    setOrders(prev => [newOrder, ...prev]);
     setPosCart([]);
     setSelectedCustomer(null);
     setPosDates({ start: '', end: '' });
