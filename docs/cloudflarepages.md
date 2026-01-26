@@ -51,7 +51,7 @@ The deployment pipeline is managed via `pnpm` and `turbo` scripts defined in the
 | Command | Script | Description |
 | :--- | :--- | :--- |
 | **Build** | `pnpm build:pages` | Runs `turbo run pages:build`. This triggers the specific adapter build in the `web` app. |
-| **Deploy** | `pnpm deploy` | Runs `wrangler pages deploy apps/web/.vercel/output/static`. Uploads the artifacts to Cloudflare. |
+| **Deploy** | `pnpm deploy` | Echoes a message. Deployment is handled automatically by Cloudflare Pages after the build. |
 
 ### `apps/web/package.json`
 | Command | Script | Description |
@@ -63,26 +63,24 @@ The deployment pipeline is managed via `pnpm` and `turbo` scripts defined in the
 ## 4. Deployment Workflow
 
 ### 4.1 Manual Deployment (CLI)
-To deploy the application manually from your local machine:
+While the `deploy` script is a no-op for CI/CD, you can still manually deploy using Wrangler from your terminal if you have the necessary permissions:
 
 1.  **Build the Project:**
     ```bash
     pnpm build:pages
     ```
-    *This will generate the `.vercel/output/static` directory in `apps/web`.*
-
 2.  **Deploy to Cloudflare:**
     ```bash
-    pnpm deploy
+    npx wrangler pages deploy apps/web/.vercel/output/static
     ```
-    *This will prompt for Cloudflare authentication (if not logged in) and upload the assets.*
 
 ### 4.2 CI/CD (Git Integration)
 When connecting the repository directly to Cloudflare Pages via the dashboard:
 
 1.  **Build Command:** `pnpm build:pages`
-2.  **Build Output Directory:** `apps/web/.vercel/output/static`
-3.  **Root Directory:** `/` (Leave as default)
+2.  **Deploy Command:** `pnpm deploy`
+3.  **Build Output Directory:** `apps/web/.vercel/output/static`
+4.  **Root Directory:** `/` (Leave as default)
 4.  **Environment Variables:** Add any required keys (e.g., `NEXT_PUBLIC_...`) in the Cloudflare Pages settings.
 
 ---
@@ -100,25 +98,17 @@ Since the application runs on the **Edge Runtime**, standard Node.js APIs (like 
 ### 6.1 Build Errors: Monorepo Resolution
 **Error:** `Next.js inferred your workspace root, but it may not be correct.`
 
-**Cause:** The default build process may fail to correctly identify the monorepo root in a workspace setup, especially when `next-on-pages` triggers a secondary build.
+**Cause:** The default build process may fail to correctly identify the monorepo root in a workspace setup when using Turbopack, especially when `next-on-pages` triggers a secondary build.
 
-**Fix:** explicitly configure the `turbo` root in `next.config.ts`. Note: In Next.js 16, the key is `turbo`, not `turbopack`.
+**Fix:** Disable Turbopack for production builds by updating the build script in `package.json`:
 
-```typescript
-import type { NextConfig } from "next";
-import path from "path";
-
-const nextConfig: NextConfig = {
-  transpilePackages: [],
-  experimental: {
-    turbo: {
-      root: path.resolve(__dirname, "../../"),
-    },
-  },
-};
-
-export default nextConfig;
+```json
+"scripts": {
+  "build": "TURBOPACK=0 next build"
+}
 ```
+
+And remove any `experimental.turbo` configuration from `next.config.ts`.
 
 ### 6.2 Module Resolution: `fs` or `path`
 **Error:** `Module not found: Can't resolve 'fs'`
