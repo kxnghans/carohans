@@ -1,15 +1,4 @@
-
-export interface InventoryItem {
-    id: number;
-    name: string;
-    category: string;
-    stock: number;
-    price: number;
-    replacementCost: number;
-    maintenance: number;
-    image: string;
-    color: string;
-}
+import { InventoryItem } from '../types';
 
 export const INVENTORY: InventoryItem[] = [
     { id: 1, name: 'Gold Chiavari Chair', category: 'Chairs', stock: 120, price: 15, replacementCost: 150, maintenance: 0, image: '🪑', color: 'text-amber-500' },

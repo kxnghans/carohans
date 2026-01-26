@@ -1,4 +1,4 @@
-import { ORDERS } from '../lib/mockData';
+import { Order, Metrics } from '../types';
 
 export const formatCurrency = (amount: number) => `¢${amount.toLocaleString()}`;
 
@@ -13,7 +13,7 @@ export const getStatusColor = (status: string) => {
   }
 };
 
-export const calculateMetrics = (orders: typeof ORDERS) => {
+export const calculateMetrics = (orders: Order[]): Metrics => {
   const totalRevenue = orders.reduce((sum, o) => sum + o.totalAmount, 0);
   const activeRentals = orders.filter(o => o.status === 'Active').length;
   const pendingRequests = orders.filter(o => o.status === 'Pending').length;
