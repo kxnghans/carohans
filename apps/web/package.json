@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
-    "build": "TURBOPACK=0 next build",
-    "pages:build": "next-on-pages",
+    "build": "next build",
+    "pages:build": "next-on-pages --skip-build",
     "start": "next start",
     "lint": "eslint"
   },

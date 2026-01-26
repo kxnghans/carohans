@@ -56,7 +56,7 @@ The deployment pipeline is managed via `pnpm` and `turbo` scripts defined in the
 ### `apps/web/package.json`
 | Command | Script | Description |
 | :--- | :--- | :--- |
-| **Adapter Build** | `pnpm pages:build` | Executes `next-on-pages`. This wraps the standard Next.js build and produces the Edge-compatible output. |
+| **Adapter Build** | `pnpm pages:build` | Executes `next-on-pages --skip-build`. This uses the artifacts from the previous standard build step, avoiding redundant builds and potential issues. |
 
 ---
 
@@ -98,17 +98,17 @@ Since the application runs on the **Edge Runtime**, standard Node.js APIs (like 
 ### 6.1 Build Errors: Monorepo Resolution
 **Error:** `Next.js inferred your workspace root, but it may not be correct.`
 
-**Cause:** The default build process may fail to correctly identify the monorepo root in a workspace setup when using Turbopack, especially when `next-on-pages` triggers a secondary build.
+**Cause:** The `next-on-pages` command triggers a secondary build which may default to using Turbopack or fail to resolve the monorepo root correctly.
 
-**Fix:** Disable Turbopack for production builds by updating the build script in `package.json`:
+**Fix:** Use the `--skip-build` flag to prevent `next-on-pages` from rebuilding the application. Instead, rely on the standard `next build` that runs before it.
 
+Update `apps/web/package.json`:
 ```json
 "scripts": {
-  "build": "TURBOPACK=0 next build"
+  "build": "next build",
+  "pages:build": "next-on-pages --skip-build"
 }
 ```
-
-And remove any `experimental.turbo` configuration from `next.config.ts`.
 
 ### 6.2 Module Resolution: `fs` or `path`
 **Error:** `Module not found: Can't resolve 'fs'`
