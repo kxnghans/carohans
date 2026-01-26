@@ -4,7 +4,7 @@ import path from "path";
 const nextConfig: NextConfig = {
   transpilePackages: [],
   experimental: {
-    turbopack: {
+    turbo: {
       root: path.resolve(__dirname, "../../"),
     },
   },
