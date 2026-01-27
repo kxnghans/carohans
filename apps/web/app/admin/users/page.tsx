@@ -63,8 +63,8 @@ export default function AdminUsersPage() {
         }
 
         const merged: UserProfile[] = profiles
-            .map(p => {
-                const client = clients?.find(c => c.user_id === p.id);
+            .map((p: any) => {
+                const client = clients?.find((c: any) => c.user_id === p.id);
                 return {
                     id: p.id,
                     email: client?.email || 'No Email',
@@ -76,7 +76,7 @@ export default function AdminUsersPage() {
             })
             // Only show users who have a linked client record or an email
             // This filters out stale/incomplete auth profiles
-            .filter(u => u.clientName !== null || u.clientEmail !== null) as UserProfile[];
+            .filter((u: any) => u.clientName !== null || u.clientEmail !== null) as UserProfile[];
 
         setUsers(merged);
         setLoading(false);

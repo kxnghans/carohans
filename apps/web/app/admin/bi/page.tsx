@@ -25,7 +25,12 @@ export default function AdminBIPage() {
   // New BI Filters
   const [returnStatusFilter, setReturnStatusFilter] = useState<string[]>(['All']);
   const [integrityFilter, setIntegrityFilter] = useState<string[]>(['All']);
-  const [usageType, setUsageType] = useState<'Items' | 'Clients'>('Items');
+  const [usageType, setUsageType] = useState<'Categories' | 'Items'>('Categories');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const resetFilters = () => {
     setTimeRange('All Time');
@@ -134,12 +139,17 @@ export default function AdminBIPage() {
 
   // 6. Usage Ranking (Dynamic Toggle)
   const usageRankingData = useMemo(() => {
-      if (usageType === 'Clients') {
-          const clientMap: Record<string, number> = {};
-          categoryFilteredData.forEach(o => {
-              clientMap[o.clientName] = (clientMap[o.clientName] || 0) + 1; // Frequency
+      if (usageType === 'Categories') {
+          const catMap: Record<string, number> = {};
+          categoryFilteredData.forEach(order => {
+              order.items.forEach(item => {
+                  const invItem = inventory.find(i => i.id === item.itemId);
+                  if (invItem) {
+                      catMap[invItem.category] = (catMap[invItem.category] || 0) + 1; // Frequency
+                  }
+              });
           });
-          return Object.entries(clientMap)
+          return Object.entries(catMap)
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value)
             .slice(0, 10);
@@ -182,7 +192,7 @@ export default function AdminBIPage() {
 
   // 7. Insight Engine
   const deepInsights = useMemo(() => {
-      const insights = [];
+      const insights: any[] = [];
       const peakMonth = [...financialTrends].sort((a, b) => b.revenue - a.revenue)[0];
       if (peakMonth) {
           insights.push({
@@ -399,41 +409,56 @@ export default function AdminBIPage() {
       </Card>
 
       {/* KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Business Revenue" 
-          value={formatCurrency(localMetrics.totalRevenue)} 
-          subtext={`${categoryFilter} Contribution`} 
-          trend={localMetrics.revenueGrowth} 
-          trendLabel="30 Days"
-          color="slate" 
-          icon={Cash} 
-        />
-        <StatCard title="Avg. Ticket" value={formatCurrency(Math.floor(localMetrics.avgOrderValue))} subtext="Value per booking" color="indigo" icon={Icons.CreditCard} />
-        <StatCard title="Total Clients" value={clients.length.toString()} subtext="Registered accounts" color="slate" icon={Users} />
-        <StatCard title="Avg. Duration" value={`${Math.round(localMetrics.avgDuration || 0)} Days`} subtext="Per rental contract" color="emerald" icon={Calendar} />
+      <div className="flex flex-wrap gap-6">
+        <div className="flex-1 min-w-[160px] max-w-[calc(50%-12px)] lg:max-w-none">
+          <StatCard 
+            title="Business Revenue" 
+            value={formatCurrency(localMetrics.totalRevenue)} 
+            subtext={`${categoryFilter} Contribution`} 
+            trend={localMetrics.revenueGrowth} 
+            trendLabel="30 Days"
+            color="slate" 
+            icon={Cash} 
+          />
+        </div>
+        <div className="flex-1 min-w-[160px] max-w-[calc(50%-12px)] lg:max-w-none">
+          <StatCard title="Avg. Ticket" value={formatCurrency(Math.floor(localMetrics.avgOrderValue))} subtext="Value per booking" color="indigo" icon={Icons.CreditCard} />
+        </div>
+        <div className="flex-1 min-w-[160px] max-w-[calc(50%-12px)] lg:max-w-none">
+          <StatCard title="Total Clients" value={clients.length.toString()} subtext="Registered accounts" color="slate" icon={Users} />
+        </div>
+        <div className="flex-1 min-w-[160px] max-w-[calc(50%-12px)] lg:max-w-none">
+          <StatCard title="Avg. Duration" value={`${Math.round(localMetrics.avgDuration || 0)} Days`} subtext="Per rental contract" color="emerald" icon={Calendar} />
+        </div>
       </div>
       
       {/* MAIN CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6 border-slate-200 bg-white">
+        <Card className="border-slate-200 bg-white">
           <h3 className="text-lg font-bold text-slate-800 mb-1">Growth Dynamics</h3>
-          <p className="text-xs text-slate-400 mb-8">Revenue performance for {categoryFilter}</p>
-          <div className="h-[320px] w-full">
+          <p className="text-xs text-slate-400 mb-8">Monthly revenue performance and financial trajectory.</p>
+          <div className="h-[320px] w-full min-h-[320px] outline-none" style={{ width: '100%', height: 320 }}>
+            {isMounted ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={filteredTrends}>
                 <defs><linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#4f46e5" stopOpacity={0.15} /><stop offset="95%" stopColor="#4f46e5" stopOpacity={0} /></linearGradient></defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 500 }} dy={12} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 500 }} tickFormatter={(v) => `₵${v / 1000}k`} />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 500 }} 
+                  tickFormatter={(v) => v >= 1000000 ? `¢${(v / 1000000).toFixed(1)}M` : `¢${v / 1000}k`} 
+                />
                 <RechartsTooltip content={<CustomTooltip />} />
                 <Area type="monotone" dataKey="revenue" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
               </AreaChart>
             </ResponsiveContainer>
+            ) : <div className="w-full h-full bg-slate-50 animate-pulse rounded-xl"></div>}
           </div>
         </Card>
 
-        <Card className="p-6 border-slate-200 bg-white">
+        <Card className="border-slate-200 bg-white">
            <div className="flex justify-between items-start mb-8">
              <div>
                 <h3 className="text-lg font-bold text-slate-800 mb-1">Operational Volume</h3>
@@ -448,28 +473,36 @@ export default function AdminBIPage() {
                 <option value="All">All Time</option>
              </select>
           </div>
-          <div className="h-[320px] w-full">
+          <div className="h-[320px] w-full min-h-[320px] outline-none" style={{ width: '100%', height: 320 }}>
+            {isMounted ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={volumeTrends}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 500 }} dy={12} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 500 }} />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 500 }}
+                  label={{ value: 'Bookings', angle: -90, position: 'insideLeft', offset: 0, style: { textAnchor: 'middle', fill: '#94a3b8', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' } }}
+                />
                 <RechartsTooltip content={<CustomTooltip />} />
                 <Bar dataKey="orders" fill="#1e293b" radius={[4, 4, 0, 0]} barSize={30}>
                     <LabelList dataKey="orders" position="top" style={{ fill: '#64748b', fontSize: '12px', fontWeight: 500 }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            ) : <div className="w-full h-full bg-slate-50 animate-pulse rounded-xl"></div>}
           </div>
         </Card>
       </div>
 
       {/* BOTTOM VISUALS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="p-6 border-slate-200 bg-white flex flex-col">
+        <Card className="border-slate-200 bg-white flex flex-col">
           <h3 className="text-lg font-bold text-slate-800 mb-1">Return Performance</h3>
           <p className="text-xs text-slate-400 mb-6">Order distribution by return condition</p>
-          <div className="h-[260px] w-full relative">
+          <div className="h-[260px] w-full relative min-h-[260px] outline-none" style={{ width: '100%', height: 260 }}>
+            {isMounted ? (
             <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                     <Pie data={returnStatusData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={5} dataKey="value" label={({ percent }) => `${((percent || 0) * 100).toFixed(0)}%`}>
@@ -479,41 +512,49 @@ export default function AdminBIPage() {
                     <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 500 }} />
                 </PieChart>
             </ResponsiveContainer>
+            ) : <div className="w-full h-full bg-slate-50 animate-pulse rounded-xl"></div>}
           </div>
         </Card>
 
-        <Card className="p-6 border-slate-200 bg-white flex flex-col">
+        <Card className="border-slate-200 bg-white flex flex-col">
           <div className="flex justify-between items-start mb-6">
             <div>
                 <h3 className="text-lg font-bold text-slate-800 mb-1">Top {usageType}</h3>
                 <p className="text-xs text-slate-400">Ranking by frequency</p>
             </div>
             <button 
-                onClick={() => setUsageType(prev => prev === 'Items' ? 'Clients' : 'Items')}
-                className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-indigo-50 hover:text-indigo-600 transition-all shadow-sm group"
-                title={`Switch to ${usageType === 'Items' ? 'Clients' : 'Items'}`}
+                onClick={() => setUsageType(prev => prev === 'Categories' ? 'Items' : 'Categories')}
+                className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-xl hover:bg-slate-200 transition-all shadow-sm group"
+                title={`Switch to ${usageType === 'Categories' ? 'Items' : 'Categories'}`}
             >
-                {usageType === 'Items' ? <Users className="w-4 h-4" /> : <Package className="w-4 h-4" />}
+                <div className={`p-1.5 rounded-lg transition-all ${usageType === 'Categories' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>
+                    <BarIcon className="w-4 h-4" />
+                </div>
+                <div className={`p-1.5 rounded-lg transition-all ${usageType === 'Items' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>
+                    <Package className="w-4 h-4" />
+                </div>
             </button>
           </div>
-          <div className="h-[260px] w-full relative">
+          <div className="h-[260px] w-full relative min-h-[260px] outline-none" style={{ width: '100%', height: 260 }}>
+            {isMounted ? (
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart layout="vertical" data={usageRankingData} margin={{ left: 30, right: 30 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
                     <XAxis type="number" hide />
                     <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 500 }} />
                     <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
-                    <Bar dataKey="value" fill={usageType === 'Items' ? '#4f46e5' : '#1e293b'} radius={[0, 4, 4, 0]} barSize={12}>
+                    <Bar dataKey="value" fill="#4f46e5" radius={[0, 4, 4, 0]} barSize={22}>
                         <LabelList dataKey="value" position="right" style={{ fill: '#64748b', fontSize: '11px', fontWeight: 500 }} offset={10} />
                     </Bar>
                 </BarChart>
             </ResponsiveContainer>
+            ) : <div className="w-full h-full bg-slate-50 animate-pulse rounded-xl"></div>}
           </div>
         </Card>
         
         <Card className="p-6 border-slate-200 bg-slate-900 text-white flex flex-col overflow-hidden relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute top-6 right-6 p-2 bg-slate-950 border border-white/10 rounded-xl text-indigo-400 z-20 shadow-xl">
+            <div className="absolute top-6 right-6 p-2 bg-slate-100 border border-white/10 rounded-xl text-indigo-400 z-20 shadow-xl">
                 <Sparkles className="w-4 h-4" />
             </div>
             
@@ -529,7 +570,7 @@ export default function AdminBIPage() {
                             </div>
                             <p className={`text-[10px] font-bold ${fact.color} uppercase tracking-[0.15em]`}>{fact.title}</p>
                         </div>
-                        <p className="text-[12px] text-slate-400 leading-snug font-medium group-hover:text-black transition-colors">{fact.desc}</p>
+                        <p className="text-[12px] text-slate-400 leading-snug font-medium group-hover:text-slate-700 transition-colors">{fact.desc}</p>
                     </div>
                 )) : <div className="text-center py-12 text-slate-500 italic text-sm">No significant data patterns found for this segment.</div>}
             </div>

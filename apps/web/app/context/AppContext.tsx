@@ -98,7 +98,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const { data: settingsData } = await supabase.from('settings').select('*');
       if (settingsData) {
           const settings: any = {};
-          settingsData.forEach(s => settings[s.key] = s.value);
+          settingsData.forEach((s: any) => settings[s.key] = s.value);
           if (Object.keys(settings).length > 0) {
               setBusinessSettings(prev => ({ ...prev, ...settings }));
           }

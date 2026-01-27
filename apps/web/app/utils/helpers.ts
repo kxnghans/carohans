@@ -2,6 +2,9 @@ import { Order, Metrics } from '../types';
 
 export const formatCurrency = (amount: number | undefined | null) => {
   if (amount === undefined || amount === null || isNaN(amount)) return '¢0';
+  if (amount >= 1000000) {
+    return `¢${(amount / 1000000).toFixed(2)}M`;
+  }
   return `¢${amount.toLocaleString()}`;
 };
 

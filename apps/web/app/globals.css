@@ -80,6 +80,11 @@ body {
 
 }
 
+/* Global Focus Reset */
+*:focus {
+  outline: none !important;
+}
+
 
 
 @media print {

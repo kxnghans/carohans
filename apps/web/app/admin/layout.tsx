@@ -44,22 +44,22 @@ export default function AdminLayout({
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-slate-200">
+            <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-slate-200">
               CH
             </div>
-            <div className="hidden md:block">
-              <span className="font-bold text-lg tracking-tight block leading-none">CaroHans</span>
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Ventures</span>
+            <div className="block max-w-[100px] xs:max-w-[120px] sm:max-w-none overflow-hidden">
+              <span className="font-bold text-base sm:text-lg tracking-tight block leading-none truncate">CaroHans</span>
+              <span className="text-[8px] sm:text-[10px] text-slate-500 font-bold uppercase tracking-wider block truncate">Ventures</span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
              <button 
               onClick={() => setIsContactOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold tracking-wide uppercase hover:bg-slate-200 transition-colors"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold tracking-wide uppercase hover:bg-slate-200 transition-colors"
             >
               <Phone className="w-3 h-3" />
-              <span className="hidden sm:inline pt-px">Contact</span>
+              <span className="pt-px">Contact</span>
             </button>
             <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
             <Button variant="secondary" size="sm" onClick={() => setIsCalendarOpen(true)}>

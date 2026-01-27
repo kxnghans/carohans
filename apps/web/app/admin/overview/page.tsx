@@ -332,15 +332,18 @@ export default function AdminOverviewPage() {
       </div>
 
       {/* FILTERABLE STATUS CARDS */}
-      <div>
-        <h3 className="text-lg font-bold text-slate-900 mb-4 ml-1">Order Status</h3>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4 justify-items-center">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between px-1">
+            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.25em]">Operational Filter Engine</h3>
+            <div className="h-px flex-1 bg-slate-200/60 mx-6 hidden sm:block"></div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6 sm:gap-8">
           <FilterCard title="Total Orders" count={orders.length} status="All" active={orderFilter === 'All'} onClick={() => setOrderFilter('All')} color="bg-slate-500" icon={LayoutDashboard} />
-          <FilterCard title="Pending Requests" count={metrics.pendingRequests} status="Pending" active={orderFilter === 'Pending'} onClick={() => setOrderFilter('Pending')} color="bg-amber-500" icon={ClipboardList} />
-          <FilterCard title="Approved Orders" count={metrics.approvedOrders} status="Approved" active={orderFilter === 'Approved'} onClick={() => setOrderFilter('Approved')} color="bg-blue-500" icon={Check} />
-          <FilterCard title="Active Rentals" count={metrics.activeRentals} status="Active" active={orderFilter === 'Active'} onClick={() => setOrderFilter('Active')} color="bg-indigo-500" icon={Truck} />
-          <FilterCard title="Late Returns" count={metrics.lateRentals} status="Late" active={orderFilter === 'Late'} onClick={() => setOrderFilter('Late')} color="bg-rose-500" icon={AlertOctagon} />
-          <FilterCard title="Completed History" count={metrics.completedRentals} status="Completed" active={orderFilter === 'Completed'} onClick={() => setOrderFilter('Completed')} color="bg-emerald-500" icon={Check} />
+          <FilterCard title="Pending" count={metrics.pendingRequests} status="Pending" active={orderFilter === 'Pending'} onClick={() => setOrderFilter('Pending')} color="bg-amber-500" icon={ClipboardList} />
+          <FilterCard title="Approved" count={metrics.approvedOrders} status="Approved" active={orderFilter === 'Approved'} onClick={() => setOrderFilter('Approved')} color="bg-blue-500" icon={Check} />
+          <FilterCard title="In Field" count={metrics.activeRentals} status="Active" active={orderFilter === 'Active'} onClick={() => setOrderFilter('Active')} color="bg-indigo-500" icon={Truck} />
+          <FilterCard title="Overdue" count={metrics.lateRentals} status="Late" active={orderFilter === 'Late'} onClick={() => setOrderFilter('Late')} color="bg-rose-500" icon={AlertOctagon} />
+          <FilterCard title="Completed" count={metrics.completedRentals} status="Completed" active={orderFilter === 'Completed'} onClick={() => setOrderFilter('Completed')} color="bg-emerald-500" icon={Check} />
         </div>
       </div>
 
