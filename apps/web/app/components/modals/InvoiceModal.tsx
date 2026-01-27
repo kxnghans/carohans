@@ -160,7 +160,7 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
                     </thead>
                     <tbody className="divide-y divide-rose-50">
                       {cart.map((item: any) => {
-                        const items = [];
+                        const items: any[] = [];
                         if ((item.lostQty ?? 0) > 0) items.push({ type: 'Lost', qty: item.lostQty });
                         if ((item.damagedQty ?? 0) > 0) items.push({ type: 'Damaged', qty: item.damagedQty });
                         
