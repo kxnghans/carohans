@@ -19,35 +19,54 @@ export interface CartItem {
 export interface OrderItem {
     itemId: number;
     qty: number;
+    price: number;
+    returnedQty?: number;
+    lostQty?: number;
+    damagedQty?: number;
 }
 
 export interface Order {
     id: number;
-    customerName: string;
+    clientName: string;
     phone: string;
     email: string;
-    status: string; // "Pending" | "Active" | "Overdue" | "Completed" | "Approved"
+    status: string; // "Pending" | "Approved" | "Active" | "Late" | "Completed" | "Settlement" | "Rejected" | "Canceled"
     items: OrderItem[];
     startDate: string;
     endDate: string;
     totalAmount: number;
+    amountPaid: number;
+    penaltyAmount: number;
     depositPaid: boolean;
+    closedAt?: string;
+    returnStatus?: 'On Time' | 'Early' | 'Late';
+    itemIntegrity?: 'Good' | 'Lost' | 'Damaged';
 }
 
-export interface Customer {
+export interface Client {
     id: number;
-    name: string;
+    firstName: string;
+    lastName: string;
+    username: string;
     phone: string;
     email: string;
+    address?: string;
+    image?: string;
+    color?: string;
     totalOrders: number;
     totalSpent: number;
     lastOrder: string;
 }
 
 export interface PortalFormData {
-    name: string;
+    firstName: string;
+    lastName: string;
+    username: string;
     phone: string;
     email: string;
+    address?: string;
+    image?: string;
+    color?: string;
     start: string;
     end: string;
 }
@@ -56,8 +75,13 @@ export interface Metrics {
     totalRevenue: number;
     activeRentals: number;
     pendingRequests: number;
-    overdueRentals: number;
+    approvedOrders: number;
+    lateRentals: number;
     completedRentals: number;
     revenueGrowth: number;
     avgOrderValue: number;
+    pickupsToday: number;
+    returnsToday: number;
+    onTimeReturnRate: number;
+    avgDuration: number;
 }

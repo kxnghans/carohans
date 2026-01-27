@@ -6,7 +6,7 @@ import { InventoryTable } from '../../components/inventory/InventoryTable';
 import { Card } from '../../components/ui/Card';
 
 export default function PortalInventoryPage() {
-  const { inventory, cart, setCart, portalFormData, setPortalFormData } = useAppStore();
+  const { inventory, cart, setCart, portalFormData, setPortalFormData, loading } = useAppStore();
 
   const addToCart = (item: any, qty: number) => {
     setCart(prev => {
@@ -25,7 +25,7 @@ export default function PortalInventoryPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Rental Catalog</h2>
+          <h2 className="text-2xl font-bold text-slate-900">CaroHans Catalog</h2>
           <p className="text-slate-500">Use the <span className="font-bold text-slate-700">Order</span> column to add items to your cart.</p>
         </div>
 
@@ -54,12 +54,19 @@ export default function PortalInventoryPage() {
       </div>
 
       <Card noPadding>
-        <InventoryTable
-          data={inventory}
-          isAdmin={false} // READ ONLY except for order column
-          onAddToCart={addToCart}
-          cart={cart}
-        />
+        {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
+                <div className="w-8 h-8 border-4 border-slate-200 border-t-indigo-500 rounded-full animate-spin"></div>
+                <p className="text-sm font-medium">Loading catalog...</p>
+            </div>
+        ) : (
+            <InventoryTable
+                data={inventory}
+                isAdmin={false} // READ ONLY except for order column
+                onAddToCart={addToCart}
+                cart={cart}
+            />
+        )}
       </Card>
     </div>
   );

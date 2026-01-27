@@ -50,21 +50,44 @@ This document outlines the verification steps required to ensure the application
 
 ---
 
-## 5. Client Portal (`/portal/*`)
+## 5. Client Portal & Identity (`/portal/*`)
 - [ ] **Rental Catalog:** Items display with correct pricing and availability.
 - [ ] **Smart Date Picker:** Selecting a range that includes a blocked date should be prevented or flagged.
-- [ ] **Order Submission:** Submitting an order as "Kwame Mensah" should immediately show that order in the `/portal/orders` page.
-- [ ] **Profile Update:** Updating the phone number in `/portal/profile` updates the name in the header/layout greeting (if applicable).
+- [ ] **Atomic Identity:**
+    - [ ] Navigate to `/portal/profile`.
+    - [ ] Verify separate fields for "First Name" and "Last Name".
+    - [ ] Update "First Name" and verify the combined name updates in the header/layout greeting.
+- [ ] **Profile Customization:**
+    - [ ] Click the profile picture (hover should show Pencil icon).
+    - [ ] Select a new Icon/Color.
+    - [ ] **Expectation:** The circular profile badge updates immediately with the selection.
+- [ ] **Form Validation:**
+    - [ ] Remove the email address and attempt to click "Update Profile".
+    - [ ] **Expectation:** Field turns red, and the update is blocked.
+- [ ] **Order Tracking:** Submitting an order should immediately list it in `/portal/orders` with a simplified status (Active/Pending/Completed) and NO internal audit tags (Good/On Time).
 
 ---
 
-## 6. Business Intelligence (`/admin/bi`)
-- [ ] **Metric Calculation:** Verify "Total Revenue" matches the sum of all `Completed` and `Active` orders in mock data.
+## 6. Admin Client Management (`/admin/clients`)
+- [ ] **Search:** Typing "Kwame" filters the table to matching records.
+- [ ] **Expansion UI:**
+    - [ ] Click a client row.
+    - [ ] **Expectation:** Row expands via a chevron animation to reveal a centered "Edit Client Profile" card.
+- [ ] **Compact Form:** Verify the expanded profile form uses smaller fonts/inputs and occupies 60% of the row width.
+- [ ] **Persistence:** Saving changes in the expanded card correctly updates the primary table row data.
+
+---
+
+## 7. Business Intelligence & Analytics (`/admin/bi`)
+- [ ] **Deep Filtering:**
+    - [ ] Select "Active" status and "Furniture" category.
+    - [ ] **Expectation:** KPI cards and Growth Area Chart update to reflect only that segment.
 - [ ] **Responsive Charts:** Resize browser to mobile width and ensure Recharts containers scale correctly.
 
 ---
 
-## 7. Error Handling & Edge Cases
+## 8. Error Handling & Edge Cases
 - [ ] **Module Resolution:** Ensure no "Module Not Found" errors appear in the console (verifies central icon registry).
 - [ ] **Empty States:** Filter orders by a status that has zero records; verify the "No orders found" illustration appears.
+- [ ] **Unified Order UI:** Verify that the "Total" column in Admin Order list does NOT show "Due" amounts (these are reserved for the Return Modal).
 - [ ] **Validation Race Conditions:** Rapidly clicking "Discard" and "Keep Editing" on the draft row validation.

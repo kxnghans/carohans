@@ -2,9 +2,12 @@
 
 :root {
   /* Softened Palette */
-  --background: #f8fafc; /* Slate-50 - softer than pure white */
-  --foreground: #334155; /* Slate-700 - much softer than black */
-  --slate-dark: #1e293b; /* Slate-800 */
+  --background: #f8fafc;
+  /* Slate-50 - softer than pure white */
+  --foreground: #334155;
+  /* Slate-700 - much softer than black */
+  --slate-dark: #1e293b;
+  /* Slate-800 */
 }
 
 @theme inline {
@@ -23,32 +26,147 @@
 
 @media screen and (max-width: 768px) {
   html {
-    zoom: 0.7; /* 70% on Mobile */
+    zoom: 0.6;
+    /* 60% Default for App (Mobile) */
+  }
+
+  html.home-page {
+    zoom: 0.75;
+    /* 75% for Home Page (Mobile) */
   }
 }
 
 @media screen and (min-width: 769px) and (max-width: 1024px) {
   html {
-    zoom: 0.8; /* 80% on Tablet/Medium */
+    zoom: 0.8;
+    /* 80% Default for App (Tablet) */
+  }
+
+  html.home-page {
+    zoom: 0.9;
+    /* 90% for Home Page (Tablet) */
   }
 }
 
 @media screen and (min-width: 1025px) {
   html {
-    zoom: 1; /* 100% on Large */
+    zoom: 1;
+    /* 100% on Large */
   }
+}
+
+html {
+  background: var(--background);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0f172a; /* Slate-900 */
-    --foreground: #e2e8f0; /* Slate-200 */
+    --background: #0f172a;
+    /* Slate-900 */
+    --foreground: #e2e8f0;
+    /* Slate-200 */
   }
 }
 
 body {
+
   background: var(--background);
+
   color: var(--foreground);
+
   font-family: Arial, Helvetica, sans-serif;
+
   -webkit-font-smoothing: antialiased;
+
+}
+
+
+
+@media print {
+
+  /* 1. Page Setup: Standard margins create the "reasonable padding" automatically */
+  @page {
+    size: A4;
+    margin: 20mm 5mm; /* 20mm Top/Bottom, 5mm Left/Right */
+  }
+
+  /* 2. Reset Document Flow */
+  html,
+  body {
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: white !important;
+    position: static !important; /* Reset position for print */
+    zoom: 1 !important;
+  }
+
+  /* 3. Collapse non-printed content entirely to prevent blank space */
+  body > *:not(.invoice-modal-overlay) {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* 4. Target the Modal Overlay */
+  .invoice-modal-overlay {
+    visibility: visible !important;
+    display: block !important;
+    position: static !important; /* Static allows flow across multiple pages */
+    width: 100% !important;
+    height: auto !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: auto !important;
+  }
+
+  /* Ensure all content inside the overlay is visible and flows */
+  .invoice-modal-overlay * {
+    visibility: visible !important;
+  }
+
+  /* 6. Reset the Content Card */
+  .invoice-modal-content {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    transform: none !important;
+    animation: none !important;
+    position: static !important;
+  }
+
+  #printable-invoice {
+    display: block !important;
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
+  }
+
+  /* 7. Prevent awkward breaks */
+  tr,
+  .invoice-footer {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  /* Force background colors */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }

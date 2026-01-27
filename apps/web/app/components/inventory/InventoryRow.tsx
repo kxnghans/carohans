@@ -105,14 +105,18 @@ export const InventoryRow = ({
 
             <td className="p-4">
                 {isFieldEditing('category') ? (
-                    <input
-                        className="border border-indigo-500 ring-2 ring-indigo-100 rounded px-2 py-1 text-sm w-full outline-none"
+                    <select
+                        className="border border-indigo-500 ring-2 ring-indigo-100 rounded px-2 py-1 text-sm w-full outline-none bg-white cursor-pointer"
                         value={editValue as string}
                         onChange={(e) => setEditValue(e.target.value)}
                         onBlur={handleSave}
                         onKeyDown={handleKeyDown}
                         autoFocus
-                    />
+                    >
+                        {['Catering', 'Glassware', 'Furniture', 'Decor', 'Lighting', 'Cutlery', 'Electronics', 'Tents'].map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                    </select>
                 ) : (
                     <span 
                         onClick={() => startEditing(item.id, 'category', item.category)}

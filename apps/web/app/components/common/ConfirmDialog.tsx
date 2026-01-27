@@ -63,9 +63,9 @@ export const ConfirmDialog = ({
                     {showAlwaysDeleteOption && (
                         <button 
                             onClick={() => onConfirm(true)}
-                            className="w-full px-4 py-2.5 text-xs font-bold text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all border border-dashed border-slate-200 hover:border-rose-200"
+                            className="w-full px-4 py-2.5 text-xs font-bold text-rose-600 bg-white border border-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                         >
-                            Always delete without asking in this session
+                            Always confirm without asking in this session
                         </button>
                     )}
                 </div>

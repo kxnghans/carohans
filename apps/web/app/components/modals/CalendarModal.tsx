@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
 
@@ -45,13 +45,20 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
     return groups;
   }, [blockedDates]);
 
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const formatDateDisplay = (dateStr: string) => {
     const d = new Date(dateStr);
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
-  // ---------------------------
 
   const formatDate = (day: number) => {
     const d = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
@@ -110,9 +117,15 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+    <div 
+      className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
       {/* Increased max-width for side-by-side layout */}
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg lg:max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
+      <div 
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-lg lg:max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 my-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* HEADER */}
         <div className="p-5 bg-slate-800 text-white flex justify-between items-center shrink-0">
@@ -131,16 +144,16 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
           {/* LEFT: CALENDAR */}
           <div className="flex-1 flex flex-col min-h-0 overflow-y-auto border-r border-slate-100">
              {/* MODE TOGGLES */}
-            <div className="p-4 bg-slate-50 border-b border-slate-100 flex gap-2 shrink-0">
+            <div className="p-4 bg-slate-100 border-b border-slate-200 flex gap-2 shrink-0">
                 <button
                     onClick={() => { setSelectionMode('individual'); setRangeAnchor(null); }}
-                    className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all border ${selectionMode === 'individual' ? 'bg-white text-indigo-600 border-indigo-200 shadow-sm ring-1 ring-indigo-100' : 'bg-slate-50 text-slate-500 border-transparent hover:bg-slate-100'}`}
+                    className={`flex-1 py-3 text-sm font-black uppercase tracking-tighter rounded-xl transition-all border-2 ${selectionMode === 'individual' ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-200' : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'}`}
                 >
                     Individual
                 </button>
                 <button
                     onClick={() => { setSelectionMode('range'); setRangeAnchor(null); }}
-                    className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all border ${selectionMode === 'range' ? 'bg-white text-indigo-600 border-indigo-200 shadow-sm ring-1 ring-indigo-100' : 'bg-slate-50 text-slate-500 border-transparent hover:bg-slate-100'}`}
+                    className={`flex-1 py-3 text-sm font-black uppercase tracking-tighter rounded-xl transition-all border-2 ${selectionMode === 'range' ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-200' : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'}`}
                 >
                     Range Select
                 </button>
@@ -149,11 +162,11 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <Button variant="secondary" size="sm" onClick={() => changeMonth(-1)}><ChevronLeft className="w-4 h-4" /></Button>
-                <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-lg text-slate-800 w-32 text-center">{monthYear}</h3>
+                <div className="flex items-center gap-3">
+                    <h3 className="font-black text-xl text-slate-900 w-40 text-center tracking-tight">{monthYear}</h3>
                     <button 
                       onClick={handleToday} 
-                      className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full hover:bg-indigo-100 transition-colors uppercase tracking-wider"
+                      className="flex items-center gap-1.5 text-xs font-black text-indigo-700 bg-indigo-100 px-4 py-2 rounded-full hover:bg-indigo-200 transition-all active:scale-95 uppercase tracking-widest border border-indigo-200 shadow-sm"
                     >
                       Today
                     </button>

@@ -3,17 +3,17 @@
 import React, { useState } from 'react';
 import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
-import { getStatusColor } from '../../utils/helpers';
-import { INVENTORY } from '../../lib/mockData';
-import { Order } from '../../types';
+import { getStatusColor, getStatusDescription } from '../../utils/helpers';
+import { Order, InventoryItem } from '../../types';
 
 interface OrderAdminCardProps {
   order: Order;
   updateStatus: (id: number, status: string) => void;
   onInvoice: (order: Order) => void;
+  inventory: InventoryItem[];
 }
 
-export const OrderAdminCard = ({ order, updateStatus, onInvoice }: OrderAdminCardProps) => {
+export const OrderAdminCard = ({ order, updateStatus, onInvoice, inventory }: OrderAdminCardProps) => {
   const { Printer, ChevronRight } = Icons;
   const [showDetails, setShowDetails] = useState(false);
 
@@ -23,11 +23,14 @@ export const OrderAdminCard = ({ order, updateStatus, onInvoice }: OrderAdminCar
         <div className="flex-1 cursor-pointer" onClick={() => setShowDetails(!showDetails)}>
           <div className="flex items-center gap-2 mb-1">
             <span className="font-bold text-slate-900">#{order.id}</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full border ${getStatusColor(order.status)} font-bold uppercase tracking-wider`}>
+            <span 
+              title={getStatusDescription(order.status)}
+              className={`text-xs px-2 py-0.5 rounded-full border ${getStatusColor(order.status)} font-bold uppercase tracking-wider cursor-help`}
+            >
               {order.status}
             </span>
           </div>
-          <h4 className="font-bold text-lg">{order.customerName}</h4>
+          <h4 className="font-bold text-lg">{order.clientName}</h4>
           <p className="text-sm text-slate-500">{order.startDate} • {order.items.length} Items</p>
         </div>
         <div className="flex items-center gap-2 self-end md:self-center">
@@ -51,7 +54,7 @@ export const OrderAdminCard = ({ order, updateStatus, onInvoice }: OrderAdminCar
               <div className="space-y-2 mb-6">
                 {order.items.map((item: any, idx: number) => {
                   // Start of rudimentary item lookup - ideally pass inventory
-                  const itemName = INVENTORY.find(i => i.id === item.itemId)?.name || 'Unknown Item';
+                  const itemName = inventory.find(i => i.id === item.itemId)?.name || 'Unknown Item';
                   return (
                     <div key={idx} className="flex justify-between text-sm bg-white p-2 rounded border border-slate-200">
                       <span className="font-medium text-slate-700">{itemName}</span>
@@ -67,16 +70,27 @@ export const OrderAdminCard = ({ order, updateStatus, onInvoice }: OrderAdminCar
               <div className="flex flex-wrap gap-2">
                 {order.status === 'Pending' && (
                   <>
-                    <Button variant="success" size="sm" onClick={() => updateStatus(order.id, 'Approved')}>Approve</Button>
-                    <Button variant="danger" size="sm" onClick={() => updateStatus(order.id, 'Rejected')}>Reject</Button>
+                    <Button variant="danger" size="sm" onClick={() => updateStatus(order.id, 'Canceled')}>
+                      <Icons.X className="w-4 h-4 mr-2" /> Cancel
+                    </Button>
+                    <Button variant="info" size="sm" onClick={() => updateStatus(order.id, 'Approved')}>
+                      <Icons.Check className="w-4 h-4 mr-2" /> Approve
+                    </Button>
                   </>
                 )}
                 {order.status === 'Approved' && (
-                  <Button variant="primary" size="sm" onClick={() => updateStatus(order.id, 'Active')}>Dispatch</Button>
+                  <>
+                    <Button variant="warning" size="sm" onClick={() => updateStatus(order.id, 'Pending')}>
+                      <Icons.Undo className="w-4 h-4 mr-2" /> Pull Back
+                    </Button>
+                    <Button variant="success" size="sm" onClick={() => updateStatus(order.id, 'Active')}>
+                      <Icons.ReturnIcon className="w-4 h-4 mr-2" /> Process Dispatch
+                    </Button>
+                  </>
                 )}
-                {(order.status === 'Active' || order.status === 'Overdue') && (
-                  <Button variant="primary" size="sm" onClick={() => updateStatus(order.id, 'Completed')}>
-                    Process Return
+                {(order.status === 'Active' || order.status === 'Late') && (
+                  <Button variant="success" size="sm" onClick={() => updateStatus(order.id, 'Completed')}>
+                    <Icons.ReturnIcon className="w-4 h-4 mr-2" /> Process Return
                   </Button>
                 )}
               </div>

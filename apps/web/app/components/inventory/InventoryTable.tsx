@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Icons } from '../../lib/icons';
 import { InventoryItem, CartItem } from '../../types';
 import { InventoryRow } from './InventoryRow';
@@ -31,7 +31,7 @@ export const InventoryTable = ({
   cart,
   showOrderColumn = true
 }: InventoryTableProps) => {
-  const { Plus } = Icons;
+  const { Plus, SortUp, SortDown } = Icons;
   const [editingCell, setEditingCell] = useState<{ id: number, field: string } | null>(null);
   const [editValue, setEditValue] = useState<string | number | undefined>(undefined);
   const [showDiscardWarning, setShowDiscardWarning] = useState(false);
@@ -39,6 +39,41 @@ export const InventoryTable = ({
   const [activePickerId, setActivePickerId] = useState<number | null>(null);
   const [deleteMode, setDeleteMode] = useState<'ask' | 'auto'>('ask');
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof InventoryItem; direction: 'asc' | 'desc' } | null>({
+    key: 'name',
+    direction: 'asc'
+  });
+
+  const sortedData = useMemo(() => {
+    let sortableItems = [...data];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        const aVal = a[sortConfig.key];
+        const bVal = b[sortConfig.key];
+        
+        if (aVal === undefined) return 1;
+        if (bVal === undefined) return -1;
+
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [data, sortConfig]);
+
+  const requestSort = (key: keyof InventoryItem) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const SortIcon = ({ column }: { column: keyof InventoryItem }) => {
+    if (sortConfig?.key !== column) return <SortUp className="w-3 h-3 opacity-20" />;
+    return sortConfig.direction === 'asc' ? <SortUp className="w-3 h-3 text-indigo-600" /> : <SortDown className="w-3 h-3 text-indigo-600" />;
+  };
 
   const dataRef = useRef(data);
   useEffect(() => {
@@ -79,7 +114,7 @@ export const InventoryTable = ({
     const newItem: TableItem = {
       id: Date.now(),
       name: "Enter Name",
-      category: "Uncategorized",
+      category: "Furniture",
       price: 0,
       replacementCost: 0,
       stock: 0,
@@ -153,17 +188,42 @@ export const InventoryTable = ({
       <table className="w-full text-left border-collapse">
         <thead>
           <tr className="bg-slate-50/50 border-b border-slate-200">
-            <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider pl-6">Details</th>
-            <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Category</th>
-            <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Daily Rate</th>
-            <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Repl. Cost</th>
-            <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Stock</th>
+            <th 
+                className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider pl-6 cursor-pointer group hover:bg-slate-100/50 transition-colors"
+                onClick={() => requestSort('name')}
+            >
+                <div className="flex items-center gap-2">Details <SortIcon column="name" /></div>
+            </th>
+            <th 
+                className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:bg-slate-100/50 transition-colors"
+                onClick={() => requestSort('category')}
+            >
+                <div className="flex items-center gap-2">Category <SortIcon column="category" /></div>
+            </th>
+            <th 
+                className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right cursor-pointer group hover:bg-slate-100/50 transition-colors"
+                onClick={() => requestSort('price')}
+            >
+                <div className="flex items-center justify-end gap-2">Daily Rate <SortIcon column="price" /></div>
+            </th>
+            <th 
+                className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right cursor-pointer group hover:bg-slate-100/50 transition-colors"
+                onClick={() => requestSort('replacementCost')}
+            >
+                <div className="flex items-center justify-end gap-2">Repl. Cost <SortIcon column="replacementCost" /></div>
+            </th>
+            <th 
+                className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center cursor-pointer group hover:bg-slate-100/50 transition-colors"
+                onClick={() => requestSort('stock')}
+            >
+                <div className="flex items-center justify-center gap-2">Stock <SortIcon column="stock" /></div>
+            </th>
             {showOrderColumn && <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Order</th>}
             {isEditMode && <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-12">Delete</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {data.map((item, index) => (
+          {sortedData.map((item, index) => (
               <React.Fragment key={item.id}>
                 <InventoryRow 
                     item={item}
