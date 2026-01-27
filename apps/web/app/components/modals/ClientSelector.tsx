@@ -1,19 +1,33 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
 
-export const CustomerSelector = ({ customers, onSelect, onClose }: any) => {
+export const ClientSelector = ({ clients, onSelect, onClose }: any) => {
   const { X, Search, ChevronRight } = Icons;
   const [search, setSearch] = useState('');
-  const filtered = customers.filter((c: any) => c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search));
+  const filtered = clients.filter((c: any) => c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search));
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-8 duration-300">
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-8 duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-          <h2 className="text-xl font-bold">Select Customer</h2>
+          <h2 className="text-xl font-bold">Select Client</h2>
           <button onClick={onClose}><X className="w-5 h-5 text-slate-400 hover:text-slate-900" /></button>
         </div>
         <div className="p-4 bg-slate-50 border-b border-slate-100">
@@ -46,8 +60,8 @@ export const CustomerSelector = ({ customers, onSelect, onClose }: any) => {
           ))}
           {filtered.length === 0 && (
             <div className="text-center py-8 text-slate-400">
-              <p>No customers found.</p>
-              <Button variant="secondary" size="sm" className="mt-2">Create New Customer</Button>
+              <p>No clients found.</p>
+              <Button variant="secondary" size="sm" className="mt-2">Create New Client</Button>
             </div>
           )}
         </div>

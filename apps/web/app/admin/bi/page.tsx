@@ -1,83 +1,538 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Icons } from '../../lib/icons';
 import {
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
-  Legend, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell
+  Legend, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, BarChart, Bar, LabelList
 } from 'recharts';
 import { useAppStore } from '../../context/AppContext';
 import { StatCard } from '../../components/dashboard/StatCard';
 import { Card } from '../../components/ui/Card';
-import { formatCurrency } from '../../utils/helpers';
-import { FINANCIAL_TRENDS, CUSTOMER_SEGMENTS } from '../../lib/mockData';
+import { Button } from '../../components/ui/Button';
+import { formatCurrency, calculateMetrics } from '../../utils/helpers';
 
 export default function AdminBIPage() {
-  const { customers, metrics } = useAppStore();
-  const { DollarSign, CreditCard, Users } = Icons;
+  const { clients, orders, inventory } = useAppStore();
+  const { Users, TrendingUp, Activity, Filter, ChevronRight, Sparkles, Cash, Zap, BarChart: BarIcon, Package, ChevronDown, Calendar } = Icons;
+
+  // Filters State
+  const [timeRange, setTimeRange] = useState('All Time');
+  const [categoryFilter, setCategoryFilter] = useState<string[]>(['All']);
+  const [statusFilter, setStatusFilter] = useState<string[]>(['All']);
+  const [volumeRange, setVolumeRange] = useState('12');
+  
+  // New BI Filters
+  const [returnStatusFilter, setReturnStatusFilter] = useState<string[]>(['All']);
+  const [integrityFilter, setIntegrityFilter] = useState<string[]>(['All']);
+  const [usageType, setUsageType] = useState<'Items' | 'Clients'>('Items');
+
+  const resetFilters = () => {
+    setTimeRange('All Time');
+    setCategoryFilter(['All']);
+    setStatusFilter(['All']);
+    setReturnStatusFilter(['All']);
+    setIntegrityFilter(['All']);
+  };
+
+  // --- CORE FILTERING LOGIC ---
+
+  // 1. Filter orders based on Status and Return Status
+  const baseFilteredOrders = useMemo(() => {
+      let result = orders;
+      if (!statusFilter.includes('All')) {
+          result = result.filter(o => statusFilter.includes(o.status));
+      }
+      if (!returnStatusFilter.includes('All')) {
+          result = result.filter(o => o.returnStatus && returnStatusFilter.includes(o.returnStatus));
+      }
+      return result;
+  }, [orders, statusFilter, returnStatusFilter]);
+
+  // 2. Deep Filter: Filter data by Category and Item Integrity
+  const categoryFilteredData = useMemo(() => {
+      let result = baseFilteredOrders;
+      
+      // Category Filter (Multi-select)
+      if (!categoryFilter.includes('All')) {
+          result = result.map(order => {
+              const filteredItems = order.items.filter(item => {
+                  const invItem = inventory.find(i => i.id === item.itemId);
+                  return invItem && categoryFilter.includes(invItem.category);
+              });
+              if (filteredItems.length === 0) return null;
+              return { ...order, items: filteredItems };
+          }).filter(Boolean) as typeof orders;
+      }
+
+      // Integrity Filter (Multi-select)
+      if (!integrityFilter.includes('All')) {
+          result = result.filter(o => o.itemIntegrity && integrityFilter.includes(o.itemIntegrity));
+      }
+
+      return result;
+  }, [baseFilteredOrders, categoryFilter, inventory, integrityFilter]);
+
+  const toggleFilter = (current: string[], value: string, setter: (val: string[]) => void) => {
+      if (value === 'All') {
+          setter(['All']);
+          return;
+      }
+      let next = current.filter(v => v !== 'All');
+      if (next.includes(value)) {
+          next = next.filter(v => v !== value);
+          if (next.length === 0) next = ['All'];
+      } else {
+          next.push(value);
+      }
+      setter(next);
+  };
+
+  // 3. Re-calculate metrics for StatCards
+  const localMetrics = useMemo(() => calculateMetrics(categoryFilteredData), [categoryFilteredData]);
+
+  // 4. Monthly Trends
+  const financialTrends = useMemo(() => {
+    const months: Record<string, { revenue: number; orders: number; monthIndex: number }> = {};
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
+    categoryFilteredData.forEach(order => {
+        const date = new Date(order.startDate);
+        const monthKey = `${monthNames[date.getMonth()]} ${date.getFullYear().toString().substr(2,2)}`;
+        if (!months[monthKey]) months[monthKey] = { revenue: 0, orders: 0, monthIndex: date.getTime() };
+        months[monthKey].revenue += Number(order.totalAmount);
+        months[monthKey].orders += 1;
+    });
+
+    return Object.entries(months)
+        .map(([key, val]) => ({ month: key, revenue: val.revenue, orders: val.orders, sort: val.monthIndex }))
+        .sort((a, b) => a.sort - b.sort)
+        .map(({ month, revenue, orders }) => ({ month, revenue, orders }));
+  }, [categoryFilteredData]);
+
+  // 5. Return Status Portfolio
+  const returnStatusData = useMemo(() => {
+      const statusMap: Record<string, number> = {};
+      const completed = orders.filter(o => o.status === 'Completed' && o.returnStatus);
+      completed.forEach(o => {
+          const status = o.returnStatus || 'Unknown';
+          statusMap[status] = (statusMap[status] || 0) + 1;
+      });
+
+      const colors: Record<string, string> = {
+          'Early': '#3b82f6',
+          'On Time': '#10b981',
+          'Late': '#ef4444'
+      };
+
+      return Object.entries(statusMap).map(([name, value]) => ({
+          name,
+          value,
+          color: colors[name] || '#94a3b8'
+      }));
+  }, [orders]);
+
+  // 6. Usage Ranking (Dynamic Toggle)
+  const usageRankingData = useMemo(() => {
+      if (usageType === 'Clients') {
+          const clientMap: Record<string, number> = {};
+          categoryFilteredData.forEach(o => {
+              clientMap[o.clientName] = (clientMap[o.clientName] || 0) + 1; // Frequency
+          });
+          return Object.entries(clientMap)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 10);
+      } else {
+          const itemMap: Record<string, number> = {};
+          categoryFilteredData.forEach(order => {
+              order.items.forEach(item => {
+                  const invItem = inventory.find(i => i.id === item.itemId);
+                  if (invItem) {
+                      itemMap[invItem.name] = (itemMap[invItem.name] || 0) + 1; // Frequency
+                  }
+              });
+          });
+          return Object.entries(itemMap)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 10);
+      }
+  }, [categoryFilteredData, inventory, usageType]);
+
+  // Simplified for insights
+  const categoryFilteredOrders = categoryFilteredData;
+
+  // 7. Inventory Performance (Kept for Insights)
+  const inventoryPerformanceData = useMemo(() => {
+      const itemMap: Record<string, number> = {};
+      categoryFilteredOrders.forEach(order => {
+          order.items.forEach(item => {
+              const invItem = inventory.find(i => i.id === item.itemId);
+              if (invItem) {
+                  itemMap[invItem.name] = (itemMap[invItem.name] || 0) + Number(item.qty);
+              }
+          });
+      });
+      return Object.entries(itemMap)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
+  }, [categoryFilteredData, inventory]);
+
+  // 7. Insight Engine
+  const deepInsights = useMemo(() => {
+      const insights = [];
+      const peakMonth = [...financialTrends].sort((a, b) => b.revenue - a.revenue)[0];
+      if (peakMonth) {
+          insights.push({
+              title: "Volume Peak",
+              desc: `${peakMonth.month} recorded the highest ${categoryFilter.includes('All') ? 'overall' : categoryFilter.join(', ')} volume with ${peakMonth.orders} bookings.`,
+              icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-50"
+          });
+      }
+      
+      // Calculate top client on the fly for insights
+      const clientMap: Record<string, number> = {};
+      categoryFilteredData.forEach(o => {
+          clientMap[o.clientName] = (clientMap[o.clientName] || 0) + Number(o.totalAmount);
+      });
+      const topClientEntry = Object.entries(clientMap).sort((a, b) => b[1] - a[1])[0];
+
+      if (topClientEntry) {
+          insights.push({
+              title: "Core Advocate",
+              desc: `${topClientEntry[0]} is your lead client for this segment, contributing ${((topClientEntry[1] / (localMetrics.totalRevenue || 1)) * 100).toFixed(0)}% of segment revenue.`,
+              icon: Users, color: "text-indigo-500", bg: "bg-indigo-50"
+          });
+      }
+      const topItem = inventoryPerformanceData[0];
+      if (topItem) {
+          insights.push({
+              title: "High Demand",
+              desc: `"${topItem.name}" has the highest turnover rate in this selection. Consider scaling this specific asset.`,
+              icon: Zap, color: "text-amber-500", bg: "bg-amber-50"
+          });
+      }
+      return insights;
+  }, [financialTrends, inventoryPerformanceData, categoryFilter, localMetrics, categoryFilteredData]);
+
+  const filteredTrends = useMemo(() => {
+    const data = financialTrends.length > 0 ? financialTrends : [];
+    switch(timeRange) {
+      case '7D': return data.slice(-1);
+      case '30D': return data.slice(-2);
+      case '90D': return data.slice(-4);
+      case '1Y': return data.slice(-12);
+      default: return data;
+    }
+  }, [timeRange, financialTrends]);
+
+  const volumeTrends = useMemo(() => {
+      const data = financialTrends.length > 0 ? financialTrends : [];
+      
+      // Convert global timeRange to an approximate month count for comparison
+      const timeRangeToMonths: Record<string, number> = {
+        '7D': 1,
+        '30D': 2,
+        '90D': 4,
+        '1Y': 12,
+        'All Time': Infinity
+      };
+
+      const globalLimit = timeRangeToMonths[timeRange] || Infinity;
+      const localLimit = volumeRange === 'All' ? Infinity : parseInt(volumeRange);
+
+      // Apply the smallest limit
+      const finalLimit = Math.min(globalLimit, localLimit);
+
+      if (finalLimit === Infinity) return data;
+      return data.slice(-finalLimit);
+  }, [timeRange, volumeRange, financialTrends]);
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-4 border border-slate-100 shadow-xl rounded-xl">
+          <p className="text-slate-500 font-bold uppercase mb-1 tracking-tight text-xs">{label || payload[0].name}</p>
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: payload[0].color || '#4f46e5' }} />
+            <p className="text-slate-900 font-black text-sm">
+                {typeof payload[0].value === 'number' && payload[0].value >= 100 ? formatCurrency(payload[0].value) : payload[0].value}
+            </p>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // --- REUSABLE DROPDOWN SLICER COMPONENT ---
+  const FilterDropdown = ({ label, options, selected, onToggle, allLabel = "All Statuses" }: { 
+    label: string, options: string[], selected: string[], onToggle: (val: string) => void, allLabel?: string 
+  }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const { ChevronDown, Check } = Icons;
+
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+          setIsOpen(false);
+        }
+      };
+      if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isOpen]);
+
+    const displayText = selected.includes('All') ? 'All' : `${selected.length} Selected`;
+
+    return (
+      <div className="flex flex-col gap-2 flex-1 min-w-[180px] relative" ref={dropdownRef}>
+        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{label}</span>
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          className={`w-full h-[38px] px-4 bg-white border rounded-xl flex items-center justify-between transition-all text-[10px] font-black uppercase tracking-tight shadow-sm active:scale-[0.98] ${isOpen ? 'border-indigo-500 ring-4 ring-indigo-500/5' : 'border-slate-200 hover:border-slate-300'}`}
+        >
+          <span className={selected.includes('All') ? 'text-slate-400' : 'text-indigo-600'}>{displayText}</span>
+          <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+        
+        {isOpen && (
+          <div className="absolute top-[65px] left-0 right-0 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 p-2 space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-200 min-w-[200px]">
+            <button 
+              onClick={() => onToggle('All')}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition-colors group text-left"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes('All') ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-300 group-hover:border-indigo-400'}`}>
+                  {selected.includes('All') && <Check className="w-3 h-3 text-white" />}
+                </div>
+                <span className={`text-[10px] font-bold uppercase tracking-tight ${selected.includes('All') ? 'text-indigo-600' : 'text-slate-600'}`}>All</span>
+              </div>
+            </button>
+            <div className="h-px bg-slate-100 mx-2 my-1"></div>
+            <div className="max-h-[200px] overflow-y-auto custom-scrollbar space-y-0.5 px-0.5">
+              {options.map(opt => (
+                <button 
+                  key={opt}
+                  onClick={() => onToggle(opt)}
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition-colors group text-left"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes(opt) ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-300 group-hover:border-indigo-400'}`}>
+                      {selected.includes(opt) && <Check className="w-3 h-3 text-white" />}
+                    </div>
+                    <span className={`text-[10px] font-bold uppercase tracking-tight ${selected.includes(opt) ? 'text-indigo-600' : 'text-slate-600'}`}>{opt}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-12">
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">
+             <span>Analytics</span>
+             <ChevronRight className="w-3 h-3" />
+             <span className="text-indigo-600">Insights</span>
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Insights</h1>
+          <p className="text-slate-500 text-sm">Real-time performance metrics and strategic outlook.</p>
+        </div>
+        <button onClick={() => window.location.reload()} className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-400"><Icons.MoreHorizontal className="w-5 h-5" /></button>
+      </div>
+
+      {/* STRATEGIC SLICERS */}
+      <Card className="bg-white border-slate-200 p-5 shadow-sm overflow-visible relative">
+        <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+        <div className="flex flex-wrap lg:flex-nowrap items-end gap-6 w-full">
+          
+          {/* Time Range */}
+          <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
+             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Time Range</span>
+             <div className="flex p-1 bg-slate-100/80 rounded-xl h-[38px] items-center w-full">
+               {['7D', '30D', '90D', '1Y', 'All'].map(range => (
+                 <button key={range} onClick={() => setTimeRange(range === 'All' ? 'All Time' : range)} className={`flex-1 h-full rounded-lg text-[10px] font-bold transition-all ${timeRange === (range === 'All' ? 'All Time' : range) ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>{range}</button>
+               ))}
+             </div>
+          </div>
+
+          <FilterDropdown 
+            label="Status Filter" 
+            options={['Pending', 'Approved', 'Active', 'Late', 'Settlement', 'Completed']} 
+            selected={statusFilter} 
+            onToggle={(val) => toggleFilter(statusFilter, val, setStatusFilter)} 
+          />
+
+          <FilterDropdown 
+            label="Return Status" 
+            options={['Early', 'On Time', 'Late']} 
+            selected={returnStatusFilter} 
+            onToggle={(val) => toggleFilter(returnStatusFilter, val, setReturnStatusFilter)} 
+          />
+
+          <FilterDropdown 
+            label="Item Integrity" 
+            options={['Good', 'Damaged', 'Lost']} 
+            selected={integrityFilter} 
+            onToggle={(val) => toggleFilter(integrityFilter, val, setIntegrityFilter)} 
+          />
+
+          {/* Reset Action */}
+          <div className="flex-none">
+            <button 
+              onClick={resetFilters}
+              className="h-[38px] px-6 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-200/50 active:scale-[0.98] whitespace-nowrap"
+            >
+              Reset Filters
+            </button>
+          </div>
+        </div>
+      </Card>
+
+      {/* KPI CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
-          title="Total Revenue" 
-          value={formatCurrency(metrics.totalRevenue)} 
-          subtext="Last 30 Days" 
-          trend={metrics.revenueGrowth} 
-          color="bg-emerald-500" 
-          icon={DollarSign} 
+          title="Business Revenue" 
+          value={formatCurrency(localMetrics.totalRevenue)} 
+          subtext={`${categoryFilter} Contribution`} 
+          trend={localMetrics.revenueGrowth} 
+          trendLabel="30 Days"
+          color="slate" 
+          icon={Cash} 
         />
-        <StatCard 
-          title="Avg. Order" 
-          value={formatCurrency(Math.floor(metrics.avgOrderValue))} 
-          subtext="Per rental" 
-          color="bg-blue-500" 
-          icon={CreditCard} 
-        />
-        <StatCard 
-          title="Total Customers" 
-          value={customers.length.toString()} 
-          subtext="Lifetime" 
-          color="bg-slate-500" 
-          icon={Users} 
-        />
+        <StatCard title="Avg. Ticket" value={formatCurrency(Math.floor(localMetrics.avgOrderValue))} subtext="Value per booking" color="indigo" icon={Icons.CreditCard} />
+        <StatCard title="Total Clients" value={clients.length.toString()} subtext="Registered accounts" color="slate" icon={Users} />
+        <StatCard title="Avg. Duration" value={`${Math.round(localMetrics.avgDuration || 0)} Days`} subtext="Per rental contract" color="emerald" icon={Calendar} />
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 min-h-[400px]">
-          <h3 className="text-lg font-bold text-slate-800 mb-4">Revenue Trends</h3>
-          <div className="h-[300px] w-full">
+      {/* MAIN CHARTS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="p-6 border-slate-200 bg-white">
+          <h3 className="text-lg font-bold text-slate-800 mb-1">Growth Dynamics</h3>
+          <p className="text-xs text-slate-400 mb-8">Revenue performance for {categoryFilter}</p>
+          <div className="h-[320px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={FINANCIAL_TRENDS}>
-                <defs>
-                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <AreaChart data={filteredTrends}>
+                <defs><linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#4f46e5" stopOpacity={0.15} /><stop offset="95%" stopColor="#4f46e5" stopOpacity={0} /></linearGradient></defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => `¢${value / 1000}k`} />
-                <RechartsTooltip />
-                <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" name="Revenue" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 500 }} dy={12} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 500 }} tickFormatter={(v) => `₵${v / 1000}k`} />
+                <RechartsTooltip content={<CustomTooltip />} />
+                <Area type="monotone" dataKey="revenue" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </Card>
-        
-        <Card className="min-h-[400px]">
-          <h3 className="text-lg font-bold text-slate-800 mb-4">Customer Segments</h3>
-          <div className="h-[250px] w-full relative">
+
+        <Card className="p-6 border-slate-200 bg-white">
+           <div className="flex justify-between items-start mb-8">
+             <div>
+                <h3 className="text-lg font-bold text-slate-800 mb-1">Operational Volume</h3>
+                <p className="text-xs text-slate-400">
+                  {volumeRange === 'All' && timeRange === 'All Time' 
+                    ? 'Full historical booking frequency' 
+                    : `Monthly frequency (Limited by ${parseInt(volumeRange) < (timeRange === '7D' ? 1 : timeRange === '30D' ? 2 : timeRange === '90D' ? 4 : timeRange === '1Y' ? 12 : Infinity) ? 'Dropdown' : 'Global Range'})`}
+                </p>
+             </div>
+             <select value={volumeRange} onChange={(e) => setVolumeRange(e.target.value)} className="bg-slate-50 border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-wider rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500 transition-all cursor-pointer">
+                {[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(m => <option key={m} value={m.toString()}>{m} Months</option>)}
+                <option value="All">All Time</option>
+             </select>
+          </div>
+          <div className="h-[320px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={CUSTOMER_SEGMENTS} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                  {CUSTOMER_SEGMENTS.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                </Pie>
-                <RechartsTooltip />
-                <Legend verticalAlign="bottom" height={36} iconType="circle" />
-              </PieChart>
+              <BarChart data={volumeTrends}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 500 }} dy={12} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 500 }} />
+                <RechartsTooltip content={<CustomTooltip />} />
+                <Bar dataKey="orders" fill="#1e293b" radius={[4, 4, 0, 0]} barSize={30}>
+                    <LabelList dataKey="orders" position="top" style={{ fill: '#64748b', fontSize: '12px', fontWeight: 500 }} />
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
+        </Card>
+      </div>
+
+      {/* BOTTOM VISUALS */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="p-6 border-slate-200 bg-white flex flex-col">
+          <h3 className="text-lg font-bold text-slate-800 mb-1">Return Performance</h3>
+          <p className="text-xs text-slate-400 mb-6">Order distribution by return condition</p>
+          <div className="h-[260px] w-full relative">
+            <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                    <Pie data={returnStatusData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={5} dataKey="value" label={({ percent }) => `${((percent || 0) * 100).toFixed(0)}%`}>
+                        {returnStatusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                    </Pie>
+                    <RechartsTooltip content={<CustomTooltip />} />
+                    <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 500 }} />
+                </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card className="p-6 border-slate-200 bg-white flex flex-col">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+                <h3 className="text-lg font-bold text-slate-800 mb-1">Top {usageType}</h3>
+                <p className="text-xs text-slate-400">Ranking by frequency</p>
+            </div>
+            <button 
+                onClick={() => setUsageType(prev => prev === 'Items' ? 'Clients' : 'Items')}
+                className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-indigo-50 hover:text-indigo-600 transition-all shadow-sm group"
+                title={`Switch to ${usageType === 'Items' ? 'Clients' : 'Items'}`}
+            >
+                {usageType === 'Items' ? <Users className="w-4 h-4" /> : <Package className="w-4 h-4" />}
+            </button>
+          </div>
+          <div className="h-[260px] w-full relative">
+            <ResponsiveContainer width="100%" height="100%">
+                <BarChart layout="vertical" data={usageRankingData} margin={{ left: 30, right: 30 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 500 }} />
+                    <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
+                    <Bar dataKey="value" fill={usageType === 'Items' ? '#4f46e5' : '#1e293b'} radius={[0, 4, 4, 0]} barSize={12}>
+                        <LabelList dataKey="value" position="right" style={{ fill: '#64748b', fontSize: '11px', fontWeight: 500 }} offset={10} />
+                    </Bar>
+                </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+        
+        <Card className="p-6 border-slate-200 bg-slate-900 text-white flex flex-col overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute top-6 right-6 p-2 bg-slate-950 border border-white/10 rounded-xl text-indigo-400 z-20 shadow-xl">
+                <Sparkles className="w-4 h-4" />
+            </div>
+            
+            <div className="flex items-center gap-2 mb-4">
+                <h3 className="text-lg font-bold tracking-tight">System Insights</h3>
+            </div>
+            <div className="flex-1 space-y-1 z-10">
+                {deepInsights.length > 0 ? deepInsights.map((fact, idx) => (
+                    <div key={idx} className="p-2.5 bg-white/[0.03] rounded-2xl border border-white/5 hover:bg-white transition-all group cursor-default">
+                        <div className="flex items-center gap-2 mb-1">
+                            <div className={`p-1 rounded-lg ${fact.bg}`}>
+                                <fact.icon className={`w-3 h-3 ${fact.color}`} />
+                            </div>
+                            <p className={`text-[10px] font-bold ${fact.color} uppercase tracking-[0.15em]`}>{fact.title}</p>
+                        </div>
+                        <p className="text-[12px] text-slate-400 leading-snug font-medium group-hover:text-black transition-colors">{fact.desc}</p>
+                    </div>
+                )) : <div className="text-center py-12 text-slate-500 italic text-sm">No significant data patterns found for this segment.</div>}
+            </div>
         </Card>
       </div>
     </div>

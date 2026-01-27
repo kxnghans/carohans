@@ -61,10 +61,15 @@ To provide CaroHans Ventures with a robust web application that manages the full
 *   **Selection Modes:** Toggle between "Individual Day" and "Range Selection" modes.
 *   **Grouped Visualization:** Consecutive blocked dates are automatically displayed as ranges (e.g., "Dec 24 - Jan 02") in the management list.
 
-### 4.4 Business Intelligence (`/admin/bi`)
+### 4.4 Client Management (`/admin/clients`)
+*   **Expansion Logic:** Admin can click a record to expand it via a chevron UI.
+*   **Inline Profile Editing:** Reuses the `ClientProfileForm` in a centered, 60% width card for rapid data updates.
+*   **Full Search:** Filter client database by name, email, or phone.
+
+### 4.5 Business Intelligence (`/admin/bi`)
 *   **Revenue Trends:** Area charts showing monthly revenue growth.
-*   **Customer Segments:** Pie charts breaking down the customer base (Corporate, Weddings, etc.).
-*   **Key Metrics:** Real-time calculation of Total Revenue, Average Order Value, and Lifetime Customers.
+*   **Customer Segments:** Multi-select filtering by order status, return status, and item integrity.
+*   **Key Metrics:** Real-time calculation of Segment Revenue, Average Ticket, and Active Field Load.
 
 ---
 
@@ -76,10 +81,14 @@ To provide CaroHans Ventures with a robust web application that manages the full
 *   **Checkout:** Seamless "Review Order" flow generating a digital invoice/quote request.
 
 ### 5.2 My Orders (`/portal/orders`)
-*   **History:** Clients can view their past and current rental requests with status tracking.
+*   **History:** Clients can view past and current rental requests.
+*   **Simplified Status:** Status column focuses on primary lifecycle (Active, Pending, Completed) without internal audit tags.
 
 ### 5.3 Profile (`/portal/profile`)
-*   **Self-Service:** Update contact information (WhatsApp, Email) and default delivery address.
+*   **Atomic Identity:** Uses separate fields for First Name and Last Name.
+*   **Extended Info:** Support for Usernames and Contact Numbers.
+*   **Visual Customization:** Editable profile picture using the same **Icon & Color Picker** found in inventory.
+*   **Form Validation:** Mandatory fields (First/Last Name, Phone, Email) marked with asterisks and enforced via real-time validation.
 
 ---
 
@@ -88,11 +97,13 @@ To provide CaroHans Ventures with a robust web application that manages the full
 ### 6.1 Automated Billing
 *   **Late Fees:** Calculated as `Daily Rate * Days Late * Quantity`.
 *   **Replacement Fees:** Triggered by damage flags or missing item counts during return processing.
+*   **Unified Presentation:** Admin "Due" amounts are calculated dynamically but hidden from primary order lists to maintain clean accounting views.
 
 ---
 
 ## 7. UX Standards & Design System
 *   **Interactive Elements:** Consistent use of custom `Button` and `Card` components.
+*   **Compact Mode:** Specialized form scaling for nested/table-expansion views.
 *   **Feedback:** Global `NotificationToast` for success/error messages.
-*   **Visual Hierarchy:** Use of bold typography and subtle shadows to differentiate UI sections.
+*   **Visual Hierarchy:** Use of bold typography, subtle shadows, and "Pencil" badges for editable elements.
 *   **Empty States:** Detailed "No Records Found" views with clear calls-to-action.

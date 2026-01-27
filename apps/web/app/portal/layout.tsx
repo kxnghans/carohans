@@ -6,7 +6,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Icons } from '../lib/icons';
 import { useAppStore } from '../context/AppContext';
 import { InvoiceModal } from '../components/modals/InvoiceModal';
+import { ContactModal } from '../components/modals/ContactModal';
 import { NotificationToast } from '../components/common/NotificationToast';
+import { calculateOrderTotal } from '../utils/helpers';
 
 export default function PortalLayout({
   children,
@@ -15,14 +17,21 @@ export default function PortalLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { cart, portalFormData, submitOrder, showNotification } = useAppStore();
+  const { cart, portalFormData, submitOrder, showNotification, logout, user, inventory } = useAppStore();
   const [showInvoice, setShowInvoice] = useState(false);
-  const { Package, ClipboardList, User, ShoppingCart, LogOut } = Icons;
+  const [isContactOpen, setIsContactOpen] = useState(false);
+  const { Package, ClipboardList, User, ShoppingCart, LogOut, MapPin, Phone } = Icons;
 
   // Determine if checkout is allowed (dates selected + items in cart)
   const canCheckout = portalFormData.start && portalFormData.end && cart.length > 0;
 
   const handleReviewOrder = () => {
+    if (!user) {
+        // Redirect to login if guest
+        router.push('/login');
+        return;
+    }
+
     if (canCheckout) {
       setShowInvoice(true);
     } else {
@@ -35,11 +44,27 @@ export default function PortalLayout({
     }
   };
 
+  const handleConfirmOrder = async () => {
+    await submitOrder(portalFormData);
+    setShowInvoice(false);
+  };
+
   const navItems = [
     { href: '/portal/inventory', label: 'Catalog', icon: Package },
-    { href: '/portal/orders', label: 'My Orders', icon: ClipboardList },
-    { href: '/portal/profile', label: 'Profile', icon: User },
+    ...(user ? [
+        { href: '/portal/orders', label: 'My Orders', icon: ClipboardList },
+        { href: '/portal/profile', label: 'Profile', icon: User },
+    ] : [])
   ];
+
+  const totalAmount = calculateOrderTotal(
+    cart.map(i => {
+        const item = inventory.find(inv => inv.id === i.id);
+        return { price: item?.price || 0, qty: i.qty };
+    }),
+    portalFormData.start,
+    portalFormData.end
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 pb-24">
@@ -48,23 +73,43 @@ export default function PortalLayout({
       {/* HEADER */}
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-200">
+          <Link href="/" className="flex items-center gap-3 group">
+             <div className="w-9 h-9 bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-slate-200 group-hover:scale-105 transition-transform">
               CH
             </div>
             <div className="hidden md:block">
               <span className="font-bold text-lg tracking-tight block leading-none">CaroHans</span>
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Client Portal</span>
             </div>
-          </div>
+          </Link>
           
-          <button
-              onClick={() => router.push('/')}
-              className="text-sm font-medium text-slate-500 hover:text-slate-900 flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
-          >
-             <LogOut className="w-4 h-4"/>
-             <span className="hidden sm:inline">Sign Out</span>
-          </button>
+          <div className="flex items-center gap-3">
+             <button 
+              onClick={() => setIsContactOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold tracking-wide uppercase hover:bg-slate-200 transition-colors"
+            >
+              <Phone className="w-3 h-3" />
+              <span className="hidden sm:inline pt-px">Contact</span>
+            </button>
+            <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
+
+            {user ? (
+                <button
+                    onClick={logout}
+                    className="text-sm font-medium text-slate-500 hover:text-slate-900 flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  <LogOut className="w-4 h-4"/>
+                  <span className="hidden sm:inline">Sign Out</span>
+                </button>
+            ) : (
+                <button
+                    onClick={() => router.push('/login')}
+                    className="text-sm font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
+                >
+                  Sign In
+                </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -95,14 +140,13 @@ export default function PortalLayout({
 
           <button
             onClick={handleReviewOrder}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm bg-slate-800 text-white hover:bg-slate-700 shadow-slate-200"
           >
             <ShoppingCart className="w-4 h-4" />
-            Review Order
+            {user ? 'Review Order' : 'Login to Checkout'}
             {cart.length > 0 && <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">{cart.length}</span>}
           </button>
         </div>
-
         {/* PAGE CONTENT */}
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
             {children}
@@ -110,18 +154,16 @@ export default function PortalLayout({
       </main>
 
       {/* CHECKOUT MODAL */}
-      <InvoiceModal
-        isOpen={showInvoice}
-        onClose={() => setShowInvoice(false)}
-        cart={cart}
-        customer={{ name: portalFormData.name, email: portalFormData.email, phone: portalFormData.phone }}
-        total={cart.reduce((sum: number, i: any) => sum + (i.price * i.qty * 2), 0)}
-        onConfirm={() => {
-          submitOrder(portalFormData);
-          setShowInvoice(false);
-          router.push('/portal/orders');
-        }}
-      />
+          <InvoiceModal
+            isOpen={showInvoice}
+            onClose={() => setShowInvoice(false)}
+            cart={cart}
+            client={{ name: `${portalFormData.firstName} ${portalFormData.lastName}`.trim(), email: portalFormData.email, phone: portalFormData.phone }}
+            onConfirm={handleConfirmOrder}
+            total={totalAmount}
+            startDate={portalFormData.start}
+            endDate={portalFormData.end}
+          />
     </div>
   );
 }

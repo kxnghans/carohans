@@ -11,6 +11,7 @@ import {
   Check,
   Dashboard,
   TrendingUp,
+  TrendingDown,
   CreditCard,
   Add,
   Remove,
@@ -29,6 +30,23 @@ import {
   Edit,
   Description,
   Block,
+  Autorenew,
+  Undo,
+  AssignmentReturn,
+  Security,
+  TrackChanges,
+  Timeline,
+  FilterList,
+  Tune,
+  MoreHoriz,
+  ErrorOutline,
+  AutoAwesome,
+  AccountBalanceWallet,
+  Insights,
+  Payments,
+  Bolt,
+  KeyboardArrowUp,
+  KeyboardArrowDown,
   // Inventory Specific
   Chair,
   TableBar,
@@ -44,7 +62,8 @@ import {
   CameraAlt,
   Videocam,
   Piano,
-  Celebration
+  Celebration,
+  Language
 } from '@mui/icons-material';
 
 // --- SYSTEM ICONS (Replacements for Lucide) ---
@@ -59,6 +78,7 @@ export const Icons = {
   Check: Check,
   LayoutDashboard: Dashboard,
   TrendingUp: TrendingUp,
+  TrendingDown: TrendingDown,
   CreditCard: CreditCard,
   Plus: Add,
   Minus: Remove,
@@ -76,7 +96,27 @@ export const Icons = {
   Trash2: Delete,
   Pencil: Edit,
   FileText: Description,
-  Ban: Block
+  Ban: Block,
+  Loader2: Autorenew,
+  Undo: Undo,
+  ReturnIcon: AssignmentReturn,
+  Shield: Security,
+  Target: TrackChanges,
+  Activity: Timeline,
+  Filter: FilterList,
+  SlidersHorizontal: Tune,
+  MoreHorizontal: MoreHoriz,
+  AlertCircle: ErrorOutline,
+  Sparkles: AutoAwesome,
+  Wallet: AccountBalanceWallet,
+  BarChart: Insights,
+  Cash: Payments,
+  Zap: Bolt,
+  SortUp: KeyboardArrowUp,
+  SortDown: KeyboardArrowDown,
+  ChevronDown: KeyboardArrowDown,
+  ChevronUp: KeyboardArrowUp,
+  Globe: Language
 };
 
 // --- INVENTORY PICKER ICONS ---

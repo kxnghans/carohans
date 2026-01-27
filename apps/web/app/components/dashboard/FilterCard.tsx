@@ -13,12 +13,12 @@ interface FilterCardProps {
 export const FilterCard = ({ title, count, status, active, onClick, color, icon: Icon }: FilterCardProps) => (
   <button
     onClick={onClick}
-    className={`relative overflow-hidden rounded-2xl border transition-all duration-300 text-left w-full group ${active
+    className={`relative overflow-hidden rounded-2xl border transition-all duration-300 text-left w-full aspect-[1.5/1] max-w-xs group ${active
       ? 'bg-slate-800 border-slate-800 shadow-xl scale-[1.02]'
       : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
       }`}
   >
-    <div className="p-5 relative z-10 flex flex-col h-full justify-between min-h-[140px]">
+    <div className="p-5 relative z-10 flex flex-col h-full justify-between">
       <div className="flex justify-between items-start">
         <div className={`p-2 rounded-lg ${active ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'}`}>
           <Icon className="w-5 h-5" />
