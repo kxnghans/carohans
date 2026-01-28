@@ -4,44 +4,44 @@ interface FilterCardProps {
   title: string;
   count: number;
   status: string;
-  active: boolean;
+  active: boolean; // This is actually 'currentStatus' based on usage in AdminOverviewPage
   onClick: () => void;
   color: string;
   icon: any;
 }
 
-export const FilterCard = ({ title, count, status, active, onClick, color, icon: Icon }: FilterCardProps) => (
-  <button
-    onClick={onClick}
-    className={`relative overflow-hidden rounded-[2rem] border-2 transition-all duration-500 text-left w-full group focus:outline-none focus:ring-0 ${active
-      ? 'bg-slate-900 border-slate-900 shadow-2xl shadow-slate-900/20 scale-[1.03] z-10'
-      : 'bg-white border-slate-200 hover:border-slate-900 hover:shadow-2xl hover:shadow-slate-200/60'
-      }`}
-  >
-    <div className="p-6 sm:p-7 relative z-10 flex flex-col gap-8">
-      <div className="flex justify-between items-center">
-        <div className={`p-3 rounded-2xl transition-all duration-500 shadow-sm ${active ? 'bg-white text-slate-900' : 'bg-slate-900 text-white group-hover:scale-110 group-hover:rotate-3'}`}>
-          <Icon className="w-5 h-5" />
-        </div>
-        <div className={`text-[9px] font-black uppercase tracking-[0.25em] px-3 py-1.5 rounded-full transition-colors ${active ? 'bg-white/10 text-slate-400' : 'bg-slate-50 text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-900'}`}>
-          {status}
-        </div>
-      </div>
-      
-      <div>
-        <div className="flex items-baseline gap-1">
-            <h3 className={`text-4xl sm:text-5xl font-black mb-1 tracking-tighter transition-colors ${active ? 'text-white' : 'text-slate-900'}`}>
-            {count}
-            </h3>
-            {active && <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse mb-2"></div>}
-        </div>
-        <p className={`text-[11px] sm:text-[12px] font-black uppercase tracking-[0.15em] transition-colors ${active ? 'text-slate-400' : 'text-slate-500'}`}>
-          {title}
-        </p>
-      </div>
-    </div>
+// In the usage: <FilterCard status="All" active={orderFilter === 'All'} ... />
+// The prop names in the previous version were slightly different or used incorrectly.
+// Let's align with the actual usage in AdminOverviewPage.
 
-    {/* Subtle geometric accent */}
-    <div className={`absolute -right-8 -top-8 w-32 h-32 rounded-full border-[32px] transition-all duration-700 opacity-[0.03] ${active ? 'border-white' : 'border-slate-900 group-hover:scale-110'}`}></div>
-  </button>
-);
+export const FilterCard = ({ title, count, status, active, onClick, icon: Icon }: any) => {
+  return (
+    <button
+      onClick={onClick}
+      className={`group w-full p-5 sm:p-6 rounded-[2rem] border-2 transition-all duration-500 text-left relative overflow-hidden flex flex-col justify-between h-full active:scale-[0.97]
+        ${active
+          ? 'bg-slate-800 border-slate-800 dark:bg-white dark:border-white text-white dark:text-slate-900 shadow-2xl shadow-indigo-200/40 dark:shadow-none'
+          : 'bg-surface border-border text-muted hover:border-slate-900 dark:hover:border-slate-100 hover:shadow-2xl hover:shadow-slate-200/60 dark:hover:shadow-none'}
+      `}
+    >
+      <div className={`p-3 rounded-2xl transition-all duration-500 shadow-sm self-start ${active ? 'bg-surface text-foreground dark:bg-slate-900 dark:text-white' : 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 group-hover:scale-110 group-hover:rotate-3'}`}>
+        <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+      </div>
+
+      <div className="mt-6">
+        <div className={`text-theme-caption font-black uppercase tracking-[0.25em] px-3 py-1.5 rounded-full transition-colors inline-block ${active ? 'bg-white/10 dark:bg-slate-900/10 text-slate-300 dark:text-slate-600' : 'bg-background text-muted group-hover:bg-slate-100 dark:group-hover:bg-slate-800 group-hover:text-foreground'}`}>
+          {title}
+        </div>
+        <h3 className={`text-theme-header sm:text-[32px] font-black mb-1 tracking-tighter transition-colors mt-2 ${active ? 'text-white dark:text-slate-900' : 'text-foreground'}`}>
+          {count}
+        </h3>
+      </div>
+
+      {active && (
+        <div className="absolute -right-2 -bottom-2 opacity-10 animate-in zoom-in-50 duration-700 pointer-events-none">
+          <Icon className="w-24 h-24 rotate-12" />
+        </div>
+      )}
+    </button>
+  );
+};

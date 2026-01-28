@@ -6,20 +6,20 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const Button = ({ children, onClick, variant = 'primary', size = 'md', className = '', disabled = false, ...props }: ButtonProps) => {
-  const baseStyle = "font-medium rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2";
+  const baseStyle = "text-theme-body-bold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2";
   const variants = {
-    primary: "bg-slate-800 text-white hover:bg-slate-700 shadow-lg shadow-slate-200",
-    secondary: "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50",
-    danger: "bg-rose-600 text-white hover:bg-rose-700 shadow-md shadow-rose-100",
-    success: "bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-100",
-    warning: "bg-amber-500 text-white hover:bg-amber-600 shadow-md shadow-amber-100",
-    info: "bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-100",
-    ghost: "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+    primary: "bg-slate-800 text-white hover:bg-slate-700 shadow-lg shadow-slate-200 dark:shadow-none",
+    secondary: "bg-surface text-muted border border-border hover:bg-background",
+    danger: "bg-rose-600 text-white hover:bg-rose-700 shadow-md shadow-rose-100 dark:shadow-none",
+    success: "bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-100 dark:shadow-none",
+    warning: "bg-amber-500 text-white hover:bg-amber-600 shadow-md shadow-amber-100 dark:shadow-none",
+    info: "bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-100 dark:shadow-none",
+    ghost: "text-muted hover:bg-background hover:text-foreground"
   };
   const sizes = {
-    sm: "px-3 py-1.5 text-xs",
-    md: "px-5 py-2.5 text-sm",
-    lg: "px-6 py-4 text-base"
+    sm: "px-3 py-1.5 text-theme-caption",
+    md: "px-5 py-2.5",
+    lg: "px-6 py-4"
   };
 
   return (

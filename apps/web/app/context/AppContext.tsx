@@ -31,6 +31,8 @@ interface AppContextType {
   setLatePenaltyPerDay: React.Dispatch<React.SetStateAction<number>>;
   businessSettings: BusinessSettings;
   updateBusinessSettings: (settings: BusinessSettings) => Promise<void>;
+  theme: 'light' | 'dark' | 'system';
+  setTheme: (theme: 'light' | 'dark' | 'system') => void;
 }
 
 export interface BusinessSettings {
@@ -53,6 +55,51 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState<{ msg: string; type: string } | null>(null);
   const [latePenaltyPerDay, setLatePenaltyPerDay] = useState(50); // Default penalty
+  const [theme, setThemeState] = useState<'light' | 'dark' | 'system'>('system');
+
+  // Load theme from local storage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('carohans_theme') as 'light' | 'dark' | 'system';
+    if (savedTheme) {
+      setThemeState(savedTheme);
+    }
+  }, []);
+
+  const setTheme = (newTheme: 'light' | 'dark' | 'system') => {
+    setThemeState(newTheme);
+    localStorage.setItem('carohans_theme', newTheme);
+  };
+
+  useEffect(() => {
+    const applyTheme = (targetTheme: 'light' | 'dark' | 'system') => {
+      const root = window.document.documentElement;
+      root.classList.remove('light', 'dark');
+      
+      let effectiveTheme: 'light' | 'dark' = 'light';
+      if (targetTheme === 'system') {
+        effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      } else {
+        effectiveTheme = targetTheme;
+      }
+      
+      root.classList.add(effectiveTheme);
+      root.setAttribute('data-theme', targetTheme); // For potential CSS targeting
+    };
+
+    applyTheme(theme);
+
+    // Add listener for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => {
+      if (theme === 'system') {
+        applyTheme('system');
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [theme]);
+
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings>({
     business_name: 'CaroHans Ventures',
     business_phone: '+233248298336',
@@ -335,7 +382,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         latePenaltyPerDay,
         setLatePenaltyPerDay,
         businessSettings,
-        updateBusinessSettings
+        updateBusinessSettings,
+        theme,
+        setTheme
       }}
     >
       {children}

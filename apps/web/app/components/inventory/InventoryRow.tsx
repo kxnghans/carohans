@@ -61,7 +61,7 @@ export const InventoryRow = ({
     return (
         <tr
             id={`row-${item.id}`}
-            className={`group transition-colors ${isNew ? 'bg-indigo-50/60 border-l-4 border-indigo-400' : 'hover:bg-slate-50/50'}`}
+            className={`group transition-colors ${isNew ? 'bg-indigo-50/60 dark:bg-indigo-900/20 border-l-4 border-indigo-400' : 'hover:bg-background/50'}`}
             tabIndex={isNew ? 0 : -1} 
             onBlur={handleRowBlur}
         >
@@ -85,7 +85,7 @@ export const InventoryRow = ({
                     </div>
                     {isFieldEditing('name') ? (
                         <input
-                            className="border border-indigo-500 ring-2 ring-indigo-100 rounded px-2 py-1 text-sm w-full outline-none"
+                            className="border border-indigo-500 ring-4 ring-indigo-500/10 rounded px-2 py-1 text-theme-label w-full outline-none bg-surface text-foreground"
                             value={editValue as string}
                             onChange={(e) => setEditValue(e.target.value)}
                             onBlur={handleSave}
@@ -95,7 +95,7 @@ export const InventoryRow = ({
                     ) : (
                         <span 
                             onClick={() => startEditing(item.id, 'name', item.name)}
-                            className={`font-bold ${isNew && item.name === 'Enter Name' ? 'text-indigo-400 italic' : 'text-slate-800'} ${isAdmin && isEditMode ? 'cursor-text hover:text-indigo-600' : ''}`}
+                            className={`text-theme-body-bold ${isNew && item.name === 'Enter Name' ? 'text-indigo-400 italic' : 'text-foreground'} ${isAdmin && isEditMode ? 'cursor-text hover:text-primary' : ''}`}
                         >
                             {item.name}
                         </span>
@@ -106,7 +106,7 @@ export const InventoryRow = ({
             <td className="p-4">
                 {isFieldEditing('category') ? (
                     <select
-                        className="border border-indigo-500 ring-2 ring-indigo-100 rounded px-2 py-1 text-sm w-full outline-none bg-white cursor-pointer"
+                        className="border border-indigo-500 ring-4 ring-indigo-500/10 rounded px-2 py-1 text-theme-label w-full outline-none bg-surface text-foreground cursor-pointer"
                         value={editValue as string}
                         onChange={(e) => setEditValue(e.target.value)}
                         onBlur={handleSave}
@@ -120,7 +120,7 @@ export const InventoryRow = ({
                 ) : (
                     <span 
                         onClick={() => startEditing(item.id, 'category', item.category)}
-                        className={`text-sm text-slate-500 ${isAdmin && isEditMode ? 'cursor-text' : ''}`}
+                        className={`text-theme-label text-muted ${isAdmin && isEditMode ? 'cursor-text' : ''}`}
                     >
                         {item.category}
                     </span>
@@ -130,7 +130,7 @@ export const InventoryRow = ({
             <td className="p-4 text-right">
                 {isFieldEditing('price') ? (
                     <input
-                        className="border border-indigo-500 ring-2 ring-indigo-100 rounded px-2 py-1 text-sm w-20 text-right outline-none"
+                        className="border border-indigo-500 ring-4 ring-indigo-500/10 rounded px-2 py-1 text-theme-label w-20 text-right outline-none bg-surface text-foreground dark:[color-scheme:dark]"
                         type="number"
                         value={editValue as number}
                         onChange={(e) => setEditValue(Number(e.target.value))}
@@ -141,7 +141,7 @@ export const InventoryRow = ({
                 ) : (
                     <span 
                         onClick={() => startEditing(item.id, 'price', item.price)}
-                        className={`text-sm font-medium ${isNew && item.price === 0 ? 'text-indigo-400' : 'text-slate-700'} ${isAdmin && isEditMode ? 'cursor-text' : ''}`}
+                        className={`text-theme-label font-bold ${isNew && item.price === 0 ? 'text-indigo-400' : 'text-foreground'} ${isAdmin && isEditMode ? 'cursor-text' : ''}`}
                     >
                         {formatCurrency(item.price)}
                     </span>
@@ -151,7 +151,7 @@ export const InventoryRow = ({
             <td className="p-4 text-right">
                 {isFieldEditing('replacementCost') ? (
                     <input
-                        className="border border-indigo-500 ring-2 ring-indigo-100 rounded px-2 py-1 text-sm w-20 text-right outline-none"
+                        className="border border-indigo-500 ring-4 ring-indigo-500/10 rounded px-2 py-1 text-theme-label w-20 text-right outline-none bg-surface text-foreground dark:[color-scheme:dark]"
                         type="number"
                         value={editValue as number}
                         onChange={(e) => setEditValue(Number(e.target.value))}
@@ -162,7 +162,7 @@ export const InventoryRow = ({
                 ) : (
                     <span 
                         onClick={() => startEditing(item.id, 'replacementCost', item.replacementCost)}
-                        className={`text-sm font-medium ${isNew && item.replacementCost === 0 ? 'text-indigo-400' : 'text-rose-600 bg-rose-50 px-2 py-1 rounded inline-block'} ${isAdmin && isEditMode ? 'cursor-text' : ''}`}
+                        className={`text-theme-label font-bold ${isNew && item.replacementCost === 0 ? 'text-indigo-400' : 'text-rose-600 bg-rose-50 dark:bg-rose-900/30 px-2 py-1 rounded inline-block'} ${isAdmin && isEditMode ? 'cursor-text' : ''}`}
                     >
                         {formatCurrency(item.replacementCost)}
                     </span>
@@ -172,7 +172,7 @@ export const InventoryRow = ({
             <td className="p-4 text-center">
                 {isFieldEditing('stock') ? (
                     <input
-                        className="border border-indigo-500 ring-2 ring-indigo-100 rounded px-2 py-1 text-sm w-16 text-center outline-none"
+                        className="border border-indigo-500 ring-4 ring-indigo-500/10 rounded px-2 py-1 text-theme-label w-16 text-center outline-none bg-surface text-foreground dark:[color-scheme:dark]"
                         type="number"
                         value={editValue as number}
                         onChange={(e) => setEditValue(Number(e.target.value))}
@@ -183,7 +183,7 @@ export const InventoryRow = ({
                 ) : (
                     <span 
                         onClick={() => startEditing(item.id, 'stock', item.stock)}
-                        className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold cursor-text ${item.stock < 10 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}
+                        className="inline-block px-2.5 py-1 rounded-full text-theme-label font-black cursor-text bg-background text-muted border border-border"
                     >
                         {item.stock}
                     </span>
@@ -195,14 +195,14 @@ export const InventoryRow = ({
                     <div className="flex items-center justify-center gap-1">
                         <button
                             onClick={() => onAddToCart && onAddToCart(item, -1)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors disabled:opacity-50"
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-background text-muted hover:bg-surface border border-border transition-colors disabled:opacity-50"
                             disabled={!cart?.find((c: CartItem) => c.id === item.id)}
                         >
                             <Minus className="w-3 h-3" />
                         </button>
                         <input
                             type="number"
-                            className="w-16 text-center text-sm font-bold bg-white border border-slate-200 rounded-md focus:outline-indigo-500 py-1"
+                            className="w-16 text-center text-theme-body-bold bg-surface text-foreground border border-border rounded-md focus:border-primary py-1 outline-none dark:[color-scheme:dark]"
                             value={cart?.find((c: CartItem) => c.id === item.id)?.qty || 0}
                             onChange={(e) => {
                                 const newVal = parseInt(e.target.value) || 0;
@@ -214,7 +214,7 @@ export const InventoryRow = ({
                         />
                         <button
                             onClick={() => onAddToCart && onAddToCart(item, 1)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-background text-muted hover:bg-surface border border-border transition-colors"
                         >
                             <Plus className="w-3 h-3" />
                         </button>
@@ -226,7 +226,7 @@ export const InventoryRow = ({
                 <td className="p-4 text-center">
                     <button 
                         onClick={() => onDelete && onDelete(item.id)}
-                        className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                        className="p-2 text-muted hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
                     >
                         <Trash2 className="w-4 h-4" />
                     </button>

@@ -1,88 +1,152 @@
 @import "tailwindcss";
 
+/* 
+  Tailwind v4 Dark Mode Strategy 
+  Ensures `dark:` utilities work with both system preference and manual `.dark` class.
+*/
+@variant dark (&:where(.dark, .dark *));
+
 :root {
-  /* Softened Palette */
-  --background: #f8fafc;
-  /* Slate-50 - softer than pure white */
-  --foreground: #334155;
-  /* Slate-700 - much softer than black */
-  --slate-dark: #1e293b;
-  /* Slate-800 */
+  color-scheme: light;
+  /* Light Mode (Default) */
+  --bg-primary: #f8fafc; /* Slate-50 */
+  --bg-surface: #ffffff; /* White */
+  --text-primary: #0f172a; /* Slate-900 */
+  --text-secondary: #64748b; /* Slate-500 */
+  --border-default: #e2e8f0; /* Slate-200 */
+  --brand-primary: #4f46e5; /* Indigo-600 */
+}
+
+/* Explicit class-based dark mode overrides */
+.dark {
+  color-scheme: dark;
+  --bg-primary: #0f172a; /* Slate-900 */
+  --bg-surface: #1e293b; /* Slate-800 */
+  --text-primary: #f8fafc; /* Slate-50 */
+  --text-secondary: #94a3b8; /* Slate-400 */
+  --border-default: #334155; /* Slate-700 */
+  --brand-primary: #6366f1; /* Indigo-500 */
+}
+
+/* Fallback to system preference if no explicit class is set on html */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+    --bg-primary: #0f172a;
+    --bg-surface: #1e293b;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --border-default: #334155;
+    --brand-primary: #6366f1;
+  }
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-slate-dark: var(--slate-dark);
+  --color-background: var(--bg-primary);
+  --color-surface: var(--bg-surface);
+  --color-foreground: var(--text-primary);
+  --color-muted: var(--text-secondary);
+  --color-border: var(--border-default);
+  --color-primary: var(--brand-primary);
+  
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+/* Typography Utilities */
+@utility text-theme-hero {
+  font-size: 45px;
+  font-weight: 700;
+}
+
+@utility text-theme-header {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+@utility text-theme-title {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+@utility text-theme-subtitle {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+@utility text-theme-label {
+  font-size: 15px;
+  font-weight: 400;
+}
+
+@utility text-theme-body {
+  font-size: 13px;
+  font-weight: 400;
+}
+
+@utility text-theme-body-bold {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+@utility text-theme-caption {
+  font-size: 11px;
+  font-weight: 400;
+}
+
 /* 
   Responsive Zoom Strategy 
-  Using 'zoom' for WebKit browsers (Chrome/Edge/Safari) which covers most use cases.
-  For Firefox support, we would need a transform scale, but 'zoom' is safest for layout flow.
 */
 
 @media screen and (max-width: 768px) {
   html {
     zoom: 0.6;
-    /* 60% Default for App (Mobile) */
   }
-
   html.home-page {
     zoom: 0.75;
-    /* 75% for Home Page (Mobile) */
   }
 }
 
 @media screen and (min-width: 769px) and (max-width: 1024px) {
   html {
     zoom: 0.8;
-    /* 80% Default for App (Tablet) */
   }
-
   html.home-page {
     zoom: 0.9;
-    /* 90% for Home Page (Tablet) */
   }
 }
 
 @media screen and (min-width: 1025px) {
   html {
     zoom: 1;
-    /* 100% on Large */
   }
 }
 
 html {
-  background: var(--background);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    /* Slate-900 */
-    --foreground: #e2e8f0;
-    /* Slate-200 */
-  }
+  background: var(--bg-primary);
 }
 
 body {
-
-  background: var(--background);
-
-  color: var(--foreground);
-
-  font-family: Arial, Helvetica, sans-serif;
-
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
-
 }
 
 /* Global Focus Reset */
 *:focus {
   outline: none !important;
+}
+
+/* Hide Number Input Spinners */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
 }
 
 /* Custom Scrollbar */
@@ -96,31 +160,27 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1; /* Slate-300 */
+  background: var(--border-default);
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8; /* Slate-400 */
+  background: var(--text-secondary);
 }
 
 /* Firefox Support */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: var(--border-default) transparent;
 }
 
-
-
 @media print {
-
-  /* 1. Page Setup: Standard margins create the "reasonable padding" automatically */
+  /* ... Print styles remain largely the same but ensure backgrounds are forced to white/transparent for paper ... */
   @page {
     size: A4;
-    margin: 20mm 5mm; /* 20mm Top/Bottom, 5mm Left/Right */
+    margin: 20mm 5mm; 
   }
 
-  /* 2. Reset Document Flow */
   html,
   body {
     height: auto !important;
@@ -129,22 +189,21 @@ body {
     padding: 0 !important;
     overflow: visible !important;
     background: white !important;
-    position: static !important; /* Reset position for print */
+    position: static !important; 
     zoom: 1 !important;
+    color: black !important;
   }
 
-  /* 3. Collapse non-printed content entirely to prevent blank space */
   body > *:not(.invoice-modal-overlay) {
     display: none !important;
     height: 0 !important;
     overflow: hidden !important;
   }
 
-  /* 4. Target the Modal Overlay */
   .invoice-modal-overlay {
     visibility: visible !important;
     display: block !important;
-    position: static !important; /* Static allows flow across multiple pages */
+    position: static !important; 
     width: 100% !important;
     height: auto !important;
     background: transparent !important;
@@ -153,12 +212,10 @@ body {
     z-index: auto !important;
   }
 
-  /* Ensure all content inside the overlay is visible and flows */
   .invoice-modal-overlay * {
     visibility: visible !important;
   }
 
-  /* 6. Reset the Content Card */
   .invoice-modal-content {
     display: block !important;
     width: 100% !important;
@@ -183,7 +240,6 @@ body {
     position: static !important;
   }
 
-  /* 7. Prevent awkward breaks */
   tr,
   .invoice-footer {
     break-inside: avoid;
@@ -194,7 +250,6 @@ body {
     display: table-header-group;
   }
 
-  /* Force background colors */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

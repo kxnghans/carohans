@@ -198,7 +198,9 @@ export default function AdminBIPage() {
           insights.push({
               title: "Volume Peak",
               desc: `${peakMonth.month} recorded the highest ${categoryFilter.includes('All') ? 'overall' : categoryFilter.join(', ')} volume with ${peakMonth.orders} bookings.`,
-              icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-50"
+              icon: TrendingUp, 
+              color: "text-emerald-600 dark:text-emerald-400", 
+              bg: "bg-emerald-50 dark:bg-emerald-900/20"
           });
       }
       
@@ -213,7 +215,9 @@ export default function AdminBIPage() {
           insights.push({
               title: "Core Advocate",
               desc: `${topClientEntry[0]} is your lead client for this segment, contributing ${((topClientEntry[1] / (localMetrics.totalRevenue || 1)) * 100).toFixed(0)}% of segment revenue.`,
-              icon: Users, color: "text-indigo-500", bg: "bg-indigo-50"
+              icon: Users, 
+              color: "text-indigo-600 dark:text-indigo-400", 
+              bg: "bg-indigo-50 dark:bg-indigo-900/20"
           });
       }
       const topItem = inventoryPerformanceData[0];
@@ -221,7 +225,9 @@ export default function AdminBIPage() {
           insights.push({
               title: "High Demand",
               desc: `"${topItem.name}" has the highest turnover rate in this selection. Consider scaling this specific asset.`,
-              icon: Zap, color: "text-amber-500", bg: "bg-amber-50"
+              icon: Zap, 
+              color: "text-amber-600 dark:text-amber-400", 
+              bg: "bg-amber-50 dark:bg-amber-900/20"
           });
       }
       return insights;
@@ -263,11 +269,11 @@ export default function AdminBIPage() {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-4 border border-slate-100 shadow-xl rounded-xl">
-          <p className="text-slate-500 font-bold uppercase mb-1 tracking-tight text-xs">{label || payload[0].name}</p>
+        <div className="bg-surface p-4 border border-border shadow-xl rounded-xl">
+          <p className="text-muted font-bold uppercase mb-1 tracking-tight text-theme-caption">{label || payload[0].name}</p>
           <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: payload[0].color || '#4f46e5' }} />
-            <p className="text-slate-900 font-black text-sm">
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: payload[0].color || 'var(--color-primary)' }} />
+            <p className="text-foreground font-black text-theme-body">
                 {typeof payload[0].value === 'number' && payload[0].value >= 100 ? formatCurrency(payload[0].value) : payload[0].value}
             </p>
           </div>
@@ -275,6 +281,19 @@ export default function AdminBIPage() {
       );
     }
     return null;
+  };
+
+  const RenderCustomLabel = (props: any) => {
+    const { x, y, value } = props;
+    const formattedValue = value >= 1000 ? `¢${(value / 1000).toFixed(0)}k` : `¢${value}`;
+    return (
+      <g>
+        <rect x={x - 20} y={y - 25} width={40} height={18} rx={4} fill="var(--color-surface)" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))" className="stroke-border stroke-[0.5px]" />
+        <text x={x} y={y - 12} fill="var(--color-primary)" textAnchor="middle" style={{ fontSize: '10px', fontWeight: 800 }}>
+          {formattedValue}
+        </text>
+      </g>
+    );
   };
 
   // --- REUSABLE DROPDOWN SLICER COMPONENT ---
@@ -299,41 +318,41 @@ export default function AdminBIPage() {
 
     return (
       <div className="flex flex-col gap-2 flex-1 min-w-[180px] relative" ref={dropdownRef}>
-        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{label}</span>
+        <span className="text-theme-caption font-bold text-muted uppercase tracking-widest ml-1">{label}</span>
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-full h-[38px] px-4 bg-white border rounded-xl flex items-center justify-between transition-all text-[10px] font-black uppercase tracking-tight shadow-sm active:scale-[0.98] ${isOpen ? 'border-indigo-500 ring-4 ring-indigo-500/5' : 'border-slate-200 hover:border-slate-300'}`}
+          className={`w-full h-[38px] px-4 bg-surface border rounded-xl flex items-center justify-between transition-all text-theme-caption font-black uppercase tracking-tight shadow-sm active:scale-[0.98] ${isOpen ? 'border-primary ring-4 ring-primary/5' : 'border-border hover:border-muted'}`}
         >
-          <span className={selected.includes('All') ? 'text-slate-400' : 'text-indigo-600'}>{displayText}</span>
-          <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+          <span className={selected.includes('All') ? 'text-muted' : 'text-primary'}>{displayText}</span>
+          <ChevronDown className={`w-3.5 h-3.5 text-muted transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
         </button>
         
         {isOpen && (
-          <div className="absolute top-[65px] left-0 right-0 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 p-2 space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-200 min-w-[200px]">
+          <div className="absolute top-[65px] left-0 right-0 bg-surface border border-border rounded-2xl shadow-2xl z-50 p-2 space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-200 min-w-[200px]">
             <button 
               onClick={() => onToggle('All')}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition-colors group text-left"
+              className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-background transition-colors group text-left"
             >
               <div className="flex items-center gap-2.5">
-                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes('All') ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-300 group-hover:border-indigo-400'}`}>
+                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes('All') ? 'bg-primary border-primary shadow-sm' : 'bg-background border-border group-hover:border-primary/50'}`}>
                   {selected.includes('All') && <Check className="w-3 h-3 text-white" />}
                 </div>
-                <span className={`text-[10px] font-bold uppercase tracking-tight ${selected.includes('All') ? 'text-indigo-600' : 'text-slate-600'}`}>All</span>
+                <span className={`text-theme-caption font-bold uppercase tracking-tight ${selected.includes('All') ? 'text-primary' : 'text-muted'}`}>All</span>
               </div>
             </button>
-            <div className="h-px bg-slate-100 mx-2 my-1"></div>
+            <div className="h-px bg-border mx-2 my-1"></div>
             <div className="max-h-[200px] overflow-y-auto custom-scrollbar space-y-0.5 px-0.5">
               {options.map(opt => (
                 <button 
                   key={opt}
                   onClick={() => onToggle(opt)}
-                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition-colors group text-left"
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-background transition-colors group text-left"
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes(opt) ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-300 group-hover:border-indigo-400'}`}>
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes(opt) ? 'bg-primary border-primary shadow-sm' : 'bg-background border-border group-hover:border-primary/50'}`}>
                       {selected.includes(opt) && <Check className="w-3 h-3 text-white" />}
                     </div>
-                    <span className={`text-[10px] font-bold uppercase tracking-tight ${selected.includes(opt) ? 'text-indigo-600' : 'text-slate-600'}`}>{opt}</span>
+                    <span className={`text-theme-caption font-bold uppercase tracking-tight ${selected.includes(opt) ? 'text-primary' : 'text-muted'}`}>{opt}</span>
                   </div>
                 </button>
               ))}
@@ -349,28 +368,28 @@ export default function AdminBIPage() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">
+          <div className="flex items-center gap-2 text-muted text-theme-caption uppercase tracking-widest mb-1">
              <span>Analytics</span>
              <ChevronRight className="w-3 h-3" />
-             <span className="text-indigo-600">Insights</span>
+             <span className="text-primary">Insights</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Insights</h1>
-          <p className="text-slate-500 text-sm">Real-time performance metrics and strategic outlook.</p>
+          <h1 className="text-theme-header text-foreground tracking-tight">Insights</h1>
+          <p className="text-muted text-theme-body">Real-time performance metrics and strategic outlook.</p>
         </div>
-        <button onClick={() => window.location.reload()} className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-400"><Icons.MoreHorizontal className="w-5 h-5" /></button>
+        <button onClick={() => window.location.reload()} className="p-2 hover:bg-background rounded-lg transition-colors text-muted"><Icons.MoreHorizontal className="w-5 h-5" /></button>
       </div>
 
       {/* STRATEGIC SLICERS */}
-      <Card className="bg-white border-slate-200 p-5 shadow-sm overflow-visible relative">
-        <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+      <Card className="bg-surface border-border p-5 shadow-sm overflow-visible relative">
+        <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>
         <div className="flex flex-wrap lg:flex-nowrap items-end gap-6 w-full">
           
           {/* Time Range */}
           <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
-             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Time Range</span>
-             <div className="flex p-1 bg-slate-100/80 rounded-xl h-[38px] items-center w-full">
+             <span className="text-theme-caption text-muted uppercase tracking-widest ml-1">Time Range</span>
+             <div className="flex p-1 bg-background rounded-xl h-[38px] items-center w-full">
                {['7D', '30D', '90D', '1Y', 'All'].map(range => (
-                 <button key={range} onClick={() => setTimeRange(range === 'All' ? 'All Time' : range)} className={`flex-1 h-full rounded-lg text-[10px] font-bold transition-all ${timeRange === (range === 'All' ? 'All Time' : range) ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>{range}</button>
+                 <button key={range} onClick={() => setTimeRange(range === 'All' ? 'All Time' : range)} className={`flex-1 h-full rounded-lg text-theme-caption transition-all ${timeRange === (range === 'All' ? 'All Time' : range) ? 'bg-surface text-primary shadow-sm' : 'text-muted hover:text-foreground'}`}>{range}</button>
                ))}
              </div>
           </div>
@@ -400,7 +419,7 @@ export default function AdminBIPage() {
           <div className="flex-none">
             <button 
               onClick={resetFilters}
-              className="h-[38px] px-6 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-200/50 active:scale-[0.98] whitespace-nowrap"
+              className="h-[38px] px-6 bg-slate-900 dark:bg-primary text-white rounded-xl text-theme-caption font-black uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-primary/90 transition-all shadow-lg shadow-slate-200/50 dark:shadow-none active:scale-[0.98] whitespace-nowrap"
             >
               Reset Filters
             </button>
@@ -434,41 +453,41 @@ export default function AdminBIPage() {
       
       {/* MAIN CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-slate-200 bg-white">
-          <h3 className="text-lg font-bold text-slate-800 mb-1">Growth Dynamics</h3>
-          <p className="text-xs text-slate-400 mb-8">Monthly revenue performance and financial trajectory.</p>
+        <Card className="border-border bg-surface">
+          <h3 className="text-theme-title font-bold text-foreground mb-1">Growth Dynamics</h3>
+          <p className="text-theme-body text-muted mb-8">Monthly revenue performance and financial trajectory.</p>
           <div className="h-[320px] w-full min-h-[320px] outline-none" style={{ width: '100%', height: 320 }}>
             {isMounted ? (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={filteredTrends}>
-                <defs><linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#4f46e5" stopOpacity={0.15} /><stop offset="95%" stopColor="#4f46e5" stopOpacity={0} /></linearGradient></defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 500 }} dy={12} />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 500 }} 
-                  tickFormatter={(v) => v >= 1000000 ? `¢${(v / 1000000).toFixed(1)}M` : `¢${v / 1000}k`} 
-                />
-                <RechartsTooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="revenue" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+              <AreaChart data={filteredTrends} margin={{ top: 25, right: 30, left: 0, bottom: 0 }}>
+                <defs><linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.15} /><stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} /></linearGradient></defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
+                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 13, fontWeight: 500 }} dy={12} />
+                        <YAxis 
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{ fill: 'var(--text-secondary)', fontSize: 13, fontWeight: 500 }} 
+                          tickFormatter={(v) => v >= 1000000 ? `¢${(v / 1000000).toFixed(1)}M` : `¢${v / 1000}k`} 
+                        />
+                        <RechartsTooltip content={<CustomTooltip />} />
+                        <Area type="monotone" dataKey="revenue" stroke="var(--color-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)">
+                            <LabelList dataKey="revenue" content={<RenderCustomLabel />} />
+                        </Area>
               </AreaChart>
             </ResponsiveContainer>
-            ) : <div className="w-full h-full bg-slate-50 animate-pulse rounded-xl"></div>}
+            ) : <div className="w-full h-full bg-background animate-pulse rounded-xl"></div>}
           </div>
         </Card>
 
-        <Card className="border-slate-200 bg-white">
+        <Card className="border-border bg-surface">
            <div className="flex justify-between items-start mb-8">
              <div>
-                <h3 className="text-lg font-bold text-slate-800 mb-1">Operational Volume</h3>
-                <p className="text-xs text-slate-400">
-                  {volumeRange === 'All' && timeRange === 'All Time' 
-                    ? 'Full historical booking frequency' 
-                    : `Monthly frequency (Limited by ${parseInt(volumeRange) < (timeRange === '7D' ? 1 : timeRange === '30D' ? 2 : timeRange === '90D' ? 4 : timeRange === '1Y' ? 12 : Infinity) ? 'Dropdown' : 'Global Range'})`}
+                <h3 className="text-theme-title font-bold text-foreground mb-1">Operational Volume</h3>
+                <p className="text-theme-body text-muted">
+                  Monthly historical booking frequency.
                 </p>
              </div>
-             <select value={volumeRange} onChange={(e) => setVolumeRange(e.target.value)} className="bg-slate-50 border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-wider rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500 transition-all cursor-pointer">
+             <select value={volumeRange} onChange={(e) => setVolumeRange(e.target.value)} className="bg-background border border-border text-muted text-theme-caption font-black uppercase tracking-wider rounded-lg px-3 py-1.5 outline-none focus:border-primary transition-all cursor-pointer">
                 {[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(m => <option key={m} value={m.toString()}>{m} Months</option>)}
                 <option value="All">All Time</option>
              </select>
@@ -477,30 +496,30 @@ export default function AdminBIPage() {
             {isMounted ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={volumeTrends}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 500 }} dy={12} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: 'var(--color-muted)', fontSize: 13, fontWeight: 500 }} dy={12} />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 500 }}
-                  label={{ value: 'Bookings', angle: -90, position: 'insideLeft', offset: 0, style: { textAnchor: 'middle', fill: '#94a3b8', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' } }}
+                  tick={{ fill: 'var(--color-muted)', fontSize: 13, fontWeight: 500 }}
+                  label={{ value: 'Bookings', angle: -90, position: 'insideLeft', offset: 0, style: { textAnchor: 'middle', fill: 'var(--color-muted)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' } }}
                 />
                 <RechartsTooltip content={<CustomTooltip />} />
-                <Bar dataKey="orders" fill="#1e293b" radius={[4, 4, 0, 0]} barSize={30}>
-                    <LabelList dataKey="orders" position="top" style={{ fill: '#64748b', fontSize: '12px', fontWeight: 500 }} />
+                <Bar dataKey="orders" fill="var(--color-foreground)" radius={[4, 4, 0, 0]} barSize={30}>
+                    <LabelList dataKey="orders" position="top" style={{ fill: 'var(--color-muted)', fontSize: '12px', fontWeight: 500 }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-            ) : <div className="w-full h-full bg-slate-50 animate-pulse rounded-xl"></div>}
+            ) : <div className="w-full h-full bg-background animate-pulse rounded-xl"></div>}
           </div>
         </Card>
       </div>
 
       {/* BOTTOM VISUALS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="border-slate-200 bg-white flex flex-col">
-          <h3 className="text-lg font-bold text-slate-800 mb-1">Return Performance</h3>
-          <p className="text-xs text-slate-400 mb-6">Order distribution by return condition</p>
+        <Card className="border-border bg-surface flex flex-col">
+          <h3 className="text-theme-title font-bold text-foreground mb-1">Return Performance</h3>
+          <p className="text-theme-body text-muted mb-6">Order distribution by return condition</p>
           <div className="h-[260px] w-full relative min-h-[260px] outline-none" style={{ width: '100%', height: 260 }}>
             {isMounted ? (
             <ResponsiveContainer width="100%" height="100%">
@@ -509,70 +528,74 @@ export default function AdminBIPage() {
                         {returnStatusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                     </Pie>
                     <RechartsTooltip content={<CustomTooltip />} />
-                    <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 500 }} />
+                    <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-muted)' }} />
                 </PieChart>
             </ResponsiveContainer>
-            ) : <div className="w-full h-full bg-slate-50 animate-pulse rounded-xl"></div>}
+            ) : <div className="w-full h-full bg-background animate-pulse rounded-xl"></div>}
           </div>
         </Card>
 
-        <Card className="border-slate-200 bg-white flex flex-col">
+        <Card className="border-border bg-surface flex flex-col">
           <div className="flex justify-between items-start mb-6">
             <div>
-                <h3 className="text-lg font-bold text-slate-800 mb-1">Top {usageType}</h3>
-                <p className="text-xs text-slate-400">Ranking by frequency</p>
+                <h3 className="text-theme-title font-bold text-foreground mb-1">Top {usageType}</h3>
+                <p className="text-theme-body text-muted">Ranking by frequency</p>
             </div>
-            <button 
-                onClick={() => setUsageType(prev => prev === 'Categories' ? 'Items' : 'Categories')}
-                className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-xl hover:bg-slate-200 transition-all shadow-sm group"
-                title={`Switch to ${usageType === 'Categories' ? 'Items' : 'Categories'}`}
-            >
-                <div className={`p-1.5 rounded-lg transition-all ${usageType === 'Categories' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>
+            <div className="flex items-center p-1 bg-background rounded-xl border border-border shadow-sm">
+                <button 
+                    onClick={() => setUsageType('Categories')}
+                    className={`p-2 rounded-lg transition-all ${usageType === 'Categories' ? 'bg-primary text-white shadow-md' : 'text-muted hover:text-foreground'}`}
+                    title="View Top Categories"
+                >
                     <BarIcon className="w-4 h-4" />
-                </div>
-                <div className={`p-1.5 rounded-lg transition-all ${usageType === 'Items' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>
+                </button>
+                <button 
+                    onClick={() => setUsageType('Items')}
+                    className={`p-2 rounded-lg transition-all ${usageType === 'Items' ? 'bg-primary text-white shadow-md' : 'text-muted hover:text-foreground'}`}
+                    title="View Top Items"
+                >
                     <Package className="w-4 h-4" />
-                </div>
-            </button>
+                </button>
+            </div>
           </div>
           <div className="h-[260px] w-full relative min-h-[260px] outline-none" style={{ width: '100%', height: 260 }}>
             {isMounted ? (
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart layout="vertical" data={usageRankingData} margin={{ left: 30, right: 30 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--color-border)" />
                     <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 500 }} />
-                    <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
-                    <Bar dataKey="value" fill="#4f46e5" radius={[0, 4, 4, 0]} barSize={22}>
-                        <LabelList dataKey="value" position="right" style={{ fill: '#64748b', fontSize: '11px', fontWeight: 500 }} offset={10} />
+                    <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fill: 'var(--color-muted)', fontSize: 11, fontWeight: 500 }} />
+                    <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: 'var(--color-background)' }} />
+                    <Bar dataKey="value" fill="var(--color-primary)" radius={[0, 4, 4, 0]} barSize={22}>
+                        <LabelList dataKey="value" position="right" style={{ fill: 'var(--color-muted)', fontSize: '11px', fontWeight: 500 }} offset={10} />
                     </Bar>
                 </BarChart>
             </ResponsiveContainer>
-            ) : <div className="w-full h-full bg-slate-50 animate-pulse rounded-xl"></div>}
+            ) : <div className="w-full h-full bg-background animate-pulse rounded-xl"></div>}
           </div>
         </Card>
         
-        <Card className="p-6 border-slate-200 bg-slate-900 text-white flex flex-col overflow-hidden relative">
+        <Card className="p-6 border-border bg-slate-900 dark:bg-surface text-white dark:text-foreground flex flex-col overflow-hidden relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute top-6 right-6 p-2 bg-slate-100 border border-white/10 rounded-xl text-indigo-400 z-20 shadow-xl">
+            <div className="absolute top-6 right-6 p-2 bg-slate-100 dark:bg-background border border-white/10 dark:border-border rounded-xl text-indigo-400 dark:text-primary z-20 shadow-xl dark:shadow-none">
                 <Sparkles className="w-4 h-4" />
             </div>
             
             <div className="flex items-center gap-2 mb-4">
-                <h3 className="text-lg font-bold tracking-tight">System Insights</h3>
+                <h3 className="text-theme-subtitle font-bold tracking-tight">System Insights</h3>
             </div>
             <div className="flex-1 space-y-1 z-10">
                 {deepInsights.length > 0 ? deepInsights.map((fact, idx) => (
-                    <div key={idx} className="p-2.5 bg-white/[0.03] rounded-2xl border border-white/5 hover:bg-white transition-all group cursor-default">
-                        <div className="flex items-center gap-2 mb-1">
-                            <div className={`p-1 rounded-lg ${fact.bg}`}>
-                                <fact.icon className={`w-3 h-3 ${fact.color}`} />
+                    <div key={idx} className="p-3 bg-white/[0.03] dark:bg-background/50 rounded-2xl border border-white/5 dark:border-border hover:bg-white dark:hover:bg-background transition-all group cursor-default">
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <div className={`p-1.5 rounded-lg ${fact.bg}`}>
+                                <fact.icon className={`w-4 h-4 ${fact.color}`} />
                             </div>
-                            <p className={`text-[10px] font-bold ${fact.color} uppercase tracking-[0.15em]`}>{fact.title}</p>
+                            <p className={`text-theme-title font-bold ${fact.color} tracking-tight`}>{fact.title}</p>
                         </div>
-                        <p className="text-[12px] text-slate-400 leading-snug font-medium group-hover:text-slate-700 transition-colors">{fact.desc}</p>
+                        <p className="text-theme-body text-slate-400 dark:text-muted leading-relaxed font-medium group-hover:text-slate-700 dark:group-hover:text-foreground transition-colors">{fact.desc}</p>
                     </div>
-                )) : <div className="text-center py-12 text-slate-500 italic text-sm">No significant data patterns found for this segment.</div>}
+                )) : <div className="text-center py-12 text-muted italic text-theme-body">No significant data patterns found for this segment.</div>}
             </div>
         </Card>
       </div>
