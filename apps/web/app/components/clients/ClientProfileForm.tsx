@@ -5,6 +5,7 @@ import { Icons, InventoryIcons } from '../../lib/icons';
 import { Button } from '../../components/ui/Button';
 import { IconColorPicker } from '../../components/inventory/IconColorPicker';
 import { PortalFormData } from '../../types';
+import { DynamicIcon } from '../common/DynamicIcon';
 
 interface ClientProfileFormProps {
     initialData: PortalFormData;
@@ -45,19 +46,6 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
         }
     };
 
-    const RenderProfileIcon = () => {
-        if (formData.image?.startsWith('icon:')) {
-            const iconKey = formData.image.replace('icon:', '');
-            const IconComp = InventoryIcons[iconKey];
-            const sizeClass = compact ? "w-8 h-8" : "w-10 h-10";
-            return IconComp ? <IconComp className={`${sizeClass} ${formData.color || 'text-slate-400'}`} /> : <span className={compact ? "text-xl" : "text-3xl"}>📦</span>;
-        }
-        if (formData.image) {
-             return <span className={compact ? "text-xl" : "text-3xl"}>{formData.image}</span>;
-        }
-        return <User className={`${compact ? "w-8 h-8" : "w-10 h-10"} ${formData.color || 'text-slate-400'}`} />;
-    };
-
     return (
         <div className={compact ? "space-y-4" : "space-y-6"}>
             <div className={`flex items-center gap-6 ${compact ? "mb-4" : "mb-8"}`}>
@@ -66,7 +54,12 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
                         onClick={() => setShowIconPicker(!showIconPicker)}
                         className={`${compact ? "h-16 w-16" : "h-24 w-24"} rounded-full flex items-center justify-center border-2 transition-all shadow-md overflow-hidden relative ${formData.color ? formData.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + (formData.color.split('-')[1] || 'slate') + '-200' : 'bg-background border-border'}`}
                     >
-                        <RenderProfileIcon />
+                        <DynamicIcon 
+                            iconString={formData.image} 
+                            color={formData.color} 
+                            className={compact ? "w-8 h-8" : "w-10 h-10"} 
+                            fallback={<User className={`${compact ? "w-8 h-8" : "w-10 h-10"} ${formData.color || 'text-slate-400'}`} />} 
+                        />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <Pencil className={compact ? "w-4 h-4 text-white" : "w-6 h-6 text-white"} />
                         </div>

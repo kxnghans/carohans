@@ -20,6 +20,7 @@ interface UserProfile {
 
 import { useAppStore } from '../../context/AppContext';
 import { InventoryIcons } from '../../lib/icons';
+import { DynamicIcon } from '../../components/common/DynamicIcon';
 
 export default function AdminUsersPage() {
     const { Shield, Trash2, ChevronRight, Loader2, TrendingUp, TrendingDown, User } = Icons;
@@ -208,22 +209,12 @@ export default function AdminUsersPage() {
                         </thead>
                         <tbody className="divide-y divide-border">
                             {data.map(user => {
-                                const RenderUserIcon = () => {
-                                    if (user.image?.startsWith('icon:')) {
-                                        const iconKey = user.image.replace('icon:', '');
-                                        const IconComp = InventoryIcons[iconKey];
-                                        return IconComp ? <IconComp className={`w-4 h-4 ${user.color || 'text-primary'}`} /> : <span>📦</span>;
-                                    }
-                                    if (user.image) return <span className="text-sm">{user.image}</span>;
-                                    return <User className={`w-4 h-4 ${user.color || 'text-muted'}`} />;
-                                };
-
                                 return (
                                 <tr key={user.id} className="hover:bg-background/50 transition-colors">
                                     <td className="p-4 pl-6">
                                         <div className="flex items-center gap-3">
                                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${user.color ? user.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + (user.color.split('-')[1] || 'slate') + '-200 dark:bg-primary/10 dark:border-primary/20' : 'bg-background border-border'}`}>
-                                                <RenderUserIcon />
+                                                <DynamicIcon iconString={user.image} color={user.color} className="w-4 h-4" fallback={<User className={`w-4 h-4 ${user.color || 'text-muted'}`} />} />
                                             </div>
                                             <div>
                                                 <div className="text-theme-label font-bold text-foreground leading-tight">{user.clientName}</div>

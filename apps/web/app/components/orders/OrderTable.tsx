@@ -5,6 +5,7 @@ import { Icons, InventoryIcons } from '../../lib/icons';
 import { getStatusColor, getStatusDescription, formatCurrency, formatDate, getReturnStatusColor, getItemIntegrityColor, getDurationDays } from '../../utils/helpers';
 import { Card } from '../ui/Card';
 import { Order, InventoryItem } from '../../types';
+import { DynamicIcon } from '../common/DynamicIcon';
 
 interface OrderTableProps {
     orders: Order[];
@@ -159,21 +160,27 @@ export const OrderTable = ({
                                                                         const price = (item.price ?? invItem?.price) || 0;
                                                                         const lineSubtotal = price * item.qty * duration;
     
-                                                                        const RenderItemIcon = () => {
-                                                                            if (invItem?.image?.startsWith('icon:')) {
-                                                                                const iconKey = invItem.image.replace('icon:', '');
-                                                                                const IconComp = InventoryIcons[iconKey];
-                                                                                return IconComp ? <IconComp className={`w-5 h-5 ${invItem.color || 'text-muted'}`} /> : <span>📦</span>;
-                                                                            }
-                                                                            return <div className="text-xl">{invItem?.image || '📦'}</div>;
-                                                                        };
+                                                                                                                                            return (
     
-                                                                        return (
-                                                                            <tr key={idx} className="hover:bg-background/50 transition-colors">
-                                                                                <td className="p-3 pl-6">
-                                                                                    <div className="flex items-center gap-3">
-                                                                                        <RenderItemIcon />
-                                                                                        <div className="flex flex-col">
+                                                                                                                                                <tr key={idx} className="hover:bg-background/50 transition-colors">
+    
+                                                                                                                                                    <td className="p-3 pl-6">
+    
+                                                                                                                                                        <div className="flex items-center gap-3">
+    
+                                                                                                                                                            <DynamicIcon 
+    
+                                                                                                                                                                iconString={invItem?.image} 
+    
+                                                                                                                                                                color={invItem?.color} 
+    
+                                                                                                                                                                fallback={<span>📦</span>}
+    
+                                                                                                                                                            />
+    
+                                                                                                                                                            <div className="flex flex-col">
+    
+                                                                        
                                                                                             <span className="text-theme-body-bold text-foreground">{invItem?.name || 'Deleted Item'}</span>
                                                                                             {((item.lostQty ?? 0) > 0 || (item.damagedQty ?? 0) > 0) && (
                                                                                                 <div className="flex gap-2">

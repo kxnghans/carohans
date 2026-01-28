@@ -3,6 +3,7 @@ import { Icons, InventoryIcons } from '../../lib/icons';
 import { formatCurrency } from '../../utils/helpers';
 import { InventoryItem, CartItem } from '../../types';
 import { IconColorPicker } from './IconColorPicker';
+import { DynamicIcon } from '../common/DynamicIcon';
 
 interface InventoryRowProps {
     item: InventoryItem & { isNew?: boolean };
@@ -46,15 +47,6 @@ export const InventoryRow = ({
     const { Minus, Plus, Trash2 } = Icons;
     const isNew = item.isNew;
 
-    const RenderItemIcon = ({ className = "text-2xl" }: { className?: string }) => {
-        if (item.image?.startsWith('icon:')) {
-            const iconKey = item.image.replace('icon:', '');
-            const IconComp = InventoryIcons[iconKey];
-            return IconComp ? <IconComp className={`${className.replace('text-2xl', 'w-6 h-6')} ${item.color || 'text-slate-600'}`} /> : <span>📦</span>;
-        }
-        return <div className={className}>{item.image || '📦'}</div>;
-    };
-
     const isFieldEditing = (field: string) => 
         editingCell?.id === item.id && editingCell?.field === field;
 
@@ -72,7 +64,7 @@ export const InventoryRow = ({
                             onClick={() => isEditMode && setActivePickerId(activePickerId === item.id ? null : item.id)}
                             className={`${isEditMode ? 'cursor-pointer hover:scale-110 active:scale-95 transition-transform' : ''}`}
                         >
-                            <RenderItemIcon />
+                            <DynamicIcon iconString={item.image} color={item.color} className="w-6 h-6" fallback={<span>📦</span>} />
                         </div>
                         {activePickerId === item.id && (
                             <IconColorPicker 
