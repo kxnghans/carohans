@@ -24,19 +24,19 @@ export default function LandingPage() {
         <div className="space-y-6 flex flex-col items-center md:items-start text-center md:text-left">
           <button 
             onClick={() => setIsContactOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold tracking-wide uppercase hover:bg-slate-800 transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-900 text-theme-caption tracking-wide uppercase hover:bg-slate-800 dark:hover:bg-white transition-colors shadow-sm"
           >
             <Phone className="w-3 h-3" />
             <span className="pt-px">Contact</span>
           </button>
           <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
-            <h1 className="text-4xl xs:text-5xl sm:text-6xl font-black text-slate-900 leading-tight mb-6">
+            <h1 className="text-theme-hero text-foreground leading-tight mb-4">
               CaroHans <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Ventures</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600 dark:from-indigo-400 dark:to-purple-300">Ventures</span>
             </h1>
 
-          <p className="text-slate-500 text-xl max-w-md leading-relaxed">
-            CaroHans Enterprise Resource Management System. Manage inventory, track rentals, and analyze growth.
+          <p className="text-muted text-theme-label max-w-sm leading-relaxed">
+            Enterprise Resource Management System. Manage inventory, track rentals, and analyze growth.
           </p>
         </div>
 
@@ -44,18 +44,18 @@ export default function LandingPage() {
           {/* CLIENT LOGIN */}
           <Link
             href="/login"
-            className="p-6 bg-white rounded-2xl border border-slate-100 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all group text-left relative overflow-hidden block"
+            className="p-6 bg-surface rounded-2xl border border-border shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all group text-left relative overflow-hidden block dark:hover:border-primary/50"
           >
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-              <User className="w-24 h-24" />
+              <User className="w-24 h-24 text-foreground" />
             </div>
             <div className="flex items-center gap-6 relative z-10">
-              <div className="h-16 w-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+              <div className="h-16 w-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
                 <User className="w-10 h-10" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-900">Client Login</h3>
-                <p className="text-slate-500 text-sm">Access your orders & profile</p>
+                <h3 className="text-theme-subtitle text-foreground">Client Login</h3>
+                <p className="text-muted text-theme-body">Access your orders & profile</p>
               </div>
             </div>
           </Link>
@@ -63,18 +63,18 @@ export default function LandingPage() {
           {/* GUEST BROWSE */}
           <Link
             href="/portal/inventory"
-            className="p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-100 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all group text-left relative overflow-hidden block"
+            className="p-6 bg-surface/80 backdrop-blur-sm rounded-2xl border border-border shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all group text-left relative overflow-hidden block dark:hover:border-primary/50"
           >
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-              <Search className="w-24 h-24" />
+              <Search className="w-24 h-24 text-foreground" />
             </div>
             <div className="flex items-center gap-6 relative z-10">
-              <div className="h-16 w-16 bg-slate-100 text-slate-500 rounded-2xl flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-colors">
+              <div className="h-16 w-16 bg-background text-muted rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
                 <Search className="w-10 h-10" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-900">Browse as Guest</h3>
-                <p className="text-slate-500 text-sm">Explore catalog without signing in</p>
+                <h3 className="text-theme-subtitle text-foreground">Browse as Guest</h3>
+                <p className="text-muted text-theme-body">Explore catalog without signing in</p>
               </div>
             </div>
           </Link>
@@ -82,18 +82,18 @@ export default function LandingPage() {
           {/* ADMIN DASHBOARD */}
           <Link
             href="/admin/overview"
-            className="p-6 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all group text-left relative overflow-hidden block"
+            className="p-6 bg-slate-900 dark:bg-slate-200 border border-slate-800 dark:border-slate-300 rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all group text-left relative overflow-hidden block"
           >
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-              <LayoutDashboard className="w-24 h-24 text-white" />
+              <LayoutDashboard className="w-24 h-24 text-white dark:text-slate-900" />
             </div>
             <div className="flex items-center gap-6 relative z-10">
-              <div className="h-16 w-16 bg-slate-800 text-slate-300 rounded-2xl flex items-center justify-center group-hover:bg-white group-hover:text-slate-900 transition-colors">
+              <div className="h-16 w-16 bg-slate-800 dark:bg-slate-300 text-slate-300 dark:text-slate-900 rounded-2xl flex items-center justify-center group-hover:bg-white dark:group-hover:bg-slate-900 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
                 <LayoutDashboard className="w-10 h-10" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white">Admin Dashboard</h3>
-                <p className="text-slate-400 text-sm">Internal operations & Analytics</p>
+                <h3 className="text-theme-subtitle text-white dark:text-slate-900">Admin Dashboard</h3>
+                <p className="text-slate-400 dark:text-slate-600 text-theme-body">Internal operations & Analytics</p>
               </div>
             </div>
           </Link>

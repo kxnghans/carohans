@@ -71,8 +71,10 @@ export const InventoryTable = ({
   };
 
   const SortIcon = ({ column }: { column: keyof InventoryItem }) => {
-    if (sortConfig?.key !== column) return <SortUp className="w-3 h-3 opacity-20" />;
-    return sortConfig.direction === 'asc' ? <SortUp className="w-3 h-3 text-indigo-600" /> : <SortDown className="w-3 h-3 text-indigo-600" />;
+    if (sortConfig?.key !== column) return <SortUp className="w-3.5 h-3.5 text-muted opacity-30" />;
+    return sortConfig.direction === 'asc' 
+        ? <SortUp className="w-3.5 h-3.5 text-primary dark:text-amber-500" /> 
+        : <SortDown className="w-3.5 h-3.5 text-primary dark:text-amber-500" />;
   };
 
   const dataRef = useRef(data);
@@ -185,44 +187,60 @@ export const InventoryTable = ({
   return (
     <>
     <div className="overflow-x-auto pb-12 custom-scrollbar">
-      <table className="w-full text-left border-collapse min-w-[800px]">
+      <table className="w-full text-left border-collapse min-w-[1000px]">
         <thead>
-          <tr className="bg-slate-50/50 border-b border-slate-200">
-            <th 
-                className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider pl-6 cursor-pointer group hover:bg-slate-100/50 transition-colors"
-                onClick={() => requestSort('name')}
+          <tr className="bg-background/50 border-b border-border">
+            <th
+              className="p-4 pl-6 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] cursor-pointer group hover:bg-surface transition-colors"
+              onClick={() => requestSort('name')}
             >
-                <div className="flex items-center gap-2">Details <SortIcon column="name" /></div>
+              <div className="flex items-center gap-2">
+                Item Details
+                <SortIcon column="name" />
+              </div>
             </th>
-            <th 
-                className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:bg-slate-100/50 transition-colors"
-                onClick={() => requestSort('category')}
+            <th
+              className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] cursor-pointer group hover:bg-surface transition-colors"
+              onClick={() => requestSort('category')}
             >
-                <div className="flex items-center gap-2">Category <SortIcon column="category" /></div>
+              <div className="flex items-center gap-2">
+                Category
+                <SortIcon column="category" />
+              </div>
             </th>
-            <th 
-                className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right cursor-pointer group hover:bg-slate-100/50 transition-colors"
-                onClick={() => requestSort('price')}
+            <th
+              className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
+              onClick={() => requestSort('price')}
             >
-                <div className="flex items-center justify-end gap-2">Daily Rate <SortIcon column="price" /></div>
+              <div className="flex items-center justify-end gap-2">
+                Rate
+                <SortIcon column="price" />
+              </div>
             </th>
-            <th 
-                className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right cursor-pointer group hover:bg-slate-100/50 transition-colors"
-                onClick={() => requestSort('replacementCost')}
+            <th
+              className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
+              onClick={() => requestSort('replacementCost')}
             >
-                <div className="flex items-center justify-end gap-2">Repl. Cost <SortIcon column="replacementCost" /></div>
+              <div className="flex items-center justify-end gap-2">
+                Replacement
+                <SortIcon column="replacementCost" />
+              </div>
             </th>
-            <th 
-                className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center cursor-pointer group hover:bg-slate-100/50 transition-colors"
-                onClick={() => requestSort('stock')}
+            <th
+              className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-center cursor-pointer group hover:bg-surface transition-colors"
+              onClick={() => requestSort('stock')}
             >
-                <div className="flex items-center justify-center gap-2">Stock <SortIcon column="stock" /></div>
+              <div className="flex items-center justify-center gap-2">
+                Stock
+                <SortIcon column="stock" />
+              </div>
             </th>
-            {showOrderColumn && <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Order</th>}
-            {isEditMode && <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-12">Delete</th>}
+            {showOrderColumn && <th className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-center">Order</th>}
+            {isEditMode && <th className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-center pr-6">Action</th>}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-border">
+
           {sortedData.map((item, index) => (
               <React.Fragment key={item.id}>
                 <InventoryRow 
@@ -252,8 +270,8 @@ export const InventoryTable = ({
                         onClick={() => handleAddItem(index)}
                         title="Insert Item Here"
                       >
-                        <div className="w-full h-px bg-indigo-200 group-hover/separator:bg-indigo-500 transition-colors relative flex items-center justify-center">
-                           <div className="bg-white border border-indigo-500 text-indigo-600 rounded-full p-0.5 shadow-sm transform hover:scale-110 transition-transform">
+                        <div className="w-full h-px bg-primary/30 group-hover/separator:bg-primary transition-colors relative flex items-center justify-center">
+                           <div className="bg-surface border border-primary text-primary rounded-full p-0.5 shadow-sm transform hover:scale-110 transition-transform">
                              <Plus className="w-3 h-3" />
                            </div>
                         </div>
@@ -267,30 +285,28 @@ export const InventoryTable = ({
           {isAdmin && isEditMode && (
              <tr 
                 onClick={() => handleAddItem(data.length - 1)}
-                className="group cursor-pointer border-t border-dashed border-slate-300 hover:bg-indigo-50/30 transition-all h-[73px]"
+                className="group cursor-pointer border-t border-dashed border-border hover:bg-primary/5 transition-all h-[73px]"
              >
                 <td className="p-4 pl-6">
                     <div className="flex items-center gap-3 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300">
-                        <div className="h-8 w-8 rounded-lg bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center text-slate-400 group-hover:border-indigo-400 group-hover:text-indigo-500 group-hover:bg-white">
+                        <div className="h-8 w-8 rounded-lg bg-background border border-dashed border-border flex items-center justify-center text-muted group-hover:border-primary group-hover:text-primary group-hover:bg-surface">
                             <Plus className="w-4 h-4" />
                         </div>
-                        <span className="font-medium text-slate-500 italic group-hover:text-indigo-600">Click to add new SKU...</span>
+                        <span className="text-theme-body font-medium text-muted italic group-hover:text-primary">Click to add new SKU...</span>
                     </div>
                 </td>
                 <td className="p-4">
-                    <div className="h-2 w-full max-w-[100px] bg-slate-100 rounded-full opacity-0 group-hover:opacity-50 transition-opacity"></div>
+                    <div className="h-2 w-full max-w-[100px] bg-background rounded-full opacity-0 group-hover:opacity-50 transition-opacity"></div>
                 </td>
                 <td className="p-4 text-right">
-                    <div className="h-2 w-12 bg-slate-100 rounded-full ml-auto opacity-0 group-hover:opacity-50 transition-opacity"></div>
+                    <div className="h-2 w-12 bg-background rounded-full ml-auto opacity-0 group-hover:opacity-50 transition-opacity"></div>
                 </td>
                 <td className="p-4 text-right">
-                    <div className="h-2 w-12 bg-slate-100 rounded-full ml-auto opacity-0 group-hover:opacity-50 transition-opacity"></div>
+                    <div className="h-2 w-12 bg-background rounded-full ml-auto opacity-0 group-hover:opacity-50 transition-opacity"></div>
                 </td>
                 <td className="p-4 text-center">
-                    <div className="h-2 w-8 bg-slate-100 rounded-full mx-auto opacity-0 group-hover:opacity-50 transition-opacity"></div>
+                    <div className="h-2 w-8 bg-background rounded-full mx-auto opacity-0 group-hover:opacity-50 transition-opacity"></div>
                 </td>
-                {showOrderColumn && <td className="p-4"></td>}
-                {isEditMode && <td className="p-4"></td>}
              </tr>
           )}
         </tbody>

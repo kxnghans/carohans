@@ -14,12 +14,15 @@ interface UserProfile {
     clientName?: string;
     clientEmail?: string;
     username?: string;
+    image?: string;
+    color?: string;
 }
 
 import { useAppStore } from '../../context/AppContext';
+import { InventoryIcons } from '../../lib/icons';
 
 export default function AdminUsersPage() {
-    const { Shield, Trash2, ChevronRight, Loader2 } = Icons;
+    const { Shield, Trash2, ChevronRight, Loader2, TrendingUp, TrendingDown, User } = Icons;
     const { showNotification } = useAppStore();
     const [users, setUsers] = useState<UserProfile[]>([]);
     const [loading, setLoading] = useState(true);
@@ -56,7 +59,7 @@ export default function AdminUsersPage() {
 
         const { data: clients, error: clientError } = await supabase
             .from('clients')
-            .select('user_id, name, email, username');
+            .select('user_id, name, email, username, image, color');
             
         if (clientError) {
             console.error('Error fetching clients', clientError);
@@ -71,7 +74,9 @@ export default function AdminUsersPage() {
                     role: p.role as 'admin' | 'client',
                     clientName: client?.name || null,
                     clientEmail: client?.email || null,
-                    username: client?.username || '-'
+                    username: client?.username || '-',
+                    image: client?.image || '',
+                    color: client?.color || ''
                 };
             })
             // Only show users who have a linked client record or an email
@@ -174,63 +179,89 @@ export default function AdminUsersPage() {
         isOpen: boolean, 
         onToggle: () => void 
     }) => (
-        <Card noPadding className="mb-8 transition-all duration-300">
+        <Card noPadding className="mb-8 transition-all duration-300 border-border">
             <div 
-                className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center cursor-pointer select-none hover:bg-slate-100/50 transition-colors"
+                className="p-4 border-b border-border bg-background/50 flex justify-between items-center cursor-pointer select-none hover:bg-surface transition-colors"
                 onClick={onToggle}
             >
-                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                <h3 className="text-theme-subtitle font-bold text-foreground flex items-center gap-2">
                     {title} 
-                    <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">{data.length}</span>
+                    <span className="text-theme-caption bg-background dark:bg-slate-800 text-muted px-2 py-0.5 rounded-full border border-border">{data.length}</span>
                 </h3>
-                <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
+                <ChevronRight className={`w-5 h-5 transition-all duration-200 ${isOpen ? 'rotate-90 text-primary dark:text-amber-500' : 'text-muted'}`} />
             </div>
             
             {isOpen && (
                 data.length === 0 ? (
-                     <div className="p-8 text-center text-slate-500 text-sm">No users found.</div>
+                     <div className="p-8 text-center text-muted text-theme-body">No users found.</div>
                 ) : (
                 <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse animate-in fade-in slide-in-from-top-2 duration-200 min-w-[800px]">
                         <thead>
-                            <tr className="border-b border-slate-100">
-                                <th className="p-4 pl-6 text-xs font-bold text-slate-500 uppercase">User / Email</th>
-                                <th className="p-4 text-xs font-bold text-slate-500 uppercase">Username</th>
-                                <th className="p-4 text-xs font-bold text-slate-500 uppercase text-center">Role</th>
-                                <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right">Access Level</th>
-                                <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right pr-6">Action</th>
+                            <tr className="border-b border-border text-theme-caption font-bold text-muted uppercase tracking-wider">
+                                <th className="p-4 pl-6">User / Email</th>
+                                <th className="p-4">Username</th>
+                                <th className="p-4 text-center">Role</th>
+                                <th className="p-4 text-right">Access Level</th>
+                                <th className="p-4 text-right pr-6">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {data.map(user => (
-                                <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
+                        <tbody className="divide-y divide-border">
+                            {data.map(user => {
+                                const RenderUserIcon = () => {
+                                    if (user.image?.startsWith('icon:')) {
+                                        const iconKey = user.image.replace('icon:', '');
+                                        const IconComp = InventoryIcons[iconKey];
+                                        return IconComp ? <IconComp className={`w-4 h-4 ${user.color || 'text-primary'}`} /> : <span>📦</span>;
+                                    }
+                                    if (user.image) return <span className="text-sm">{user.image}</span>;
+                                    return <User className={`w-4 h-4 ${user.color || 'text-muted'}`} />;
+                                };
+
+                                return (
+                                <tr key={user.id} className="hover:bg-background/50 transition-colors">
                                     <td className="p-4 pl-6">
-                                        <div className="font-bold text-slate-900">{user.clientName}</div>
-                                        <div className="text-xs text-slate-500">{user.clientEmail}</div>
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${user.color ? user.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + (user.color.split('-')[1] || 'slate') + '-200 dark:bg-primary/10 dark:border-primary/20' : 'bg-background border-border'}`}>
+                                                <RenderUserIcon />
+                                            </div>
+                                            <div>
+                                                <div className="text-theme-label font-bold text-foreground leading-tight">{user.clientName}</div>
+                                                <div className="text-theme-caption text-muted">{user.clientEmail}</div>
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td className="p-4 text-sm font-mono text-slate-600">
+                                    <td className="p-4 text-theme-label font-mono text-muted">
                                         {user.username}
                                     </td>
                                     <td className="p-4 text-center">
-                                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold capitalize ${
+                                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-tight ${
                                             user.role === 'admin' 
-                                            ? 'bg-purple-100 text-purple-700' 
-                                            : 'bg-emerald-100 text-emerald-700'
+                                            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' 
+                                            : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
                                         }`}>
-                                            {user.role === 'admin' && <Shield className="w-3 h-3" />}
+                                            {user.role === 'admin' ? <Shield className="w-3 h-3" /> : <User className="w-3 h-3" />}
                                             {user.role}
                                         </span>
                                     </td>
                                     <td className="p-4">
                                         <div className="flex justify-end">
                                             {user.role === 'client' ? (
-                                                <Button size="sm" onClick={() => handleActionClick(user)}>
+                                                <button 
+                                                    onClick={() => handleActionClick(user)}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-xl text-theme-caption font-black uppercase tracking-tight hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all shadow-sm group/btn"
+                                                >
+                                                    <TrendingUp className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
                                                     Promote
-                                                </Button>
+                                                </button>
                                             ) : (
-                                                <Button size="sm" variant="secondary" onClick={() => handleActionClick(user)}>
+                                                <button 
+                                                    onClick={() => handleActionClick(user)}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-xl text-theme-caption font-black uppercase tracking-tight hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-all shadow-sm group/btn"
+                                                >
+                                                    <TrendingDown className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
                                                     Demote
-                                                </Button>
+                                                </button>
                                             )}
                                         </div>
                                     </td>
@@ -252,7 +283,8 @@ export default function AdminUsersPage() {
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
@@ -264,14 +296,21 @@ export default function AdminUsersPage() {
     return (
         <div className="animate-in fade-in duration-500 space-y-6">
              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Access</h2>
-                <Button onClick={() => fetchUsers()} variant="secondary">Refresh List</Button>
+                <div>
+                    <div className="flex items-center gap-2 text-muted text-theme-caption font-black uppercase tracking-widest mb-1">
+                        <span>Management</span>
+                        <ChevronRight className="w-3 h-3" />
+                        <span className="text-primary">Access</span>
+                    </div>
+                    <h2 className="text-theme-title text-foreground tracking-tight">System Access</h2>
+                </div>
+                <Button onClick={() => fetchUsers()} variant="secondary" size="sm">Refresh List</Button>
             </div>
 
             {loading ? (
-                <div className="p-12 text-center text-slate-500 bg-white rounded-2xl shadow-sm border border-slate-200">
+                <div className="p-12 text-center text-muted bg-surface rounded-2xl shadow-sm border border-border">
                     <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin opacity-20" />
-                    <p className="text-sm font-medium">Loading Access Data...</p>
+                    <p className="text-theme-body font-medium">Loading Access Data...</p>
                 </div>
             ) : (
                 <>

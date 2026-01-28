@@ -29,36 +29,36 @@ export const StatCard = ({ title, value, subtext, trend, trendLabel, icon: Icon,
   };
 
   const gradientMap = {
-    slate: 'bg-gradient-to-br from-white to-slate-50/50',
-    indigo: 'bg-gradient-to-br from-white to-indigo-50/30',
-    emerald: 'bg-gradient-to-br from-white to-emerald-50/30',
-    amber: 'bg-gradient-to-br from-white to-amber-50/30'
+    slate: 'bg-surface dark:bg-slate-900',
+    indigo: 'bg-surface dark:bg-slate-900',
+    emerald: 'bg-surface dark:bg-slate-900',
+    amber: 'bg-surface dark:bg-slate-900'
   };
 
   return (
-    <Card noPadding className={`relative overflow-hidden group hover:shadow-xl transition-all duration-500 border-none shadow-sm ring-1 ring-slate-200/50 min-h-[185px] w-full ${gradientMap[color as keyof typeof gradientMap]}`}>
+    <Card noPadding className={`relative overflow-hidden group hover:shadow-xl dark:hover:shadow-none transition-all duration-500 border-none shadow-sm ring-1 ring-border min-h-[185px] w-full ${gradientMap[color as keyof typeof gradientMap]}`}>
       {/* Decorative Ghost Icon */}
-      <div className={`absolute -right-2 -top-2 p-4 opacity-[0.05] group-hover:opacity-[0.12] transition-all duration-700 group-hover:scale-110 transform rotate-12 text-slate-900`}>
+      <div className={`absolute -right-2 -top-2 p-4 opacity-[0.05] group-hover:opacity-[0.12] transition-all duration-700 group-hover:scale-110 transform rotate-12 text-foreground`}>
         <Icon className="w-24 h-24" />
       </div>
 
       <div className="relative z-10 p-6 pb-8">
         <div className="flex items-center justify-between mb-5">
-          <div className={`p-3 rounded-2xl ${colorMap[color]} shadow-lg transition-transform duration-500 group-hover:scale-110`}>
+          <div className={`p-3 rounded-2xl ${colorMap[color]} shadow-lg dark:shadow-none transition-transform duration-500 group-hover:scale-110`}>
             <Icon className="w-5 h-5 text-white" />
           </div>
           {trend !== undefined && (
             <div className={`flex items-center gap-1.5 px-2 py-1 rounded-xl border transition-colors ${
               trend > 0 
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
-              : 'bg-rose-50 text-rose-700 border-rose-100'
+              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800' 
+              : 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-800'
             }`}>
               {trend > 0 ? (
                 <TrendingUp className="w-3.5 h-3.5" />
               ) : (
                 <TrendingDown className="w-3.5 h-3.5" />
               )}
-              <span className="text-[10px] font-black tracking-tight">{trend > 0 ? '+' : ''}{trend}%</span>
+              <span className="text-theme-caption font-black tracking-tight">{trend > 0 ? '+' : ''}{trend}%</span>
               {trendLabel && (
                 <span className="text-[9px] font-bold opacity-60 uppercase ml-0.5">{trendLabel}</span>
               )}
@@ -67,11 +67,11 @@ export const StatCard = ({ title, value, subtext, trend, trendLabel, icon: Icon,
         </div>
 
         <div>
-          <h3 className="text-slate-400 font-black text-[10px] uppercase tracking-[0.15em] mb-2">{title}</h3>
+          <h3 className="text-muted font-black text-theme-caption uppercase tracking-[0.15em] mb-2">{title}</h3>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900 tracking-tight">{value}</span>
+            <span className="text-theme-header text-foreground tracking-tight">{value}</span>
           </div>
-          <p className="mt-2 text-slate-400 text-[11px] font-bold leading-tight">{subtext}</p>
+          <p className="mt-2 text-muted text-theme-label font-medium leading-tight">{subtext}</p>
         </div>
       </div>
       

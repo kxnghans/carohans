@@ -81,20 +81,20 @@ export default function PortalOrdersPage() {
 
   if (loading) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 text-slate-400">
-            <div className="w-8 h-8 border-4 border-slate-200 border-t-indigo-500 rounded-full animate-spin"></div>
-            <p className="text-sm font-medium">Fetching your orders...</p>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 text-muted">
+            <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin"></div>
+            <p className="text-theme-body font-medium">Fetching your orders...</p>
         </div>
     );
   }
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
-      <h2 className="text-2xl font-bold text-slate-900">My Order History</h2>
+      <h2 className="text-theme-title text-foreground">My Order History</h2>
       
       {myOrders.length === 0 ? (
-        <div className="text-center py-12 text-slate-400">
-          <p>No orders found.</p>
+        <div className="text-center py-12 text-muted">
+          <p className="text-theme-body">No orders found.</p>
         </div>
       ) : (
         <OrderTable

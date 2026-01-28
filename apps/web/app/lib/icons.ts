@@ -48,6 +48,7 @@ import {
   Bolt,
   KeyboardArrowUp,
   KeyboardArrowDown,
+  Language,
   // Inventory Specific
   Chair,
   TableBar,
@@ -64,7 +65,12 @@ import {
   Videocam,
   Piano,
   Celebration,
-  Language
+  WbSunny,
+  DarkMode,
+  SettingsBrightness,
+  Visibility,
+  VisibilityOff,
+  Laptop
 } from '@mui/icons-material';
 
 // --- SYSTEM ICONS (Replacements for Lucide) ---
@@ -118,6 +124,12 @@ export const Icons = {
   SortDown: KeyboardArrowDown,
   ChevronDown: KeyboardArrowDown,
   ChevronUp: KeyboardArrowUp,
+  Sun: WbSunny,
+  Moon: DarkMode,
+  Monitor: SettingsBrightness,
+  Laptop: Laptop,
+  Eye: Visibility,
+  EyeOff: VisibilityOff,
   Globe: Language
 };
 

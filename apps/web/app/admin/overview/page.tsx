@@ -284,6 +284,7 @@ export default function AdminOverviewPage() {
     };
     await submitOrder(orderData);
     setPosCart([]); setSelectedClient(null); setPosDates({ start: '', end: '' }); setCreateOrderStep('none');
+    showNotification("Order created successfully!", "success");
   };
 
   if (loading) {
@@ -300,32 +301,32 @@ export default function AdminOverviewPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* TODAY'S LOGISTICS BANNER */}
-      <div className="bg-slate-800 text-white rounded-3xl p-8 shadow-2xl relative overflow-hidden group">
+      <div className="bg-slate-800 dark:bg-white text-white dark:text-slate-900 rounded-3xl p-8 shadow-2xl relative overflow-hidden group border border-transparent dark:border-white">
         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity duration-700">
-          <Truck className="w-64 h-64 -mr-16 -mt-16" />
+          <Truck className="w-64 h-64 -mr-16 -mt-16 text-white dark:text-slate-900" />
         </div>
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold mb-4 border border-indigo-500/30">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 dark:bg-indigo-500/10 text-indigo-300 dark:text-indigo-600 text-theme-caption font-bold mb-4 border border-indigo-500/30">
               <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span> Live Operations
             </div>
-            <h2 className="text-3xl font-bold mb-2">Today's Logistics</h2>
-            <p className="text-slate-400">Overview of pickup and return schedules for today.</p>
+            <h2 className="text-theme-header mb-2 text-white dark:text-slate-900">Today's Logistics</h2>
+            <p className="text-slate-400 dark:text-slate-500 text-theme-body">Overview of pickup and return schedules for today.</p>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 md:gap-8 bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm w-full md:w-auto">
+          <div className="grid grid-cols-3 gap-4 md:gap-8 bg-white/5 dark:bg-slate-900/5 p-6 rounded-2xl border border-white/10 dark:border-slate-900/10 backdrop-blur-sm w-full md:w-auto">
             <div className="text-center px-2">
-              <span className="block text-2xl md:text-3xl font-bold text-white">{metrics.pickupsToday}</span>
-              <span className="text-[10px] md:text-xs text-slate-400 uppercase tracking-wider font-bold">Pickups</span>
+              <span className="block text-theme-header text-white dark:text-slate-900">{metrics.pickupsToday}</span>
+              <span className="text-theme-caption text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">Pickups</span>
             </div>
-            <div className="text-center px-2 border-x border-white/10">
-              <span className="block text-2xl md:text-3xl font-bold text-white">{metrics.returnsToday}</span>
-              <span className="text-[10px] md:text-xs text-slate-400 uppercase tracking-wider font-bold">Return</span>
+            <div className="text-center px-2 border-x border-white/10 dark:border-slate-900/10">
+              <span className="block text-theme-header text-white dark:text-slate-900">{metrics.returnsToday}</span>
+              <span className="text-theme-caption text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">Return</span>
             </div>
             <div className="text-center px-2">
-              <span className="block text-2xl md:text-3xl font-bold text-rose-400">{metrics.lateRentals}</span>
-              <span className="text-[10px] md:text-xs text-rose-400/80 uppercase tracking-wider font-bold">Late</span>
+              <span className="block text-theme-header text-rose-400 dark:text-rose-600">{metrics.lateRentals}</span>
+              <span className="text-theme-caption text-rose-400/80 dark:text-rose-600/80 uppercase tracking-wider font-bold">Late</span>
             </div>
           </div>
         </div>
@@ -334,14 +335,14 @@ export default function AdminOverviewPage() {
       {/* FILTERABLE STATUS CARDS */}
       <div className="space-y-6">
         <div className="flex items-center justify-between px-1">
-            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.25em]">Operational Filter Engine</h3>
-            <div className="h-px flex-1 bg-slate-200/60 mx-6 hidden sm:block"></div>
+            <h3 className="text-theme-caption text-muted uppercase tracking-[0.25em]">Operational Filter Engine</h3>
+            <div className="h-px flex-1 bg-border mx-6 hidden sm:block"></div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6 sm:gap-8">
           <FilterCard title="Total Orders" count={orders.length} status="All" active={orderFilter === 'All'} onClick={() => setOrderFilter('All')} color="bg-slate-500" icon={LayoutDashboard} />
           <FilterCard title="Pending" count={metrics.pendingRequests} status="Pending" active={orderFilter === 'Pending'} onClick={() => setOrderFilter('Pending')} color="bg-amber-500" icon={ClipboardList} />
           <FilterCard title="Approved" count={metrics.approvedOrders} status="Approved" active={orderFilter === 'Approved'} onClick={() => setOrderFilter('Approved')} color="bg-blue-500" icon={Check} />
-          <FilterCard title="In Field" count={metrics.activeRentals} status="Active" active={orderFilter === 'Active'} onClick={() => setOrderFilter('Active')} color="bg-indigo-500" icon={Truck} />
+          <FilterCard title="Active" count={metrics.activeRentals} status="Active" active={orderFilter === 'Active'} onClick={() => setOrderFilter('Active')} color="bg-indigo-500" icon={Truck} />
           <FilterCard title="Overdue" count={metrics.lateRentals} status="Late" active={orderFilter === 'Late'} onClick={() => setOrderFilter('Late')} color="bg-rose-500" icon={AlertOctagon} />
           <FilterCard title="Completed" count={metrics.completedRentals} status="Completed" active={orderFilter === 'Completed'} onClick={() => setOrderFilter('Completed')} color="bg-emerald-500" icon={Check} />
         </div>
@@ -351,16 +352,16 @@ export default function AdminOverviewPage() {
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">{orderFilter === 'All' ? 'Recent Orders' : `${orderFilter} Orders`}</h2>
-            <p className="text-xs text-slate-500 font-medium mt-1">{filteredOrders.length} records found</p>
+            <h2 className="text-theme-title text-foreground tracking-tight">{orderFilter === 'All' ? 'Recent Orders' : `${orderFilter} Orders`}</h2>
+            <p className="text-theme-caption text-muted mt-1">{filteredOrders.length} records found</p>
           </div>
           <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto items-center">
             <div className="relative w-full md:w-72 group">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
               <input 
                 type="text" 
                 placeholder="Search orders, clients..." 
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all shadow-sm"
+                className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl text-theme-label outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all shadow-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -388,17 +389,17 @@ export default function AdminOverviewPage() {
       )}
 
       {createOrderStep === 'shop' && (
-        <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto animate-in fade-in duration-300">
-          <div className="bg-white border-b border-slate-200 sticky top-0 z-40 px-6 h-16 flex items-center justify-between shadow-sm">
+        <div className="fixed inset-0 bg-background z-50 overflow-y-auto animate-in fade-in duration-300">
+          <div className="bg-surface border-b border-border sticky top-0 z-40 px-6 h-16 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-4">
               <Button variant="secondary" size="sm" onClick={() => { setCreateOrderStep('none'); setPosCart([]); }}><X className="w-4 h-4 mr-2" /> Cancel</Button>
-              <div className="h-6 w-px bg-slate-200"></div>
-              <h2 className="font-bold text-slate-900">New Order for <span className="text-indigo-600">{selectedClient?.firstName} {selectedClient?.lastName}</span></h2>
+              <div className="h-6 w-px bg-border"></div>
+              <h2 className="text-theme-subtitle text-foreground">New Order for <span className="text-primary">{selectedClient?.firstName} {selectedClient?.lastName}</span></h2>
             </div>
             <div className="flex items-center gap-3">
               <div className="text-right mr-2 hidden md:block">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Estimated Total</p>
-                <p className="text-xl font-bold text-slate-900">{formatCurrency(posTotal)}</p>
+                <p className="text-theme-caption font-bold text-muted uppercase tracking-wider">Estimated Total</p>
+                <p className="text-theme-title text-foreground">{formatCurrency(posTotal)}</p>
               </div>
               <Button onClick={() => setCreateOrderStep('review')} disabled={posCart.length === 0}>Review Order ({posCart.length}) <ChevronRight className="w-4 h-4 ml-2" /></Button>
             </div>
@@ -406,13 +407,13 @@ export default function AdminOverviewPage() {
           <div className="max-w-7xl mx-auto p-6">
             <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:max-w-lg">
-                <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase px-1">Pickup Date</label>
-                  <input type="date" className="w-full bg-transparent text-slate-900 font-bold outline-none" value={posDates.start} onChange={e => setPosDates({ ...posDates, start: e.target.value })} />
+                <div className="bg-surface p-3 rounded-xl border border-border shadow-sm flex flex-col gap-1">
+                  <label className="text-theme-caption font-black text-muted uppercase px-1">Pickup Date</label>
+                  <input type="date" className="w-full bg-transparent text-foreground text-theme-label outline-none" value={posDates.start} onChange={e => setPosDates({ ...posDates, start: e.target.value })} />
                 </div>
-                <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase px-1">Return Date</label>
-                  <input type="date" className="w-full bg-transparent text-slate-900 font-bold outline-none" value={posDates.end} onChange={e => setPosDates({ ...posDates, end: e.target.value })} />
+                <div className="bg-surface p-3 rounded-xl border border-border shadow-sm flex flex-col gap-1">
+                  <label className="text-theme-caption font-black text-muted uppercase px-1">Return Date</label>
+                  <input type="date" className="w-full bg-transparent text-foreground text-theme-label outline-none" value={posDates.end} onChange={e => setPosDates({ ...posDates, end: e.target.value })} />
                 </div>
               </div>
             </div>
@@ -444,8 +445,8 @@ export default function AdminOverviewPage() {
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-white/10 rounded-lg text-emerald-400"><Check className="w-5 h-5" /></div>
                         <div>
-                            <h3 className="text-xl font-bold tracking-tight">Process Return Audit</h3>
-                            <p className="text-sm text-slate-400 font-medium">Order #{returnOrder.id} • {returnOrder.clientName}</p>
+                            <h3 className="text-theme-title font-bold tracking-tight">Process Return Audit</h3>
+                            <p className="text-theme-caption text-slate-400 font-medium">Order #{returnOrder.id} • {returnOrder.clientName}</p>
                         </div>
                     </div>
                     <button onClick={() => setReturnOrder(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
@@ -456,8 +457,8 @@ export default function AdminOverviewPage() {
                     {/* Dates & Logistics */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">Actual Return Date</label>
-                            <input type="date" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all" value={returnDate} onChange={(e) => setReturnDate(e.target.value)} />
+                            <label className="text-theme-caption font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">Actual Return Date</label>
+                            <input type="date" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-theme-label text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all" value={returnDate} onChange={(e) => setReturnDate(e.target.value)} />
                         </div>
                         <div className="space-y-5">
                             <div>
@@ -524,8 +525,8 @@ export default function AdminOverviewPage() {
                                             <div className="flex items-center gap-3">
                                                 <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center font-bold text-xl text-slate-400 group-hover:scale-110 transition-transform">{invItem?.image || '📦'}</div>
                                                 <div>
-                                                    <p className="font-bold text-slate-900 text-sm">{invItem?.name}</p>
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Original Qty: {item.qty}</p>
+                                                    <p className="text-theme-body-bold text-slate-900">{invItem?.name}</p>
+                                                    <p className="text-theme-caption text-slate-400 font-bold uppercase tracking-tight">Original Qty: {item.qty}</p>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-4 bg-slate-50/50 p-2 rounded-xl border border-slate-100/50">
@@ -576,43 +577,43 @@ export default function AdminOverviewPage() {
                     {/* Financial Summary & Payment */}
                     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-8 shadow-inner">
                         <div className="space-y-2.5">
-                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Financial Summary</h4>
-                            <div className="flex justify-between text-xs font-medium">
+                            <h4 className="text-theme-caption font-black text-slate-400 uppercase tracking-widest mb-4">Financial Summary</h4>
+                            <div className="flex justify-between text-theme-body">
                                 <span className="text-slate-500">Rental Subtotal</span>
                                 <span className="text-slate-900 font-bold">{formatCurrency(returnTotals.subtotal)}</span>
                             </div>
-                            <div className="flex justify-between text-xs font-medium">
+                            <div className="flex justify-between text-theme-body">
                                 <span className="text-slate-500">Late Fees</span>
                                 <span className="text-rose-600 font-bold">+{formatCurrency(returnTotals.lateFee)}</span>
                             </div>
-                            <div className="flex justify-between text-xs font-medium">
+                            <div className="flex justify-between text-theme-body">
                                 <span className="text-slate-500">Damage/Loss Penalty</span>
                                 <span className="text-rose-600 font-bold">+{formatCurrency(returnTotals.lossFee + returnTotals.damageFee)}</span>
                             </div>
-                            <div className="flex justify-between text-xs font-medium pt-2 border-t border-slate-200">
+                            <div className="flex justify-between text-theme-body pt-2 border-t border-slate-200">
                                 <span className="text-slate-500">Total Revised Bill</span>
-                                <span className="font-black text-slate-900">{formatCurrency(returnTotals.total)}</span>
+                                <span className="text-theme-body-bold text-slate-900">{formatCurrency(returnTotals.total)}</span>
                             </div>
-                            <div className="flex justify-between text-xs font-medium">
+                            <div className="flex justify-between text-theme-body">
                                 <span className="text-slate-500">Already Paid</span>
                                 <span className="text-emerald-600 font-bold">-{formatCurrency(returnOrder.amountPaid)}</span>
                             </div>
-                            <div className="flex justify-between text-sm font-black pt-3 border-t-2 border-slate-900 mt-2">
-                                <span className="text-slate-900 uppercase tracking-tight">Amount Due Now</span>
-                                <span className="text-rose-600 text-xl">{formatCurrency(Math.max(0, returnTotals.total - returnOrder.amountPaid))}</span>
+                            <div className="flex justify-between text-theme-subtitle font-black pt-3 border-t-2 border-slate-900 mt-2">
+                                <span className="text-slate-900 uppercase tracking-tighter">Amount Due Now</span>
+                                <span className="text-rose-600 text-theme-header">{formatCurrency(Math.max(0, returnTotals.total - returnOrder.amountPaid))}</span>
                             </div>
                         </div>
 
                         <div className="space-y-4">
-                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Process Payment</h4>
+                            <h4 className="text-theme-caption font-black text-slate-400 uppercase tracking-widest mb-4">Process Payment</h4>
                             <div className="relative group">
-                                <div className={`absolute left-4 top-1/2 -translate-y-1/2 font-black text-xl transition-colors ${submitAttempted && (!paymentAmount || paymentAmount <= 0) ? 'text-rose-500' : 'text-slate-400 group-focus-within:text-indigo-500'}`}>¢</div>
+                                <div className={`absolute left-4 top-1/2 -translate-y-1/2 font-black text-theme-header transition-colors ${submitAttempted && (!paymentAmount || paymentAmount <= 0) ? 'text-rose-500' : 'text-slate-400 group-focus-within:text-indigo-500'}`}>¢</div>
                                 <input 
                                     type="number" 
                                     step="0.01"
                                     min="0.01"
                                     required
-                                    className={`w-full pl-10 pr-4 py-5 bg-white border rounded-2xl text-2xl font-black text-slate-900 outline-none transition-all shadow-sm ${
+                                    className={`w-full pl-10 pr-4 py-5 bg-white border rounded-2xl text-theme-header font-black text-slate-900 outline-none transition-all shadow-sm ${
                                         submitAttempted && (!paymentAmount || paymentAmount <= 0) 
                                         ? 'border-rose-500 focus:ring-rose-500/10' 
                                         : 'border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10'
@@ -626,13 +627,13 @@ export default function AdminOverviewPage() {
                                 />
                             </div>
                             <div className="flex gap-2">
-                                <button onClick={() => setPaymentAmount(Math.max(0, returnTotals.total - returnOrder.amountPaid))} className="flex-1 py-2.5 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase rounded-xl border border-indigo-100 hover:bg-indigo-100 transition-colors shadow-sm">Pay Full Balance</button>
-                                <button onClick={() => setPaymentAmount(0)} className="flex-1 py-2.5 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-xl border border-slate-200 hover:bg-slate-200 transition-colors shadow-sm">Clear</button>
+                                <button onClick={() => setPaymentAmount(Math.max(0, returnTotals.total - returnOrder.amountPaid))} className="flex-1 py-2.5 bg-indigo-50 text-indigo-600 text-theme-caption font-black uppercase rounded-xl border border-indigo-100 hover:bg-indigo-100 transition-colors shadow-sm">Pay Full Balance</button>
+                                <button onClick={() => setPaymentAmount(0)} className="flex-1 py-2.5 bg-slate-100 text-slate-500 text-theme-caption font-black uppercase rounded-xl border border-slate-200 hover:bg-slate-200 transition-colors shadow-sm">Clear</button>
                             </div>
                             {returnTotals.balance > 0 && (
                                 <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100 mt-2">
                                     <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                                    <p className="text-[10px] text-amber-700 font-bold italic leading-tight">Order remains in 'Settlement' until balance is ¢0.</p>
+                                    <p className="text-theme-caption text-amber-700 font-bold italic leading-tight">Order remains in 'Settlement' until balance is ¢0.</p>
                                 </div>
                             )}
                         </div>

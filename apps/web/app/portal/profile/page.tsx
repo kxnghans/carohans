@@ -9,10 +9,10 @@ import { PortalFormData } from '../../types';
 export default function PortalProfilePage() {
   const { portalFormData, setPortalFormData, updateProfile } = useAppStore();
 
-  const handleUpdate = (data: PortalFormData) => {
+  const handleUpdate = async (data: PortalFormData) => {
     // Update local state and trigger context update
     setPortalFormData(data);
-    updateProfile(data);
+    await updateProfile(data);
   };
 
   return (
