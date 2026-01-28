@@ -39,7 +39,7 @@ export default function AdminLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 pb-24">
+    <div className="min-h-screen bg-background font-sans text-slate-900 selection:bg-indigo-100 pb-24">
       {/* HEADER */}
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">

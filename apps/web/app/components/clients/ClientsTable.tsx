@@ -71,9 +71,10 @@ export const ClientsTable = ({ data }: { data: Client[] }) => {
 
     return (
         <Card noPadding className="overflow-hidden">
-            <table className="w-full text-left border-collapse">
-                <thead>
-                    <tr className="border-b border-slate-100 bg-slate-50/50">
+            <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full text-left border-collapse min-w-[800px]">
+                    <thead>
+                        <tr className="border-b border-slate-100 bg-slate-50/50">
                         <th 
                             className="p-4 pl-6 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:bg-slate-100/50 transition-colors"
                             onClick={() => requestSort('firstName')}
@@ -170,6 +171,7 @@ export const ClientsTable = ({ data }: { data: Client[] }) => {
                     ))}
                 </tbody>
             </table>
+            </div>
         </Card>
     );
 };

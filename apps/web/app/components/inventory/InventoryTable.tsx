@@ -184,8 +184,8 @@ export const InventoryTable = ({
 
   return (
     <>
-    <div className="overflow-x-auto pb-12">
-      <table className="w-full text-left border-collapse">
+    <div className="overflow-x-auto pb-12 custom-scrollbar">
+      <table className="w-full text-left border-collapse min-w-[800px]">
         <thead>
           <tr className="bg-slate-50/50 border-b border-slate-200">
             <th 
