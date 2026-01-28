@@ -18,13 +18,8 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      {/* Abstract Background Design */}
-      <div className="absolute inset-0 z-0 opacity-40">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-100 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-      </div>
-
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      
       <div className="max-w-4xl w-full z-10 grid md:grid-cols-2 gap-12 items-center">
         <div className="space-y-6 flex flex-col items-center md:items-start text-center md:text-left">
           <button 
@@ -35,7 +30,7 @@ export default function LandingPage() {
             <span className="pt-px">Contact</span>
           </button>
           <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
-            <h1 className="text-6xl font-black text-slate-900 leading-tight mb-6">
+            <h1 className="text-4xl xs:text-5xl sm:text-6xl font-black text-slate-900 leading-tight mb-6">
               CaroHans <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Ventures</span>
             </h1>

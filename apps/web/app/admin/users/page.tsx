@@ -190,70 +190,72 @@ export default function AdminUsersPage() {
                 data.length === 0 ? (
                      <div className="p-8 text-center text-slate-500 text-sm">No users found.</div>
                 ) : (
-                <table className="w-full text-left border-collapse animate-in fade-in slide-in-from-top-2 duration-200">
-                    <thead>
-                        <tr className="border-b border-slate-100">
-                            <th className="p-4 pl-6 text-xs font-bold text-slate-500 uppercase">User / Email</th>
-                            <th className="p-4 text-xs font-bold text-slate-500 uppercase">Username</th>
-                            <th className="p-4 text-xs font-bold text-slate-500 uppercase text-center">Role</th>
-                            <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right">Access Level</th>
-                            <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right pr-6">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {data.map(user => (
-                            <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="p-4 pl-6">
-                                    <div className="font-bold text-slate-900">{user.clientName}</div>
-                                    <div className="text-xs text-slate-500">{user.clientEmail}</div>
-                                </td>
-                                <td className="p-4 text-sm font-mono text-slate-600">
-                                    {user.username}
-                                </td>
-                                <td className="p-4 text-center">
-                                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold capitalize ${
-                                        user.role === 'admin' 
-                                        ? 'bg-purple-100 text-purple-700' 
-                                        : 'bg-emerald-100 text-emerald-700'
-                                    }`}>
-                                        {user.role === 'admin' && <Shield className="w-3 h-3" />}
-                                        {user.role}
-                                    </span>
-                                </td>
-                                <td className="p-4">
-                                    <div className="flex justify-end">
-                                        {user.role === 'client' ? (
-                                            <Button size="sm" onClick={() => handleActionClick(user)}>
-                                                Promote
-                                            </Button>
-                                        ) : (
-                                            <Button size="sm" variant="secondary" onClick={() => handleActionClick(user)}>
-                                                Demote
-                                            </Button>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="p-4 pr-6">
-                                    <div className="flex justify-end">
-                                        <Button 
-                                            size="sm" 
-                                            variant="danger" 
-                                            onClick={() => {
-                                                if (alwaysApproveDelete) {
-                                                    deleteUser(user.id);
-                                                } else {
-                                                    setDeleteTarget(user);
-                                                }
-                                            }}
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                </td>
+                <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full text-left border-collapse animate-in fade-in slide-in-from-top-2 duration-200 min-w-[800px]">
+                        <thead>
+                            <tr className="border-b border-slate-100">
+                                <th className="p-4 pl-6 text-xs font-bold text-slate-500 uppercase">User / Email</th>
+                                <th className="p-4 text-xs font-bold text-slate-500 uppercase">Username</th>
+                                <th className="p-4 text-xs font-bold text-slate-500 uppercase text-center">Role</th>
+                                <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right">Access Level</th>
+                                <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right pr-6">Action</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {data.map(user => (
+                                <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
+                                    <td className="p-4 pl-6">
+                                        <div className="font-bold text-slate-900">{user.clientName}</div>
+                                        <div className="text-xs text-slate-500">{user.clientEmail}</div>
+                                    </td>
+                                    <td className="p-4 text-sm font-mono text-slate-600">
+                                        {user.username}
+                                    </td>
+                                    <td className="p-4 text-center">
+                                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold capitalize ${
+                                            user.role === 'admin' 
+                                            ? 'bg-purple-100 text-purple-700' 
+                                            : 'bg-emerald-100 text-emerald-700'
+                                        }`}>
+                                            {user.role === 'admin' && <Shield className="w-3 h-3" />}
+                                            {user.role}
+                                        </span>
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="flex justify-end">
+                                            {user.role === 'client' ? (
+                                                <Button size="sm" onClick={() => handleActionClick(user)}>
+                                                    Promote
+                                                </Button>
+                                            ) : (
+                                                <Button size="sm" variant="secondary" onClick={() => handleActionClick(user)}>
+                                                    Demote
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="p-4 pr-6">
+                                        <div className="flex justify-end">
+                                            <Button 
+                                                size="sm" 
+                                                variant="danger" 
+                                                onClick={() => {
+                                                    if (alwaysApproveDelete) {
+                                                        deleteUser(user.id);
+                                                    } else {
+                                                        setDeleteTarget(user);
+                                                    }
+                                                }}
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
                 )
             )}
         </Card>

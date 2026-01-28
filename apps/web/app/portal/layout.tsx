@@ -67,7 +67,7 @@ export default function PortalLayout({
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 pb-24">
+    <div className="min-h-screen bg-background font-sans text-slate-900 selection:bg-indigo-100 pb-24">
       <NotificationToast />
       
       {/* HEADER */}
