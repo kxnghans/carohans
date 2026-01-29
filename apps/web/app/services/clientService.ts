@@ -35,7 +35,7 @@ export const updateClientProfile = async (userId: string, details: PortalFormDat
         name: fullName,
         first_name: details.firstName,
         last_name: details.lastName,
-        username: details.username,
+        username: details.username.toLowerCase(),
         phone: details.phone,
         email: details.email,
         address: details.address,

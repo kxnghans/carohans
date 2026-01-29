@@ -78,6 +78,7 @@ export interface Metrics {
     approvedOrders: number;
     lateRentals: number;
     completedRentals: number;
+    settlementOrders: number;
     revenueGrowth: number;
     avgOrderValue: number;
     pickupsToday: number;

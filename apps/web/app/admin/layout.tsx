@@ -7,6 +7,7 @@ import { Icons } from '../lib/icons';
 import { Button } from '../components/ui/Button';
 import { CalendarModal } from '../components/modals/CalendarModal';
 import { ContactModal } from '../components/modals/ContactModal';
+import { ClientSelector } from '../components/modals/ClientSelector';
 import { NotificationToast } from '../components/common/NotificationToast';
 import { useAppStore } from '../context/AppContext';
 
@@ -17,9 +18,10 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout, theme, setTheme } = useAppStore();
+  const { logout, theme, setTheme, clients, setPortalFormData } = useAppStore();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
+  const [isClientSelectorOpen, setIsClientSelectorOpen] = useState(false);
   const {
     LayoutDashboard,
     Users,
@@ -30,7 +32,8 @@ export default function AdminLayout({
     Phone,
     Sun,
     Moon,
-    Laptop
+    Laptop,
+    ExternalLink
   } = Icons;
 
   const ThemeIcon = () => {
@@ -43,6 +46,23 @@ export default function AdminLayout({
     if (theme === 'system') setTheme('light');
     else if (theme === 'light') setTheme('dark');
     else setTheme('system');
+  };
+
+  const handleClientPortalAccess = (client: any) => {
+    setPortalFormData({
+        firstName: client.firstName || client.name?.split(' ')[0] || '',
+        lastName: client.lastName || client.name?.split(' ').slice(1).join(' ') || '',
+        username: client.username || '',
+        phone: client.phone || '',
+        email: client.email || '',
+        address: client.address || '',
+        image: client.image || '',
+        color: client.color || '',
+        start: '',
+        end: ''
+    });
+    setIsClientSelectorOpen(false);
+    router.push('/portal/inventory');
   };
 
   const navItems = [
@@ -59,7 +79,7 @@ export default function AdminLayout({
       <header className="bg-surface/80 backdrop-blur-md border-b border-border sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-slate-900 to-slate-800 dark:from-white dark:to-slate-100 rounded-xl flex items-center justify-center text-white dark:text-slate-900 font-bold shadow-lg shadow-slate-200 dark:shadow-none">
+            <div className="flex-shrink-0 w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-text font-black shadow-lg shadow-primary/20">
               CH
             </div>
             <div className="block max-w-[100px] xs:max-w-[120px] sm:max-w-none overflow-hidden">
@@ -70,8 +90,23 @@ export default function AdminLayout({
 
           <div className="flex items-center gap-2">
              <button 
+              onClick={() => setIsClientSelectorOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/5 dark:bg-primary/10 text-primary border border-primary/10 hover:bg-primary/10 transition-all font-bold text-theme-caption uppercase tracking-wide"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span className="pt-px">Client Portal</span>
+            </button>
+            {isClientSelectorOpen && (
+                <ClientSelector 
+                    clients={clients} 
+                    onSelect={handleClientPortalAccess} 
+                    onClose={() => setIsClientSelectorOpen(false)} 
+                />
+            )}
+
+             <button 
               onClick={() => setIsContactOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 text-theme-caption font-bold tracking-wide uppercase hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors border border-transparent dark:border-border/50"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/5 dark:bg-primary/10 text-primary border border-primary/10 hover:bg-primary/10 transition-all font-bold text-theme-caption uppercase tracking-wide"
             >
               <Phone className="w-3.5 h-3.5" />
               <span className="pt-px">Contact</span>
@@ -83,7 +118,7 @@ export default function AdminLayout({
                 <CalendarIcon className="w-4 h-4 mr-2 text-muted" /> Block Calendar
               </Button>
             </div>
-            <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsContactOpen(false)} />
+            <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} />
 
             <div className="h-6 w-px bg-border mx-1"></div>
 
@@ -99,7 +134,7 @@ export default function AdminLayout({
                         <button 
                           onClick={cycleTheme}
                           title={`Theme: ${theme}`}
-                          className="h-[42px] aspect-square text-muted hover:text-primary dark:hover:text-amber-500 transition-colors flex items-center justify-center rounded-full bg-background border border-border hover:bg-surface"
+                          className="h-[42px] aspect-square text-muted hover:text-primary dark:hover:text-warning transition-colors flex items-center justify-center rounded-full bg-background border border-border hover:bg-surface"
                         >
                           <ThemeIcon />
                         </button>          </div>
@@ -118,10 +153,10 @@ export default function AdminLayout({
                 key={tab.href}
                 href={tab.href}
                 className={`
-                    flex items-center gap-2 px-5 py-2.5 rounded-full text-theme-subtitle transition-all border-2
+                    flex items-center gap-2 px-5 py-2.5 rounded-xl text-theme-subtitle transition-all border-2 font-bold
                     ${isActive
-                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-white dark:border-slate-900 shadow-lg shadow-indigo-200/20 dark:shadow-none'
-                    : 'bg-surface text-muted hover:bg-background border-transparent'}
+                    ? 'bg-primary text-primary-text border-primary shadow-xl shadow-primary/20 hover:opacity-90'
+                    : 'bg-surface text-muted hover:bg-primary/5 hover:text-primary hover:border-primary/10 border-transparent'}
                   `}
               >
                 <tab.icon className="w-4 h-4" />

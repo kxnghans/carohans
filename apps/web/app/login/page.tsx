@@ -42,7 +42,7 @@ export default function LoginPage() {
       
       if (!isEmail) {
           const { data: resolvedEmail, error: rpcError } = await supabase
-            .rpc('get_email_for_login', { login_input: loginInput });
+            .rpc('get_email_for_login', { login_input: loginInput.toLowerCase() });
 
           if (rpcError || !resolvedEmail) {
               throw new Error('Invalid username or email.');
@@ -128,13 +128,13 @@ export default function LoginPage() {
 
         <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-700">
           
-          <div className="bg-surface/60 dark:bg-slate-900/80 backdrop-blur-2xl p-8 md:p-12 rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-border dark:border-slate-800 relative overflow-hidden group">
+          <div className="bg-surface/60 dark:bg-surface/80 backdrop-blur-2xl p-8 md:p-12 rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-border dark:border-border/50 relative overflow-hidden group">
             
             {/* Exclusive Creative Background for Login Card */}
             <div className="bg-flow pointer-events-none">
-              <div className="flow-shape w-[400px] h-[400px] bg-indigo-500/[0.08] dark:bg-indigo-500/10 rounded-full top-[-20%] left-[-20%] animate-[float-slow_20s_infinite_ease-in-out]"></div>
-              <div className="flow-shape w-[450px] h-[450px] bg-purple-500/[0.08] dark:bg-purple-500/10 rounded-full bottom-[-20%] right-[-20%] animate-[float-reverse_25s_infinite_ease-in-out]"></div>
-              <div className="flow-shape w-[300px] h-[300px] bg-blue-500/[0.04] dark:bg-blue-500/5 rounded-full top-[40%] left-[20%] animate-[float-slow_15s_infinite_ease-in-out_reverse]"></div>
+              <div className="flow-shape w-[400px] h-[400px] bg-primary/[0.08] dark:bg-primary/5 rounded-full top-[-20%] left-[-20%] animate-[float-slow_20s_infinite_ease-in-out]"></div>
+              <div className="flow-shape w-[450px] h-[450px] bg-blob-purple/10 rounded-full bottom-[-20%] right-[-20%] animate-[float-reverse_25s_infinite_ease-in-out]"></div>
+              <div className="flow-shape w-[300px] h-[300px] bg-accent-primary/[0.04] dark:bg-accent-primary/5 rounded-full top-[40%] left-[20%] animate-[float-slow_15s_infinite_ease-in-out_reverse]"></div>
             </div>
 
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-foreground/10 to-transparent z-20"></div>
@@ -142,8 +142,8 @@ export default function LoginPage() {
             <div className="relative z-10">
                 <div className="flex flex-col items-center mb-10">
                     <div className="relative mb-6">
-                        <div className="inline-flex items-center justify-center w-20 h-20 bg-slate-900 dark:bg-white rounded-3xl shadow-xl shadow-slate-300 dark:shadow-none relative z-10 group-hover:scale-105 transition-transform duration-500">
-                            <span className="text-3xl font-black text-white dark:text-slate-900 tracking-tight">CH</span>
+                        <div className="inline-flex items-center justify-center w-20 h-20 bg-primary dark:bg-primary rounded-3xl shadow-xl shadow-primary/10 dark:shadow-none relative z-10 group-hover:scale-105 transition-transform duration-500">
+                            <span className="text-3xl font-black text-primary-text dark:text-primary-text tracking-tight">CH</span>
                             <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         </div>
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-primary/20 blur-2xl rounded-full -z-10 animate-[pulse-glow_4s_infinite]"></div>
@@ -154,8 +154,8 @@ export default function LoginPage() {
                 </div>
 
                 {error && (
-                <div className="bg-rose-50/80 dark:bg-rose-900/20 backdrop-blur-sm border border-rose-100 dark:border-rose-800 text-rose-600 dark:text-rose-400 p-4 rounded-2xl mb-8 text-theme-caption uppercase tracking-wide flex items-center gap-3 animate-in slide-in-from-top-2">
-                    <div className="w-2 h-2 rounded-full bg-rose-500 shrink-0 shadow-[0_0_8px_rgba(244,63,94,0.4)]"></div>
+                <div className="bg-error/10 dark:bg-rose-900/20 backdrop-blur-sm border border-rose-100 dark:border-rose-800 text-error dark:text-rose-400 p-4 rounded-2xl mb-8 text-theme-caption uppercase tracking-wide flex items-center gap-3 animate-in slide-in-from-top-2">
+                    <div className="w-2 h-2 rounded-full bg-error shrink-0 shadow-[0_0_8px_rgba(244,63,94,0.4)]"></div>
                     {error}
                 </div>
                 )}
@@ -170,7 +170,7 @@ export default function LoginPage() {
                                         <input
                                             type="text"
                                             required
-                                            className="w-full pl-16 pr-4 py-4 bg-background/40 dark:bg-slate-950/40 border border-border dark:border-slate-800 hover:bg-background/60 dark:hover:bg-slate-950/60 focus:bg-background dark:focus:bg-slate-950 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30"
+                                            className="w-full pl-16 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30"
                                             value={loginInput}
                                             onChange={(e) => setLoginInput(e.target.value)}
                                             placeholder="name@example.com"
@@ -189,7 +189,7 @@ export default function LoginPage() {
                                                                                                     <input
                                                                                                         type={showPassword ? "text" : "password"}
                                                                                                         required
-                                                                                                        className="w-full pl-16 pr-12 py-4 bg-background/40 dark:bg-slate-950/40 border border-border dark:border-slate-800 hover:bg-background/60 dark:hover:bg-slate-950/60 focus:bg-background dark:focus:bg-slate-950 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30"
+                                                                                                        className="w-full pl-16 pr-12 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30"
                                                                                                         value={password}
                                                                                                         onChange={(e) => setPassword(e.target.value)}
                                                                                                         placeholder="Enter password.."
@@ -204,7 +204,7 @@ export default function LoginPage() {
 
                 <div className="pt-4">
                     <Button 
-                    className="w-full py-4.5 uppercase bg-slate-900 dark:bg-primary hover:bg-slate-800 dark:hover:bg-primary/90 text-white shadow-xl shadow-slate-900/10 dark:shadow-none rounded-2xl transform transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]" 
+                    className="w-full py-4.5 uppercase bg-primary dark:bg-primary hover:bg-primary dark:hover:bg-primary/90 text-primary-text shadow-xl shadow-slate-900/10 dark:shadow-none rounded-2xl transform transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]" 
                     disabled={loading} 
                     size="lg"
                     >
@@ -218,7 +218,7 @@ export default function LoginPage() {
 
                 <div className="mt-8 text-center pt-8 border-t border-border dark:border-slate-800">
                 <p className="text-theme-body text-muted">
-                    Don't have an account? <Link href="/signup" className="text-primary dark:text-amber-500 hover:underline decoration-2 underline-offset-4 transition-colors">Sign Up</Link>
+                    Don't have an account? <Link href="/signup" className="text-primary dark:text-warning hover:underline decoration-2 underline-offset-4 transition-colors">Sign Up</Link>
                 </p>
                 </div>
             </div>

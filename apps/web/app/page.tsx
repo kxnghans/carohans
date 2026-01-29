@@ -24,7 +24,7 @@ export default function LandingPage() {
         <div className="space-y-6 flex flex-col items-center md:items-start text-center md:text-left">
           <button 
             onClick={() => setIsContactOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-900 text-theme-caption tracking-wide uppercase hover:bg-slate-800 dark:hover:bg-white transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary dark:bg-slate-200 text-primary-text dark:text-primary-text text-theme-caption tracking-wide uppercase hover:bg-primary dark:hover:bg-white transition-colors shadow-sm"
           >
             <Phone className="w-3 h-3" />
             <span className="pt-px">Contact</span>
@@ -50,7 +50,7 @@ export default function LandingPage() {
               <User className="w-24 h-24 text-foreground" />
             </div>
             <div className="flex items-center gap-6 relative z-10">
-              <div className="h-16 w-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+              <div className="h-16 w-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-primary-text transition-colors">
                 <User className="w-10 h-10" />
               </div>
               <div>
@@ -69,7 +69,7 @@ export default function LandingPage() {
               <Search className="w-24 h-24 text-foreground" />
             </div>
             <div className="flex items-center gap-6 relative z-10">
-              <div className="h-16 w-16 bg-background text-muted rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+              <div className="h-16 w-16 bg-background text-muted rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-primary-text transition-colors">
                 <Search className="w-10 h-10" />
               </div>
               <div>
@@ -82,18 +82,18 @@ export default function LandingPage() {
           {/* ADMIN DASHBOARD */}
           <Link
             href="/admin/overview"
-            className="p-6 bg-slate-900 dark:bg-slate-200 border border-slate-800 dark:border-slate-300 rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all group text-left relative overflow-hidden block"
+            className="p-6 bg-primary dark:bg-slate-200 border border-slate-800 dark:border-slate-300 rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all group text-left relative overflow-hidden block"
           >
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-              <LayoutDashboard className="w-24 h-24 text-white dark:text-slate-900" />
+              <LayoutDashboard className="w-24 h-24 text-primary-text dark:text-primary-text" />
             </div>
             <div className="flex items-center gap-6 relative z-10">
-              <div className="h-16 w-16 bg-slate-800 dark:bg-slate-300 text-slate-300 dark:text-slate-900 rounded-2xl flex items-center justify-center group-hover:bg-white dark:group-hover:bg-slate-900 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+              <div className="h-16 w-16 bg-primary dark:bg-slate-300 text-slate-300 dark:text-primary-text rounded-2xl flex items-center justify-center group-hover:bg-white dark:group-hover:bg-primary group-hover:text-foreground dark:group-hover:text-primary-text transition-colors">
                 <LayoutDashboard className="w-10 h-10" />
               </div>
               <div>
-                <h3 className="text-theme-subtitle text-white dark:text-slate-900">Admin Dashboard</h3>
-                <p className="text-slate-400 dark:text-slate-600 text-theme-body">Internal operations & Analytics</p>
+                <h3 className="text-theme-subtitle text-primary-text dark:text-primary-text">Admin Dashboard</h3>
+                <p className="text-muted dark:text-slate-600 text-theme-body">Internal operations & Analytics</p>
               </div>
             </div>
           </Link>

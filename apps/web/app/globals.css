@@ -7,50 +7,108 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
-  color-scheme: light;
-  /* Light Mode (Default) */
-  --bg-primary: #f8fafc; /* Slate-50 */
-  --bg-surface: #ffffff; /* White */
-  --text-primary: #0f172a; /* Slate-900 */
-  --text-secondary: #64748b; /* Slate-500 */
-  --border-default: #e2e8f0; /* Slate-200 */
-  --brand-primary: #4f46e5; /* Indigo-600 */
+  /* Global Palette */
+  --primary: #0f172a;           /* Navy */
+  --secondary: #4f46e5;         /* Indigo/Purple */
+  --accent-primary: #2563eb;    /* Vibrant Blue */
+  --accent-secondary: #64748b;  /* Slate/Grey */
+  
+  /* System States */
+  --success: #10b981;
+  --error: #e11d48;             /* Refined Rose Crimson */
+  --warning: #f59e0b;
+  --neutral: #334155;
+  
+  /* Neutral / UI */
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --foreground: #0f172a;
+  --primary-text: #ffffff;
+  --muted: #64748b;
+  --border: #e2e8f0;
+
+  /* Semantic Status Mapping (Single Source) */
+  --status-pending: var(--warning);
+  --status-approved: var(--accent-secondary);
+  --status-active: var(--accent-primary);
+  --status-late: #f43f5e;       /* Softer Rose-Pink for Late */
+  --status-completed: var(--success);
+  --status-settlement: var(--secondary);
+  --status-rejected: var(--error);
+  --status-canceled: var(--muted); /* Neutral Grey for Canceled */
+
+  /* Transparent Variants */
+  --status-pending-bg: color-mix(in srgb, var(--status-pending), transparent 90%);
+  --status-approved-bg: color-mix(in srgb, var(--status-approved), transparent 90%);
+  --status-active-bg: color-mix(in srgb, var(--status-active), transparent 90%);
+  --status-late-bg: color-mix(in srgb, var(--status-late), transparent 90%);
+  --status-completed-bg: color-mix(in srgb, var(--status-completed), transparent 90%);
+  --status-settlement-bg: color-mix(in srgb, var(--status-settlement), transparent 90%);
+  --status-rejected-bg: color-mix(in srgb, var(--status-rejected), transparent 90%);
+  --status-canceled-bg: color-mix(in srgb, var(--status-canceled), transparent 90%);
+
+  /* Chart & UI Overrides */
+  --chart-label: var(--secondary);
 }
 
-/* Explicit class-based dark mode overrides */
-.dark {
-  color-scheme: dark;
-  --bg-primary: #0f172a; /* Slate-900 */
-  --bg-surface: #1e293b; /* Slate-800 */
-  --text-primary: #f8fafc; /* Slate-50 */
-  --text-secondary: #94a3b8; /* Slate-400 */
-  --border-default: #334155; /* Slate-700 */
-  --brand-primary: #6366f1; /* Indigo-500 */
-}
+@theme {
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-secondary: var(--accent-secondary);
+  
+  --color-success: var(--success);
+  --color-error: var(--error);
+  --color-warning: var(--warning);
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-primary-text: var(--primary-text);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
 
-/* Fallback to system preference if no explicit class is set on html */
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    color-scheme: dark;
-    --bg-primary: #0f172a;
-    --bg-surface: #1e293b;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --border-default: #334155;
-    --brand-primary: #6366f1;
-  }
-}
+  --color-status-pending: var(--status-pending);
+  --color-status-approved: var(--status-approved);
+  --color-status-active: var(--status-active);
+  --color-status-completed: var(--status-completed);
+  --color-status-settlement: var(--status-settlement);
+  
+  --color-status-pending-bg: var(--status-pending-bg);
+  --color-status-approved-bg: var(--status-approved-bg);
+  --color-status-active-bg: var(--status-active-bg);
+  --color-status-completed-bg: var(--status-completed-bg);
+  --color-status-settlement-bg: var(--status-settlement-bg);
+  --color-status-rejected-bg: var(--status-rejected-bg);
+  --color-status-canceled-bg: var(--status-canceled-bg);
 
-@theme inline {
-  --color-background: var(--bg-primary);
-  --color-surface: var(--bg-surface);
-  --color-foreground: var(--text-primary);
-  --color-muted: var(--text-secondary);
-  --color-border: var(--border-default);
-  --color-primary: var(--brand-primary);
+  --color-chart-label: var(--chart-label);
   
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+.dark {
+  color-scheme: dark;
+  --primary: #f8fafc;
+  --secondary: #6366f1;
+  --accent-primary: #60a5fa;
+  --accent-secondary: #94a3b8;
+  
+  --success: #34d399;
+  --error: #fb7185;             /* Softer Rose 400 */
+  --warning: #fbbf24;
+  
+  --background: #0f172a;
+  --surface: #1e283b;
+  --foreground: #f8fafc;
+  --primary-text: #0f172a;
+  --muted: #94a3b8;
+  --border: #334155;
+  
+  --neutral: #e2e8f0;
+
+  /* Chart & UI Overrides */
+  --chart-label: var(--primary);
 }
 
 /* Typography Utilities */
@@ -123,14 +181,21 @@
 }
 
 html {
-  background: var(--bg-primary);
+  background: var(--color-background);
+  color-scheme: light;
 }
 
 body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: var(--color-background);
+  color: var(--color-foreground);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Global Focus Reset */
@@ -160,12 +225,12 @@ input[type='number'] {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--border-default);
+  background: var(--color-border);
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+  background: var(--color-accent-primary);
 }
 
 /* Firefox Support */

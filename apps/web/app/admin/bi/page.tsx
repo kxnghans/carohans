@@ -4,13 +4,92 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Icons } from '../../lib/icons';
 import {
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
-  Legend, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, BarChart, Bar, LabelList
+  Legend, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, BarChart, Bar, LabelList, Sector, Rectangle
 } from 'recharts';
 import { useAppStore } from '../../context/AppContext';
 import { StatCard } from '../../components/dashboard/StatCard';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { formatCurrency, calculateMetrics } from '../../utils/helpers';
+
+// --- REUSABLE DROPDOWN SLICER COMPONENT ---
+const FilterDropdown = ({ label, options, selected, onToggle, allLabel = "All Statuses" }: { 
+  label: string, options: string[], selected: string[], onToggle: (val: string) => void, allLabel?: string 
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { ChevronDown, Check } = Icons;
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const displayText = selected.includes('All') ? 'All' : `${selected.length} Selected`;
+
+  return (
+    <div className="flex flex-col gap-2 flex-1 min-w-[180px] relative" ref={dropdownRef}>
+      <span className="text-theme-caption font-bold text-muted uppercase tracking-widest ml-1">{label}</span>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full h-[38px] px-4 bg-surface border rounded-xl flex items-center justify-between transition-all text-theme-caption font-black uppercase tracking-tight shadow-sm active:scale-[0.98] ${isOpen ? 'border-primary ring-4 ring-primary/5' : 'border-border hover:border-muted'}`}
+      >
+        <span className={selected.includes('All') ? 'text-muted' : 'text-primary'}>{displayText}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-muted transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      
+      {isOpen && (
+        <div className="absolute top-[65px] left-0 right-0 bg-surface border border-border rounded-2xl shadow-2xl z-50 p-2 space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-200 min-w-[200px]">
+          <div className="flex justify-between items-center px-2 py-1.5 border-b border-border/50 mb-1">
+            <span className="text-[9px] font-bold text-muted uppercase tracking-widest">Select {label}</span>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsOpen(false);
+              }}
+              className="text-[10px] font-black text-primary hover:bg-primary/10 px-2.5 py-1 rounded-lg transition-all active:scale-95 border border-primary/20"
+            >
+              Done
+            </button>
+          </div>
+          <button 
+            onClick={() => onToggle('All')}
+            className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-background transition-colors group text-left"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes('All') ? 'bg-primary border-primary shadow-sm' : 'bg-background border-border group-hover:border-primary/50'}`}>
+                {selected.includes('All') && <Check className="w-3 h-3 text-primary-text" />}
+              </div>
+              <span className={`text-theme-caption font-bold uppercase tracking-tight ${selected.includes('All') ? 'text-primary' : 'text-muted'}`}>All</span>
+            </div>
+          </button>
+          <div className="h-px bg-border mx-2 my-1"></div>
+          <div className="max-h-[200px] overflow-y-auto custom-scrollbar space-y-0.5 px-0.5">
+            {options.map(opt => (
+              <button 
+                key={opt}
+                onClick={() => onToggle(opt)}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-background transition-colors group text-left"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes(opt) ? 'bg-primary border-primary shadow-sm' : 'bg-background border-border group-hover:border-primary/50'}`}>
+                    {selected.includes(opt) && <Check className="w-3 h-3 text-primary-text" />}
+                  </div>
+                  <span className={`text-theme-caption font-bold uppercase tracking-tight ${selected.includes(opt) ? 'text-primary' : 'text-muted'}`}>{opt}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function AdminBIPage() {
   const { clients, orders, inventory } = useAppStore();
@@ -117,23 +196,29 @@ export default function AdminBIPage() {
 
   // 5. Return Status Portfolio
   const returnStatusData = useMemo(() => {
-      const statusMap: Record<string, number> = {};
-      const completed = orders.filter(o => o.status === 'Completed' && o.returnStatus);
-      completed.forEach(o => {
+      const statusMap: Record<string, number> = { 'Early': 0, 'On Time': 0, 'Late': 0 };
+      // Include both Completed and Settlement orders as they both represent returned equipment
+      const returnedOrders = orders.filter(o => ['Completed', 'Settlement'].includes(o.status) && o.returnStatus);
+      
+      returnedOrders.forEach(o => {
           const status = o.returnStatus || 'Unknown';
-          statusMap[status] = (statusMap[status] || 0) + 1;
+          if (statusMap[status] !== undefined) {
+            statusMap[status] = (statusMap[status] || 0) + 1;
+          }
       });
 
       const colors: Record<string, string> = {
-          'Early': '#3b82f6',
-          'On Time': '#10b981',
-          'Late': '#ef4444'
+          'Early': 'var(--color-accent-primary)',
+          'On Time': 'var(--color-success)',
+          'Late': 'var(--color-error)'
       };
 
-      return Object.entries(statusMap).map(([name, value]) => ({
+      return Object.entries(statusMap)
+        .filter(([_, value]) => value > 0) // Only show statuses that have data
+        .map(([name, value]) => ({
           name,
           value,
-          color: colors[name] || '#94a3b8'
+          color: colors[name] || 'var(--color-muted)'
       }));
   }, [orders]);
 
@@ -199,8 +284,8 @@ export default function AdminBIPage() {
               title: "Volume Peak",
               desc: `${peakMonth.month} recorded the highest ${categoryFilter.includes('All') ? 'overall' : categoryFilter.join(', ')} volume with ${peakMonth.orders} bookings.`,
               icon: TrendingUp, 
-              color: "text-emerald-600 dark:text-emerald-400", 
-              bg: "bg-emerald-50 dark:bg-emerald-900/20"
+              color: "text-success", 
+              bg: "bg-success/10"
           });
       }
       
@@ -216,8 +301,8 @@ export default function AdminBIPage() {
               title: "Core Advocate",
               desc: `${topClientEntry[0]} is your lead client for this segment, contributing ${((topClientEntry[1] / (localMetrics.totalRevenue || 1)) * 100).toFixed(0)}% of segment revenue.`,
               icon: Users, 
-              color: "text-indigo-600 dark:text-indigo-400", 
-              bg: "bg-indigo-50 dark:bg-indigo-900/20"
+              color: "text-secondary", 
+              bg: "bg-secondary/10"
           });
       }
       const topItem = inventoryPerformanceData[0];
@@ -226,8 +311,8 @@ export default function AdminBIPage() {
               title: "High Demand",
               desc: `"${topItem.name}" has the highest turnover rate in this selection. Consider scaling this specific asset.`,
               icon: Zap, 
-              color: "text-amber-600 dark:text-amber-400", 
-              bg: "bg-amber-50 dark:bg-amber-900/20"
+              color: "text-warning", 
+              bg: "bg-warning/10"
           });
       }
       return insights;
@@ -266,14 +351,47 @@ export default function AdminBIPage() {
       return data.slice(-finalLimit);
   }, [timeRange, volumeRange, financialTrends]);
 
+  const [activeIndex, setActiveIndex] = useState(-1);
+
+  const renderActiveShape = (props: any) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+    return (
+      <g>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 6}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+        <Sector
+          cx={cx}
+          cy={cy}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          innerRadius={outerRadius + 8}
+          outerRadius={outerRadius + 10}
+          fill={fill}
+          fillOpacity={0.3}
+        />
+      </g>
+    );
+  };
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+      const color = payload[0].color || payload[0].payload?.color || 'var(--color-primary)';
       return (
-        <div className="bg-surface p-4 border border-border shadow-xl rounded-xl">
-          <p className="text-muted font-bold uppercase mb-1 tracking-tight text-theme-caption">{label || payload[0].name}</p>
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: payload[0].color || 'var(--color-primary)' }} />
-            <p className="text-foreground font-black text-theme-body">
+        <div 
+          className="bg-surface p-4 border-2 shadow-2xl rounded-2xl transition-all duration-300"
+          style={{ borderColor: color }}
+        >
+          <p className="text-muted font-black uppercase mb-2 tracking-widest text-[10px] opacity-60">{label || payload[0].name}</p>
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: color }} />
+            <p className="text-foreground font-black text-theme-header tracking-tighter">
                 {typeof payload[0].value === 'number' && payload[0].value >= 100 ? formatCurrency(payload[0].value) : payload[0].value}
             </p>
           </div>
@@ -289,79 +407,152 @@ export default function AdminBIPage() {
     return (
       <g>
         <rect x={x - 20} y={y - 25} width={40} height={18} rx={4} fill="var(--color-surface)" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))" className="stroke-border stroke-[0.5px]" />
-        <text x={x} y={y - 12} fill="var(--color-primary)" textAnchor="middle" style={{ fontSize: '10px', fontWeight: 800 }}>
+        <text x={x} y={y - 12} fill="var(--color-chart-label)" textAnchor="middle" style={{ fontSize: '10px', fontWeight: 600 }}>
           {formattedValue}
         </text>
       </g>
     );
   };
 
-  // --- REUSABLE DROPDOWN SLICER COMPONENT ---
-  const FilterDropdown = ({ label, options, selected, onToggle, allLabel = "All Statuses" }: { 
-    label: string, options: string[], selected: string[], onToggle: (val: string) => void, allLabel?: string 
-  }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-    const { ChevronDown, Check } = Icons;
-
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-          setIsOpen(false);
-        }
-      };
-      if (isOpen) document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isOpen]);
-
-    const displayText = selected.includes('All') ? 'All' : `${selected.length} Selected`;
+  const RenderPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, payload }: any) => {
+    const RADIAN = Math.PI / 180;
+    const sin = Math.sin(-RADIAN * midAngle);
+    const cos = Math.cos(-RADIAN * midAngle);
+    
+    // Position start of line slightly outside the outer radius
+    const sx = cx + (outerRadius + 2) * cos;
+    const sy = cy + (outerRadius + 2) * sin;
+    
+    // Middle point for the "elbow"
+    const mx = cx + (outerRadius + 15) * cos;
+    const my = cy + (outerRadius + 15) * sin;
+    
+    // End point extending horizontally
+    const ex = mx + (cos >= 0 ? 1 : -1) * 15;
+    const ey = my;
+    
+    const textAnchor = cos >= 0 ? 'start' : 'end';
+    const sliceColor = payload?.color || "var(--color-chart-label)";
+    const textValue = `${((percent || 0) * 100).toFixed(0)}%`;
 
     return (
-      <div className="flex flex-col gap-2 flex-1 min-w-[180px] relative" ref={dropdownRef}>
-        <span className="text-theme-caption font-bold text-muted uppercase tracking-widest ml-1">{label}</span>
-        <button 
-          onClick={() => setIsOpen(!isOpen)}
-          className={`w-full h-[38px] px-4 bg-surface border rounded-xl flex items-center justify-between transition-all text-theme-caption font-black uppercase tracking-tight shadow-sm active:scale-[0.98] ${isOpen ? 'border-primary ring-4 ring-primary/5' : 'border-border hover:border-muted'}`}
-        >
-          <span className={selected.includes('All') ? 'text-muted' : 'text-primary'}>{displayText}</span>
-          <ChevronDown className={`w-3.5 h-3.5 text-muted transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+      <g>
+        {/* Connector Line with higher contrast */}
+        <path 
+          d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} 
+          stroke={sliceColor} 
+          fill="none" 
+          strokeOpacity={0.8}
+          strokeWidth={1.5}
+        />
+        {/* Small dot anchor at the start of the line (on the slice edge) */}
+        <circle cx={sx} cy={sy} r={2} fill={sliceColor} />
         
-        {isOpen && (
-          <div className="absolute top-[65px] left-0 right-0 bg-surface border border-border rounded-2xl shadow-2xl z-50 p-2 space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-200 min-w-[200px]">
-            <button 
-              onClick={() => onToggle('All')}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-background transition-colors group text-left"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes('All') ? 'bg-primary border-primary shadow-sm' : 'bg-background border-border group-hover:border-primary/50'}`}>
-                  {selected.includes('All') && <Check className="w-3 h-3 text-white" />}
-                </div>
-                <span className={`text-theme-caption font-bold uppercase tracking-tight ${selected.includes('All') ? 'text-primary' : 'text-muted'}`}>All</span>
-              </div>
-            </button>
-            <div className="h-px bg-border mx-2 my-1"></div>
-            <div className="max-h-[200px] overflow-y-auto custom-scrollbar space-y-0.5 px-0.5">
-              {options.map(opt => (
-                <button 
-                  key={opt}
-                  onClick={() => onToggle(opt)}
-                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-background transition-colors group text-left"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes(opt) ? 'bg-primary border-primary shadow-sm' : 'bg-background border-border group-hover:border-primary/50'}`}>
-                      {selected.includes(opt) && <Check className="w-3 h-3 text-white" />}
-                    </div>
-                    <span className={`text-theme-caption font-bold uppercase tracking-tight ${selected.includes(opt) ? 'text-primary' : 'text-muted'}`}>{opt}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+        {/* The Data Label positioned relative to the horizontal line end */}
+        <text 
+          x={ex + (cos >= 0 ? 1 : -1) * 6} 
+          y={ey} 
+          dy={4}
+          textAnchor={textAnchor} 
+          fill={sliceColor} 
+          style={{ 
+            fontSize: '11px', 
+            fontWeight: 700,
+            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))'
+          }}
+        >
+          {textValue}
+        </text>
+      </g>
     );
   };
+
+  const [rotatedInsights, setRotatedInsights] = useState<any[]>([]);
+
+  // 7. Insight Engine
+  const allPotentialInsights = useMemo(() => {
+      const insights: any[] = [];
+      const peakMonth = [...financialTrends].sort((a, b) => b.revenue - a.revenue)[0];
+      if (peakMonth) {
+          insights.push({
+              title: "Volume Peak",
+              desc: `${peakMonth.month} recorded the highest ${categoryFilter.includes('All') ? 'overall' : categoryFilter.join(', ')} volume with ${peakMonth.orders} bookings.`,
+              icon: Icons.TrendingUp, 
+              color: "text-success", 
+              bg: "bg-success/10"
+          });
+      }
+      
+      const clientMap: Record<string, number> = {};
+      categoryFilteredData.forEach(o => {
+          clientMap[o.clientName] = (clientMap[o.clientName] || 0) + Number(o.totalAmount);
+      });
+      const topClientEntry = Object.entries(clientMap).sort((a, b) => b[1] - a[1])[0];
+
+      if (topClientEntry) {
+          insights.push({
+              title: "Core Advocate",
+              desc: `${topClientEntry[0]} is your lead client for this segment, contributing ${((topClientEntry[1] / (localMetrics.totalRevenue || 1)) * 100).toFixed(0)}% of segment revenue.`,
+              icon: Icons.Users, 
+              color: "text-secondary", 
+              bg: "bg-secondary/10"
+          });
+      }
+      const topItem = inventoryPerformanceData[0];
+      if (topItem) {
+          insights.push({
+              title: "High Demand",
+              desc: `"${topItem.name}" has the highest turnover rate in this selection. Consider scaling this specific asset.`,
+              icon: Icons.Zap, 
+              color: "text-warning", 
+              bg: "bg-warning/10"
+          });
+      }
+
+      // Add dynamic general insights
+      if (localMetrics.avgDuration > 5) {
+          insights.push({
+              title: "Extended Rentals",
+              desc: "Average rental duration is currently high. Consider offering loyalty discounts for long-term contracts.",
+              icon: Icons.Calendar,
+              color: "text-secondary",
+              bg: "bg-secondary/10"
+          });
+      }
+
+      if (localMetrics.onTimeReturnRate < 80) {
+          insights.push({
+              title: "Audit Alert",
+              desc: "On-time returns are below threshold. Review late penalty settings to encourage timely equipment recovery.",
+              icon: Icons.AlertCircle,
+              color: "text-error",
+              bg: "bg-error/10"
+          });
+      }
+
+      if (orders.filter(o => o.status === 'Pending').length > 5) {
+          insights.push({
+              title: "Backlog Notice",
+              desc: "Large volume of pending orders detected. Rapid processing will improve inventory liquidity.",
+              icon: Icons.ClipboardList,
+              color: "text-warning",
+              bg: "bg-warning/10"
+          });
+      }
+
+      return insights;
+  }, [financialTrends, inventoryPerformanceData, categoryFilter, localMetrics, categoryFilteredData, orders]);
+
+  useEffect(() => {
+    const shuffle = () => {
+        const shuffled = [...allPotentialInsights].sort(() => 0.5 - Math.random());
+        setRotatedInsights(shuffled.slice(0, 3));
+    };
+    
+    shuffle();
+    const interval = setInterval(shuffle, 60000); // Rotate every minute
+    return () => clearInterval(interval);
+  }, [allPotentialInsights]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
@@ -419,7 +610,7 @@ export default function AdminBIPage() {
           <div className="flex-none">
             <button 
               onClick={resetFilters}
-              className="h-[38px] px-6 bg-slate-900 dark:bg-primary text-white rounded-xl text-theme-caption font-black uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-primary/90 transition-all shadow-lg shadow-slate-200/50 dark:shadow-none active:scale-[0.98] whitespace-nowrap"
+              className="h-[38px] px-6 bg-primary dark:bg-primary text-primary-text rounded-xl text-theme-caption font-black uppercase tracking-widest hover:bg-primary dark:hover:bg-primary/90 transition-all shadow-lg shadow-primary/10 dark:shadow-none active:scale-[0.98] whitespace-nowrap"
             >
               Reset Filters
             </button>
@@ -436,18 +627,18 @@ export default function AdminBIPage() {
             subtext={`${categoryFilter} Contribution`} 
             trend={localMetrics.revenueGrowth} 
             trendLabel="30 Days"
-            color="slate" 
+            color="primary" 
             icon={Cash} 
           />
         </div>
         <div className="flex-1 min-w-[160px] max-w-[calc(50%-12px)] lg:max-w-none">
-          <StatCard title="Avg. Ticket" value={formatCurrency(Math.floor(localMetrics.avgOrderValue))} subtext="Value per booking" color="indigo" icon={Icons.CreditCard} />
+          <StatCard title="Avg. Ticket" value={formatCurrency(Math.floor(localMetrics.avgOrderValue))} subtext="Value per booking" color="secondary" icon={Icons.CreditCard} />
         </div>
         <div className="flex-1 min-w-[160px] max-w-[calc(50%-12px)] lg:max-w-none">
-          <StatCard title="Total Clients" value={clients.length.toString()} subtext="Registered accounts" color="slate" icon={Users} />
+          <StatCard title="Total Clients" value={clients.length.toString()} subtext="Registered accounts" color="primary" icon={Users} />
         </div>
         <div className="flex-1 min-w-[160px] max-w-[calc(50%-12px)] lg:max-w-none">
-          <StatCard title="Avg. Duration" value={`${Math.round(localMetrics.avgDuration || 0)} Days`} subtext="Per rental contract" color="emerald" icon={Calendar} />
+          <StatCard title="Avg. Duration" value={`${Math.round(localMetrics.avgDuration || 0)} Days`} subtext="Per rental contract" color="success" icon={Calendar} />
         </div>
       </div>
       
@@ -460,17 +651,17 @@ export default function AdminBIPage() {
             {isMounted ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={filteredTrends} margin={{ top: 25, right: 30, left: 0, bottom: 0 }}>
-                <defs><linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.15} /><stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} /></linearGradient></defs>
+                <defs><linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-secondary)" stopOpacity={0.15} /><stop offset="95%" stopColor="var(--color-secondary)" stopOpacity={0} /></linearGradient></defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
-                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 13, fontWeight: 500 }} dy={12} />
+                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: 'var(--color-muted)', fontSize: 13, fontWeight: 500 }} dy={12} />
                         <YAxis 
                           axisLine={false} 
                           tickLine={false} 
-                          tick={{ fill: 'var(--text-secondary)', fontSize: 13, fontWeight: 500 }} 
+                          tick={{ fill: 'var(--color-muted)', fontSize: 13, fontWeight: 500 }} 
                           tickFormatter={(v) => v >= 1000000 ? `¢${(v / 1000000).toFixed(1)}M` : `¢${v / 1000}k`} 
                         />
                         <RechartsTooltip content={<CustomTooltip />} />
-                        <Area type="monotone" dataKey="revenue" stroke="var(--color-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)">
+                        <Area type="monotone" dataKey="revenue" stroke="var(--color-secondary)" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)">
                             <LabelList dataKey="revenue" content={<RenderCustomLabel />} />
                         </Area>
               </AreaChart>
@@ -504,8 +695,17 @@ export default function AdminBIPage() {
                   tick={{ fill: 'var(--color-muted)', fontSize: 13, fontWeight: 500 }}
                   label={{ value: 'Bookings', angle: -90, position: 'insideLeft', offset: 0, style: { textAnchor: 'middle', fill: 'var(--color-muted)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' } }}
                 />
-                <RechartsTooltip content={<CustomTooltip />} />
-                <Bar dataKey="orders" fill="var(--color-foreground)" radius={[4, 4, 0, 0]} barSize={30}>
+                <RechartsTooltip 
+                    content={<CustomTooltip />} 
+                    cursor={{ fill: 'var(--color-secondary)', fillOpacity: 0.05 }}
+                />
+                <Bar 
+                    dataKey="orders" 
+                    fill="var(--color-primary)" 
+                    radius={[4, 4, 0, 0]} 
+                    barSize={30}
+                    activeBar={<Rectangle stroke="var(--color-primary)" strokeWidth={1} fillOpacity={0.8} />}
+                >
                     <LabelList dataKey="orders" position="top" style={{ fill: 'var(--color-muted)', fontSize: '12px', fontWeight: 500 }} />
                 </Bar>
               </BarChart>
@@ -524,7 +724,22 @@ export default function AdminBIPage() {
             {isMounted ? (
             <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                    <Pie data={returnStatusData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={5} dataKey="value" label={({ percent }) => `${((percent || 0) * 100).toFixed(0)}%`}>
+                    <Pie 
+                        activeIndex={activeIndex}
+                        activeShape={renderActiveShape}
+                        data={returnStatusData} 
+                        cx="50%" 
+                        cy="50%" 
+                        innerRadius={60} 
+                        outerRadius={85} 
+                        paddingAngle={5} 
+                        dataKey="value" 
+                        stroke="var(--color-surface)"
+                        strokeWidth={2}
+                        label={RenderPieLabel}
+                        onMouseEnter={(_, index) => setActiveIndex(index)}
+                        onMouseLeave={() => setActiveIndex(-1)}
+                    >
                         {returnStatusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                     </Pie>
                     <RechartsTooltip content={<CustomTooltip />} />
@@ -544,14 +759,14 @@ export default function AdminBIPage() {
             <div className="flex items-center p-1 bg-background rounded-xl border border-border shadow-sm">
                 <button 
                     onClick={() => setUsageType('Categories')}
-                    className={`p-2 rounded-lg transition-all ${usageType === 'Categories' ? 'bg-primary text-white shadow-md' : 'text-muted hover:text-foreground'}`}
+                    className={`p-2 rounded-lg transition-all ${usageType === 'Categories' ? 'bg-secondary text-primary-text shadow-md' : 'text-muted hover:text-foreground'}`}
                     title="View Top Categories"
                 >
                     <BarIcon className="w-4 h-4" />
                 </button>
                 <button 
                     onClick={() => setUsageType('Items')}
-                    className={`p-2 rounded-lg transition-all ${usageType === 'Items' ? 'bg-primary text-white shadow-md' : 'text-muted hover:text-foreground'}`}
+                    className={`p-2 rounded-lg transition-all ${usageType === 'Items' ? 'bg-secondary text-primary-text shadow-md' : 'text-muted hover:text-foreground'}`}
                     title="View Top Items"
                 >
                     <Package className="w-4 h-4" />
@@ -565,8 +780,17 @@ export default function AdminBIPage() {
                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--color-border)" />
                     <XAxis type="number" hide />
                     <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fill: 'var(--color-muted)', fontSize: 11, fontWeight: 500 }} />
-                    <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: 'var(--color-background)' }} />
-                    <Bar dataKey="value" fill="var(--color-primary)" radius={[0, 4, 4, 0]} barSize={22}>
+                    <RechartsTooltip 
+                        content={<CustomTooltip />} 
+                        cursor={{ fill: 'var(--color-secondary)', fillOpacity: 0.05 }} 
+                    />
+                    <Bar 
+                        dataKey="value" 
+                        fill="var(--color-secondary)" 
+                        radius={[0, 4, 4, 0]} 
+                        barSize={22}
+                        activeBar={<Rectangle stroke="var(--color-secondary)" strokeWidth={1} fillOpacity={0.8} />}
+                    >
                         <LabelList dataKey="value" position="right" style={{ fill: 'var(--color-muted)', fontSize: '11px', fontWeight: 500 }} offset={10} />
                     </Bar>
                 </BarChart>
@@ -575,25 +799,27 @@ export default function AdminBIPage() {
           </div>
         </Card>
         
-        <Card className="p-6 border-border bg-slate-900 dark:bg-surface text-white dark:text-foreground flex flex-col overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute top-6 right-6 p-2 bg-slate-100 dark:bg-background border border-white/10 dark:border-border rounded-xl text-indigo-400 dark:text-primary z-20 shadow-xl dark:shadow-none">
-                <Sparkles className="w-4 h-4" />
+        <Card className="border-border bg-surface flex flex-col overflow-hidden">
+            <div className="flex justify-between items-start mb-6">
+                <div>
+                    <h3 className="text-theme-title font-bold text-foreground mb-1">System Insights</h3>
+                    <p className="text-theme-body text-muted">Automated performance highlights</p>
+                </div>
+                <div className="p-2 bg-secondary/10 border border-secondary/20 rounded-xl text-secondary shadow-sm">
+                    <Icons.Sparkles className="w-5 h-5" />
+                </div>
             </div>
-            
-            <div className="flex items-center gap-2 mb-4">
-                <h3 className="text-theme-subtitle font-bold tracking-tight">System Insights</h3>
-            </div>
-            <div className="flex-1 space-y-1 z-10">
-                {deepInsights.length > 0 ? deepInsights.map((fact, idx) => (
-                    <div key={idx} className="p-3 bg-white/[0.03] dark:bg-background/50 rounded-2xl border border-white/5 dark:border-border hover:bg-white dark:hover:bg-background transition-all group cursor-default">
+
+            <div className="flex-1 space-y-1">
+                {rotatedInsights.length > 0 ? rotatedInsights.map((fact, idx) => (
+                    <div key={idx} className="p-3 bg-transparent dark:bg-background/50 hover:bg-background/50 dark:hover:bg-background rounded-2xl border border-transparent dark:border-border transition-all group cursor-default">
                         <div className="flex items-center gap-2 mb-1.5">
                             <div className={`p-1.5 rounded-lg ${fact.bg}`}>
                                 <fact.icon className={`w-4 h-4 ${fact.color}`} />
                             </div>
-                            <p className={`text-theme-title font-bold ${fact.color} tracking-tight`}>{fact.title}</p>
+                            <p className={`text-theme-subtitle font-bold ${fact.color} tracking-tight`}>{fact.title}</p>
                         </div>
-                        <p className="text-theme-body text-slate-400 dark:text-muted leading-relaxed font-medium group-hover:text-slate-700 dark:group-hover:text-foreground transition-colors">{fact.desc}</p>
+                        <p className="text-theme-body text-muted leading-relaxed font-medium group-hover:text-foreground transition-colors">{fact.desc}</p>
                     </div>
                 )) : <div className="text-center py-12 text-muted italic text-theme-body">No significant data patterns found for this segment.</div>}
             </div>

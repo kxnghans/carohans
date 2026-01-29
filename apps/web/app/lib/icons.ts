@@ -70,7 +70,8 @@ import {
   SettingsBrightness,
   Visibility,
   VisibilityOff,
-  Laptop
+  Laptop,
+  Launch
 } from '@mui/icons-material';
 
 // --- SYSTEM ICONS (Replacements for Lucide) ---
@@ -130,7 +131,8 @@ export const Icons = {
   Laptop: Laptop,
   Eye: Visibility,
   EyeOff: VisibilityOff,
-  Globe: Language
+  Globe: Language,
+  ExternalLink: Launch
 };
 
 // --- INVENTORY PICKER ICONS ---

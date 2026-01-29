@@ -7,12 +7,13 @@ import { PortalFormData } from '../../types';
 import { InventoryTable } from '../../components/inventory/InventoryTable';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { DatePicker } from '../../components/ui/DatePicker';
 import { InvoiceModal } from '../../components/modals/InvoiceModal';
 import { calculateOrderTotal } from '../../utils/helpers';
 
 export default function AdminInventoryPage() {
 
-  const { Plus, ShoppingCart, Check, X, Pencil, Ban, Loader2 } = Icons;
+  const { Plus, ShoppingCart, Check, X, Pencil, Ban, Loader2, Calendar } = Icons;
 
     const { inventory, setInventory, cart, setCart, clients, submitOrder, showNotification, loading, latePenaltyPerDay, setLatePenaltyPerDay } = useAppStore();
 
@@ -108,94 +109,77 @@ export default function AdminInventoryPage() {
 
   
 
-    const handleDeleteItem = (id: number) => {
-
-      setInventory(prev => prev.filter(item => item.id !== id));
-
-      showNotification("Item deleted successfully", "success");
-
-    };
-
-  
-
-    const handleCreateOrder = () => {
-
-      if (!selectedClient) {
-
-        showNotification("Please select a client", "error");
-
+    const handleReviewOrder = () => {
+      if (!selectedClientId) {
+        showNotification("Please select a client to continue.", "error");
         return;
-
       }
-
       if (!orderDates.start || !orderDates.end) {
-
-        showNotification("Please select pickup and return dates", "error");
-
+        showNotification("Please select both pickup and return dates.", "error");
         return;
-
       }
-
-      
-
-      const orderData: PortalFormData = {
-
-        firstName: selectedClient.firstName,
-
-        lastName: selectedClient.lastName,
-
-        username: selectedClient.username || '',
-
-        phone: selectedClient.phone,
-
-        email: selectedClient.email,
-
-        address: selectedClient.address,
-
-        start: orderDates.start,
-
-        end: orderDates.end
-
-      };
-
-  
-
-      submitOrder(orderData);
-
-      setIsOrderMode(false);
-
-      setSelectedClientId('');
-
-      setOrderDates({ start: '', end: '' });
-
+      if (orderDates.end < orderDates.start) {
+        showNotification("Return date cannot be earlier than the pickup date.", "error");
+        return;
+      }
+      if (cart.length === 0) {
+        showNotification("Your order cart is empty. Please add items to continue.", "error");
+        return;
+      }
+      setShowReview(true);
     };
 
+    const handleCreateOrder = async () => {
+      if (!selectedClient) return;
+      
+      const orderData: PortalFormData = {
+        firstName: selectedClient.firstName,
+        lastName: selectedClient.lastName,
+        username: selectedClient.username || '',
+        phone: selectedClient.phone,
+        email: selectedClient.email,
+        address: selectedClient.address,
+        start: orderDates.start,
+        end: orderDates.end
+      };
   
+      await submitOrder(orderData);
+      setIsOrderMode(false);
+      setSelectedClientId('');
+      setOrderDates({ start: '', end: '' });
+      setCart([]);
+      showNotification("Order created successfully!", "success");
+    };
+
+    const handleDeleteItem = (id: number) => {
+      setInventory(prev => prev.filter(item => item.id !== id));
+      showNotification("Item deleted successfully", "success");
+    };
 
     return (
-      <div className="animate-in fade-in duration-500 space-y-4">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-6">
-                  <h2 className="text-theme-title text-foreground tracking-tight">Inventory</h2>
+      <div className="animate-in fade-in duration-500 space-y-8">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col md:flex-row md:items-center gap-6">
+                  <h1 className="text-theme-hero text-foreground tracking-tight">Inventory Management</h1>
                   
                   {/* LATE PENALTY SETTING */}
                   {!isOrderMode && (
                     <div className="flex items-center gap-3 bg-surface px-4 py-2 rounded-xl border border-border shadow-sm">
-                      <label className="text-theme-caption text-muted uppercase tracking-[0.2em]">Late Penalty Per Day</label>
+                      <label className="text-theme-caption text-muted uppercase tracking-[0.2em] font-bold">Late Penalty</label>
                       <div className="flex items-center gap-1.5">
                         <span className="text-muted text-theme-body">¢</span>
                         <input 
                           type="number" 
                           value={latePenaltyPerDay} 
                           onChange={(e) => setLatePenaltyPerDay(Number(e.target.value))}
-                          className="w-16 bg-background border-none rounded-lg p-1 text-theme-label text-rose-600 dark:text-rose-400 outline-none focus:ring-2 focus:ring-rose-500/20"
+                          className="w-16 bg-background border-none rounded-lg p-1 text-theme-label text-error font-bold outline-none focus:ring-2 focus:ring-rose-500/20 text-center"
                         />
                       </div>
                     </div>
                   )}
                 </div>
   
-                <div className="flex gap-2">
+                <div className="flex items-center gap-3">
         
             {/* EDIT MODE TOGGLE */}
             {!isOrderMode && (
@@ -213,14 +197,14 @@ export default function AdminInventoryPage() {
              <>
                <Button variant="secondary" onClick={toggleOrderMode}><X className="w-4 h-4 mr-2" /> Cancel</Button>
                <Button 
-                 onClick={() => setShowReview(true)} 
-                 disabled={cart.length === 0 || !selectedClientId || !orderDates.start || !orderDates.end}
+                 onClick={handleReviewOrder} 
+                 className="shadow-lg shadow-primary/20"
                >
                  Review Order ({cart.length})
                </Button>
              </>
           ) : (
-            <Button onClick={toggleOrderMode} disabled={isEditMode} className={isEditMode ? "opacity-50" : ""}>
+            <Button onClick={toggleOrderMode} disabled={isEditMode} className={isEditMode ? "opacity-50 shadow-lg shadow-primary/20" : "shadow-lg shadow-primary/20"}>
                <Plus className="w-4 h-4 mr-2" /> New Order
             </Button>
           )}
@@ -228,39 +212,33 @@ export default function AdminInventoryPage() {
       </div>
 
       {isOrderMode && (
-        <div className="bg-surface p-4 rounded-xl border border-border shadow-sm animate-in slide-in-from-top-2 duration-300">
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex flex-col gap-1.5">
+        <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm animate-in slide-in-from-top-2 duration-300">
+           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+              <div className="md:col-span-4 flex flex-col gap-1.5">
                  <label className="text-theme-caption font-black text-muted uppercase tracking-wider ml-1">Client Selection</label>
                  <select 
-                   className="p-2.5 border border-border rounded-lg bg-background text-foreground text-theme-label font-medium outline-none focus:border-primary"
+                   className="p-3 border border-border rounded-xl bg-background text-foreground text-theme-label font-medium outline-none focus:border-primary transition-all"
                    value={selectedClientId}
                    onChange={(e) => setSelectedClientId(e.target.value)}
                  >
                     <option value="">Select Client...</option>
-                                        {clients.map(c => (
-                                          <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>
-                                        ))}
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>
+                    ))}
                  </select>
               </div>
-              <div className="flex flex-col gap-1.5">
-                 <label className="text-theme-caption font-black text-muted uppercase tracking-wider ml-1">Pickup Date</label>
-                 <input 
-                   type="date"
-                   className="p-2.5 border border-border rounded-lg bg-background text-foreground text-theme-label font-medium outline-none focus:border-primary"
-                   value={orderDates.start}
-                   onChange={(e) => setOrderDates(prev => ({ ...prev, start: e.target.value }))}
-                 />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                 <label className="text-theme-caption font-black text-muted uppercase tracking-wider ml-1">Return Date</label>
-                 <input 
-                   type="date"
-                   className="p-2.5 border border-border rounded-lg bg-background text-foreground text-theme-label font-medium outline-none focus:border-primary"
-                   value={orderDates.end}
-                   onChange={(e) => setOrderDates(prev => ({ ...prev, end: e.target.value }))}
-                 />
-              </div>
+              <DatePicker 
+                label="Pickup Date"
+                value={orderDates.start}
+                onChange={(val) => setOrderDates(prev => ({ ...prev, start: val }))}
+                containerClassName="md:col-span-4"
+              />
+              <DatePicker 
+                label="Return Date"
+                value={orderDates.end}
+                onChange={(val) => setOrderDates(prev => ({ ...prev, end: val }))}
+                containerClassName="md:col-span-4"
+              />
            </div>
         </div>
       )}

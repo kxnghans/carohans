@@ -1,71 +1,136 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
+import { DynamicIcon } from '../common/DynamicIcon';
 
-export const ClientSelector = ({ clients, onSelect, onClose }: any) => {
-  const { X, Search, ChevronRight } = Icons;
+export const ClientSelector = ({ clients, onSelect, onClose, isOpen = true }: any) => {
+  const { X, Search, ChevronRight, User, Users } = Icons;
   const [search, setSearch] = useState('');
-  const filtered = clients.filter((c: any) => c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search));
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    }
+    return () => { 
+      document.body.style.overflow = 'unset'; 
+      document.documentElement.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  const filtered = clients.filter((c: any) => {
+    const fullName = `${c.firstName || ''} ${c.lastName || ''}`.toLowerCase();
+    const searchTerm = search.toLowerCase();
+    return fullName.includes(searchTerm) || (c.phone && c.phone.includes(search));
+  });
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
-    window.addEventListener('keydown', handleEsc);
+    if (isOpen) window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
+  }, [isOpen, onClose]);
 
-  return (
+  if (!isOpen || !mounted) return null;
+
+  return createPortal(
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200 overflow-hidden"
       onClick={onClose}
     >
       <div 
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-8 duration-300"
+        className="bg-surface rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-          <h2 className="text-xl font-bold">Select Client</h2>
-          <button onClick={onClose}><X className="w-5 h-5 text-slate-400 hover:text-slate-900" /></button>
+        {/* Header */}
+        <div className="bg-primary dark:bg-primary-text text-primary-text dark:text-primary p-6 flex justify-between items-center flex-shrink-0 border-b border-transparent dark:border-white/40">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/10 p-2 rounded-lg text-primary-text dark:text-primary"><Users className="w-5 h-5" /></div>
+            <div>
+              <h2 className="text-theme-title font-bold tracking-tight">Select Client</h2>
+              <p className="opacity-70 text-theme-caption font-medium">Search the client database</p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose}
+            className="p-2 hover:bg-white/10 rounded-full transition-colors text-primary-text dark:text-primary"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
-        <div className="p-4 bg-slate-50 border-b border-slate-100">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+        
+        <div className="p-4 bg-background/50 border-b border-border">
+          <div className="relative group">
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-secondary transition-colors" />
             <input
-              className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 outline-indigo-500 transition-all font-medium"
+              className="w-full bg-surface border border-border rounded-2xl pl-11 pr-4 py-3.5 outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all font-medium text-foreground placeholder:text-muted/40"
               placeholder="Search by name or phone..."
-              autoFocus
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
         </div>
-        <div className="overflow-y-auto p-2 space-y-1 flex-1">
+
+        <div className="overflow-y-auto p-3 space-y-1 flex-1 custom-scrollbar">
           {filtered.map((c: any) => (
             <button
               key={c.id}
               onClick={() => onSelect(c)}
-              className="w-full text-left p-3 hover:bg-indigo-50 hover:border-indigo-100 border border-transparent rounded-xl transition-all group"
+              className="w-full text-left p-3 hover:bg-primary/5 dark:hover:bg-primary/10 rounded-2xl transition-all group border border-transparent hover:border-primary/10"
             >
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-bold text-slate-900 group-hover:text-indigo-700">{c.name}</p>
-                  <p className="text-xs text-slate-500">{c.phone} • {c.email}</p>
+              <div className="flex items-center gap-4">
+                {/* Profile Pic / Icon */}
+                <div className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center border transition-all ${c.color ? c.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + (c.color.split('-')[1] || 'slate') + '-200 dark:bg-primary/20 dark:border-primary/30' : 'bg-background border-border'}`}>
+                    <DynamicIcon 
+                        iconString={c.image} 
+                        color={c.color} 
+                        className="w-6 h-6" 
+                        fallback={<User className={`w-6 h-6 ${c.color || 'text-muted'}`} />} 
+                    />
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-400" />
+                
+                <div className="flex-1 min-w-0">
+                  <p className="font-black text-theme-body-bold text-foreground group-hover:text-primary transition-colors truncate">
+                    {c.firstName} {c.lastName}
+                  </p>
+                  <p className="text-theme-caption text-muted truncate font-medium">
+                    {c.phone} • {c.email}
+                  </p>
+                </div>
+                
+                <ChevronRight className="w-5 h-5 text-secondary dark:text-warning group-hover:translate-x-0.5 transition-all opacity-50 group-hover:opacity-100" />
               </div>
             </button>
           ))}
+          
           {filtered.length === 0 && (
-            <div className="text-center py-8 text-slate-400">
-              <p>No clients found.</p>
-              <Button variant="secondary" size="sm" className="mt-2">Create New Client</Button>
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mx-auto mb-4 border border-dashed border-border">
+                <Search className="w-8 h-8 text-muted/20" />
+              </div>
+              <p className="text-theme-body text-muted font-medium italic">No clients found.</p>
+              <Button variant="secondary" size="sm" className="mt-4 rounded-xl">Create New Client</Button>
             </div>
           )}
         </div>
+
+        <div className="p-6 bg-background border-t border-border flex justify-end flex-shrink-0">
+          <Button variant="secondary" onClick={onClose} className="w-full md:w-auto rounded-xl px-8">Close</Button>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

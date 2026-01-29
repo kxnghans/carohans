@@ -44,8 +44,8 @@ export const ClientsTable = ({ data }: { data: Client[] }) => {
     const SortIcon = ({ column }: { column: keyof Client }) => {
         if (sortConfig?.key !== column) return <SortUp className="w-3.5 h-3.5 text-muted opacity-30" />;
         return sortConfig.direction === 'asc' 
-            ? <SortUp className="w-3.5 h-3.5 text-primary dark:text-amber-500" /> 
-            : <SortDown className="w-3.5 h-3.5 text-primary dark:text-amber-500" />;
+            ? <SortUp className="w-3.5 h-3.5 text-primary dark:text-warning" /> 
+            : <SortDown className="w-3.5 h-3.5 text-primary dark:text-warning" />;
     };
 
     const toggleExpand = (clientId: number) => {
@@ -63,7 +63,7 @@ export const ClientsTable = ({ data }: { data: Client[] }) => {
         if (client.image?.startsWith('icon:')) {
             const iconKey = client.image.replace('icon:', '');
             const IconComp = InventoryIcons[iconKey];
-            return IconComp ? <IconComp className={`w-4 h-4 ${client.color || 'text-indigo-600'}`} /> : <span>📦</span>;
+            return IconComp ? <IconComp className={`w-4 h-4 ${client.color || 'text-primary'}`} /> : <span>📦</span>;
         }
         if (client.image) {
              return <span>{client.image}</span>;
@@ -106,7 +106,7 @@ export const ClientsTable = ({ data }: { data: Client[] }) => {
                             <tr className="hover:bg-background/50 transition-colors group cursor-pointer" onClick={() => toggleExpand(client.id)}>
                                 <td className="p-4 pl-6">
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${client.color ? client.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + client.color.split('-')[1] + '-200 dark:bg-primary/10 dark:border-primary/20' : 'bg-indigo-50 dark:bg-primary/10 text-primary border-indigo-100 dark:border-primary/20'}`}>
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${client.color ? client.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + client.color.split('-')[1] + '-200 dark:bg-primary/10 dark:border-primary/20' : 'bg-primary/10 dark:bg-primary/10 text-primary border-indigo-100 dark:border-primary/20'}`}>
                                             <RenderClientIcon client={client} />
                                         </div>
                                         <div>
@@ -136,7 +136,7 @@ export const ClientsTable = ({ data }: { data: Client[] }) => {
                                 </td>
                                 <td className="p-4 pr-6 text-right">
                                     <div className={`transition-transform duration-200 ${expandedClientId === client.id ? 'rotate-90' : ''}`}>
-                                        <ChevronRight className={`w-5 h-5 ${expandedClientId === client.id ? 'text-primary dark:text-amber-500' : 'text-muted'}`} />
+                                        <ChevronRight className={`w-5 h-5 ${expandedClientId === client.id ? 'text-primary dark:text-warning' : 'text-muted'}`} />
                                     </div>
                                 </td>
                             </tr>

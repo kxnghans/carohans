@@ -97,30 +97,40 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       .order('created_at', { ascending: false });
 
     if (!error) {
-      const mapped: Order[] = (data || []).map(o => ({
-        id: o.id,
-        clientName: o.client_name,
-        phone: o.phone,
-        email: o.email,
-        status: o.status,
-        startDate: o.start_date,
-        endDate: o.end_date,
-        totalAmount: Number(o.total_amount),
-        amountPaid: Number(o.amount_paid || 0),
-        penaltyAmount: Number(o.penalty_amount || 0),
-        depositPaid: o.deposit_paid,
-        closedAt: o.closed_at,
-        returnStatus: o.return_status,
-        itemIntegrity: o.item_integrity,
-        items: o.order_items.map((oi: any) => ({
-          itemId: oi.inventory_id,
-          qty: oi.quantity,
-          price: Number(oi.unit_price),
-          returnedQty: oi.returned_qty,
-          lostQty: oi.lost_qty,
-          damagedQty: oi.damaged_qty
-        }))
-      }));
+      const today = new Date().toISOString().split('T')[0];
+      const mapped: Order[] = (data || []).map(o => {
+        let status = o.status;
+        
+        // Auto-transition: If Approved and pickup date is reached, treat as Active
+        if (status === 'Approved' && o.start_date <= today) {
+          status = 'Active';
+        }
+
+        return {
+          id: o.id,
+          clientName: o.client_name,
+          phone: o.phone,
+          email: o.email,
+          status: status,
+          startDate: o.start_date,
+          endDate: o.end_date,
+          totalAmount: Number(o.total_amount),
+          amountPaid: Number(o.amount_paid || 0),
+          penaltyAmount: Number(o.penalty_amount || 0),
+          depositPaid: o.deposit_paid,
+          closedAt: o.closed_at,
+          returnStatus: o.return_status,
+          itemIntegrity: o.item_integrity,
+          items: o.order_items.map((oi: any) => ({
+            itemId: oi.inventory_id,
+            qty: oi.quantity,
+            price: Number(oi.unit_price),
+            returnedQty: oi.returned_qty,
+            lostQty: oi.lost_qty,
+            damagedQty: oi.damaged_qty
+          }))
+        };
+      });
       setOrders(mapped);
     }
   };

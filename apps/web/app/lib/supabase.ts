@@ -4,7 +4,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Supabase environment variables are missing. Authentication and data fetching will fail.');
+  console.error('CRITICAL ERROR: Supabase environment variables are missing. Ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in your Cloudflare Pages Dashboard (Settings > Variables and Secrets).');
 }
 
 // Fallback to avoid "Cannot read properties of null" crashes. 

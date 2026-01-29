@@ -11,12 +11,14 @@ import { InventoryTable } from '../../components/inventory/InventoryTable';
 import { InvoiceModal } from '../../components/modals/InvoiceModal';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { DatePicker } from '../../components/ui/DatePicker';
+import { DynamicIcon } from '../../components/common/DynamicIcon';
 import { Order, Client, InventoryItem, PortalFormData } from '../../types';
 import { updateOrderStatusToSupabase, processOrderReturn } from '../../services/orderService';
 import { OrderTable } from '../../components/orders/OrderTable';
 
 export default function AdminOverviewPage() {
-  const { Truck, LayoutDashboard, ClipboardList, AlertOctagon, AlertCircle, Check, Search, Plus, X, ChevronRight, Loader2 } = Icons;
+  const { Truck, LayoutDashboard, ClipboardList, AlertOctagon, AlertCircle, Check, Search, Plus, X, ChevronRight, Loader2, Calendar, User, CreditCard } = Icons;
   const { orders, setOrders, clients, showNotification, inventory, loading, submitOrder, latePenaltyPerDay } = useAppStore();
   
   const [mounted, setMounted] = useState(false);
@@ -289,7 +291,7 @@ export default function AdminOverviewPage() {
 
   if (loading) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-slate-400">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted">
             <Loader2 className="w-10 h-10 animate-spin" />
             <p className="font-medium">Loading Dashboard Data...</p>
         </div>
@@ -301,32 +303,32 @@ export default function AdminOverviewPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* TODAY'S LOGISTICS BANNER */}
-      <div className="bg-slate-800 dark:bg-white text-white dark:text-slate-900 rounded-3xl p-8 shadow-2xl relative overflow-hidden group border border-transparent dark:border-white">
+      <div className="bg-primary dark:bg-primary-text text-primary-text dark:text-primary rounded-3xl p-8 shadow-2xl relative overflow-hidden group border border-border">
         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity duration-700">
-          <Truck className="w-64 h-64 -mr-16 -mt-16 text-white dark:text-slate-900" />
+          <Truck className="w-64 h-64 -mr-16 -mt-16 text-primary-text dark:text-primary" />
         </div>
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 dark:bg-indigo-500/10 text-indigo-300 dark:text-indigo-600 text-theme-caption font-bold mb-4 border border-indigo-500/30">
-              <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span> Live Operations
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-warning/10 text-warning text-theme-caption font-bold mb-4 border border-warning/20 shadow-[0_0_15px_var(--color-warning)]/10">
+              <span className="w-2 h-2 rounded-full bg-warning animate-pulse shadow-[0_0_8px_var(--color-warning)]"></span> Live Operations
             </div>
-            <h2 className="text-theme-header mb-2 text-white dark:text-slate-900">Today's Logistics</h2>
-            <p className="text-slate-400 dark:text-slate-500 text-theme-body">Overview of pickup and return schedules for today.</p>
+            <h2 className="text-theme-header mb-2 text-primary-text dark:text-primary">Today's Logistics</h2>
+            <p className="text-primary-text/60 dark:text-primary/60 text-theme-body">Overview of pickup and return schedules for today.</p>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 md:gap-8 bg-white/5 dark:bg-slate-900/5 p-6 rounded-2xl border border-white/10 dark:border-slate-900/10 backdrop-blur-sm w-full md:w-auto">
+          <div className="grid grid-cols-3 gap-4 md:gap-8 bg-primary-text/5 dark:bg-primary/5 p-6 rounded-2xl border border-primary-text/10 dark:border-primary/10 backdrop-blur-sm w-full md:w-auto">
             <div className="text-center px-2">
-              <span className="block text-theme-header text-white dark:text-slate-900">{metrics.pickupsToday}</span>
-              <span className="text-theme-caption text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">Pickups</span>
+              <span className="block text-theme-header text-primary-text dark:text-primary">{metrics.pickupsToday}</span>
+              <span className="text-theme-caption text-primary-text/60 dark:text-primary/60 uppercase tracking-wider font-bold">Pickups</span>
             </div>
-            <div className="text-center px-2 border-x border-white/10 dark:border-slate-900/10">
-              <span className="block text-theme-header text-white dark:text-slate-900">{metrics.returnsToday}</span>
-              <span className="text-theme-caption text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">Return</span>
+            <div className="text-center px-2 border-x border-primary-text/10 dark:border-primary/10">
+              <span className="block text-theme-header text-primary-text dark:text-primary">{metrics.returnsToday}</span>
+              <span className="text-theme-caption text-primary-text/60 dark:text-primary/60 uppercase tracking-wider font-bold">Return</span>
             </div>
             <div className="text-center px-2">
-              <span className="block text-theme-header text-rose-400 dark:text-rose-600">{metrics.lateRentals}</span>
-              <span className="text-theme-caption text-rose-400/80 dark:text-rose-600/80 uppercase tracking-wider font-bold">Late</span>
+              <span className="block text-theme-header text-error">{metrics.lateRentals}</span>
+              <span className="text-theme-caption text-error/80 uppercase tracking-wider font-bold">Late</span>
             </div>
           </div>
         </div>
@@ -339,12 +341,12 @@ export default function AdminOverviewPage() {
             <div className="h-px flex-1 bg-border mx-6 hidden sm:block"></div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6 sm:gap-8">
-          <FilterCard title="Total Orders" count={orders.length} status="All" active={orderFilter === 'All'} onClick={() => setOrderFilter('All')} color="bg-slate-500" icon={LayoutDashboard} />
-          <FilterCard title="Pending" count={metrics.pendingRequests} status="Pending" active={orderFilter === 'Pending'} onClick={() => setOrderFilter('Pending')} color="bg-amber-500" icon={ClipboardList} />
-          <FilterCard title="Approved" count={metrics.approvedOrders} status="Approved" active={orderFilter === 'Approved'} onClick={() => setOrderFilter('Approved')} color="bg-blue-500" icon={Check} />
-          <FilterCard title="Active" count={metrics.activeRentals} status="Active" active={orderFilter === 'Active'} onClick={() => setOrderFilter('Active')} color="bg-indigo-500" icon={Truck} />
-          <FilterCard title="Overdue" count={metrics.lateRentals} status="Late" active={orderFilter === 'Late'} onClick={() => setOrderFilter('Late')} color="bg-rose-500" icon={AlertOctagon} />
-          <FilterCard title="Completed" count={metrics.completedRentals} status="Completed" active={orderFilter === 'Completed'} onClick={() => setOrderFilter('Completed')} color="bg-emerald-500" icon={Check} />
+          <FilterCard title="Total Orders" count={orders.length} status="All" active={orderFilter === 'All'} onClick={() => setOrderFilter('All')} color="bg-primary" icon={LayoutDashboard} />
+          <FilterCard title="Pending" count={metrics.pendingRequests} status="Pending" active={orderFilter === 'Pending'} onClick={() => setOrderFilter('Pending')} color="bg-status-pending" icon={ClipboardList} />
+          <FilterCard title="Active" count={metrics.activeRentals} status="Active" active={orderFilter === 'Active'} onClick={() => setOrderFilter('Active')} color="bg-status-active" icon={Truck} />
+          <FilterCard title="Overdue" count={metrics.lateRentals} status="Late" active={orderFilter === 'Late'} onClick={() => setOrderFilter('Late')} color="bg-status-late" icon={AlertOctagon} />
+          <FilterCard title="Settlement" count={metrics.settlementOrders} status="Settlement" active={orderFilter === 'Settlement'} onClick={() => setOrderFilter('Settlement')} color="bg-status-settlement" icon={CreditCard} />
+          <FilterCard title="Completed" count={metrics.completedRentals} status="Completed" active={orderFilter === 'Completed'} onClick={() => setOrderFilter('Completed')} color="bg-status-completed" icon={Check} />
         </div>
       </div>
 
@@ -361,13 +363,13 @@ export default function AdminOverviewPage() {
               <input 
                 type="text" 
                 placeholder="Search orders, clients..." 
-                className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl text-theme-label outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all shadow-sm"
+                className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl text-theme-label outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all shadow-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-600/20" onClick={() => setCreateOrderStep('select-client')}>
-              <Plus className="w-4 h-4 mr-2" /> CREATE ORDER
+            <Button className="w-full md:w-auto bg-primary text-primary-text hover:opacity-90 shadow-lg shadow-primary/20" onClick={() => setCreateOrderStep('select-client')}>
+              <Plus className="w-4 h-4 mr-2" /> NEW ORDER
             </Button>
           </div>
         </div>
@@ -394,7 +396,21 @@ export default function AdminOverviewPage() {
             <div className="flex items-center gap-4">
               <Button variant="secondary" size="sm" onClick={() => { setCreateOrderStep('none'); setPosCart([]); }}><X className="w-4 h-4 mr-2" /> Cancel</Button>
               <div className="h-6 w-px bg-border"></div>
-              <h2 className="text-theme-subtitle text-foreground">New Order for <span className="text-primary">{selectedClient?.firstName} {selectedClient?.lastName}</span></h2>
+              <h2 className="text-theme-subtitle text-foreground mr-2 whitespace-nowrap">New Order For</h2>
+              <div className="bg-surface py-2 px-3 rounded-2xl border border-border shadow-sm flex items-center gap-3">
+                <div className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center border transition-all ${selectedClient?.color ? selectedClient.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + (selectedClient.color.split('-')[1] || 'slate') + '-200' : 'bg-background border-border'}`}>
+                    <DynamicIcon 
+                        iconString={selectedClient?.image} 
+                        color={selectedClient?.color} 
+                        className="w-5 h-5" 
+                        fallback={<User className={`w-5 h-5 ${selectedClient?.color || 'text-muted'}`} />} 
+                    />
+                </div>
+                <div className="flex flex-col leading-tight pr-1">
+                    <span className="text-theme-body-bold text-foreground text-sm font-black">{selectedClient?.firstName} {selectedClient?.lastName}</span>
+                    <span className="text-[10px] text-muted font-bold">{selectedClient?.phone} • {selectedClient?.email}</span>
+                </div>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <div className="text-right mr-2 hidden md:block">
@@ -407,14 +423,16 @@ export default function AdminOverviewPage() {
           <div className="max-w-7xl mx-auto p-6">
             <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:max-w-lg">
-                <div className="bg-surface p-3 rounded-xl border border-border shadow-sm flex flex-col gap-1">
-                  <label className="text-theme-caption font-black text-muted uppercase px-1">Pickup Date</label>
-                  <input type="date" className="w-full bg-transparent text-foreground text-theme-label outline-none" value={posDates.start} onChange={e => setPosDates({ ...posDates, start: e.target.value })} />
-                </div>
-                <div className="bg-surface p-3 rounded-xl border border-border shadow-sm flex flex-col gap-1">
-                  <label className="text-theme-caption font-black text-muted uppercase px-1">Return Date</label>
-                  <input type="date" className="w-full bg-transparent text-foreground text-theme-label outline-none" value={posDates.end} onChange={e => setPosDates({ ...posDates, end: e.target.value })} />
-                </div>
+                <DatePicker 
+                  label="Pickup Date"
+                  value={posDates.start}
+                  onChange={(val) => setPosDates({ ...posDates, start: val })}
+                />
+                <DatePicker 
+                  label="Return Date"
+                  value={posDates.end}
+                  onChange={(val) => setPosDates({ ...posDates, end: val })}
+                />
               </div>
             </div>
             <Card noPadding><InventoryTable data={inventory} isAdmin={false} onAddToCart={addToPosCart} cart={posCart} /></Card>
@@ -441,35 +459,36 @@ export default function AdminOverviewPage() {
               onClick={(e) => e.stopPropagation()}
             >
                 {/* Header - Sticky */}
-                <div className="bg-slate-800 text-white p-6 flex justify-between items-center flex-shrink-0">
+                <div className="bg-primary text-primary-text p-6 flex justify-between items-center flex-shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white/10 rounded-lg text-emerald-400"><Check className="w-5 h-5" /></div>
+                        <div className="p-2 bg-primary-text/10 rounded-lg text-secondary"><Check className="w-5 h-5" /></div>
                         <div>
                             <h3 className="text-theme-title font-bold tracking-tight">Process Return Audit</h3>
-                            <p className="text-theme-caption text-slate-400 font-medium">Order #{returnOrder.id} • {returnOrder.clientName}</p>
+                            <p className="text-theme-caption text-primary-text/60 font-medium">Order #{returnOrder.id} • {returnOrder.clientName}</p>
                         </div>
                     </div>
-                    <button onClick={() => setReturnOrder(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+                    <button onClick={() => setReturnOrder(null)} className="p-2 hover:bg-primary-text/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                 </div>
 
                 {/* Main Content - Scrollable */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
                     {/* Dates & Logistics */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="text-theme-caption font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">Actual Return Date</label>
-                            <input type="date" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-theme-label text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all" value={returnDate} onChange={(e) => setReturnDate(e.target.value)} />
-                        </div>
+                        <DatePicker 
+                          label="Actual Return Date"
+                          value={returnDate}
+                          onChange={(val) => setReturnDate(val)}
+                        />
                         <div className="space-y-5">
                             <div>
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">Return Status</label>
+                                <label className="text-[10px] font-black text-muted uppercase tracking-widest block mb-2 ml-1">Return Status</label>
                                 <div className="flex gap-2">
                                     {(['Early', 'On Time', 'Late'] as const).map(status => {
                                         const isActive = selectedReturnStatus === status;
                                         const colors = {
-                                            'Early': isActive ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-100 text-slate-500 hover:border-blue-200',
-                                            'On Time': isActive ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-100 text-slate-500 hover:border-emerald-200',
-                                            'Late': isActive ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-slate-100 text-slate-500 hover:border-rose-200'
+                                            'Early': isActive ? 'border-accent-primary bg-accent-primary/10 text-accent-primary' : 'border-border text-muted hover:border-accent-primary/30',
+                                            'On Time': isActive ? 'border-success bg-success/10 text-success' : 'border-border text-muted hover:border-success/30',
+                                            'Late': isActive ? 'border-error bg-error/10 text-error' : 'border-border text-muted hover:border-error/30'
                                         };
                                         return (
                                             <button 
@@ -484,14 +503,14 @@ export default function AdminOverviewPage() {
                                 </div>
                             </div>
                             <div>
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">Item Integrity</label>
+                                <label className="text-[10px] font-black text-muted uppercase tracking-widest block mb-2 ml-1">Item Integrity</label>
                                 <div className="flex gap-2">
                                     {(['Good', 'Lost', 'Damaged'] as const).map(status => {
                                         const isActive = selectedItemIntegrity.includes(status);
                                         const colors = {
-                                            'Good': isActive ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-100 text-slate-500 hover:border-emerald-200',
-                                            'Lost': isActive ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-slate-100 text-slate-500 hover:border-rose-200',
-                                            'Damaged': isActive ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-slate-100 text-slate-500 hover:border-amber-200'
+                                            'Good': isActive ? 'border-success bg-success/10 text-success' : 'border-border text-muted hover:border-success/30',
+                                            'Lost': isActive ? 'border-error bg-error/10 text-error' : 'border-border text-muted hover:border-error/30',
+                                            'Damaged': isActive ? 'border-warning bg-warning/10 text-warning' : 'border-border text-muted hover:border-warning/30'
                                         };
                                         return (
                                             <button 
@@ -511,8 +530,8 @@ export default function AdminOverviewPage() {
                     {/* Item Audit List */}
                     <div>
                         <div className="flex items-center gap-2 mb-4 ml-1">
-                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Item Inspection</label>
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                            <label className="text-[10px] font-black text-muted uppercase tracking-widest">Item Inspection</label>
                         </div>
                         <div className="space-y-3">
                             {returnOrder.items.map(item => {
@@ -520,21 +539,21 @@ export default function AdminOverviewPage() {
                                 const qtys = returnItemQuantities[item.itemId] || { returned: item.qty, lost: 0, damaged: 0 };
                                 
                                 return (
-                                    <div key={item.itemId} className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm group hover:border-slate-200 hover:shadow-md transition-all">
+                                    <div key={item.itemId} className="bg-white border border-border rounded-2xl p-4 shadow-sm group hover:border-border hover:shadow-md transition-all">
                                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center font-bold text-xl text-slate-400 group-hover:scale-110 transition-transform">{invItem?.image || '📦'}</div>
+                                                <div className="w-12 h-12 bg-background rounded-xl flex items-center justify-center font-bold text-xl text-muted group-hover:scale-110 transition-transform">{invItem?.image || '📦'}</div>
                                                 <div>
-                                                    <p className="text-theme-body-bold text-slate-900">{invItem?.name}</p>
-                                                    <p className="text-theme-caption text-slate-400 font-bold uppercase tracking-tight">Original Qty: {item.qty}</p>
+                                                    <p className="text-theme-body-bold text-foreground">{invItem?.name}</p>
+                                                    <p className="text-theme-caption text-muted font-bold uppercase tracking-tight">Original Qty: {item.qty}</p>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-4 bg-slate-50/50 p-2 rounded-xl border border-slate-100/50">
+                                            <div className="flex items-center gap-4 bg-background/50 p-2 rounded-xl border border-border/50">
                                                 <div className="flex flex-col items-center">
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase mb-1">Good</span>
+                                                    <span className="text-[9px] font-black text-muted uppercase mb-1">Good</span>
                                                     <input 
                                                         type="number" 
-                                                        className="w-12 text-center bg-white border border-slate-200 rounded-lg p-1.5 text-xs font-black text-emerald-600 outline-none focus:border-emerald-500" 
+                                                        className="w-12 text-center bg-white border border-border rounded-lg p-1.5 text-xs font-black text-success outline-none focus:border-success" 
                                                         value={qtys.returned} 
                                                         onChange={(e) => {
                                                             const val = parseInt(e.target.value) || 0;
@@ -543,10 +562,10 @@ export default function AdminOverviewPage() {
                                                     />
                                                 </div>
                                                 <div className="flex flex-col items-center">
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase mb-1">Lost</span>
+                                                    <span className="text-[9px] font-black text-muted uppercase mb-1">Lost</span>
                                                     <input 
                                                         type="number" 
-                                                        className="w-12 text-center bg-white border border-slate-200 rounded-lg p-1.5 text-xs font-black text-rose-600 outline-none focus:border-rose-500" 
+                                                        className="w-12 text-center bg-white border border-border rounded-lg p-1.5 text-xs font-black text-error outline-none focus:border-error" 
                                                         value={qtys.lost} 
                                                         onChange={(e) => {
                                                             const val = parseInt(e.target.value) || 0;
@@ -555,10 +574,10 @@ export default function AdminOverviewPage() {
                                                     />
                                                 </div>
                                                 <div className="flex flex-col items-center">
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase mb-1">Dmg</span>
+                                                    <span className="text-[9px] font-black text-muted uppercase mb-1">Dmg</span>
                                                     <input 
                                                         type="number" 
-                                                        className="w-12 text-center bg-white border border-slate-200 rounded-lg p-1.5 text-xs font-black text-amber-600 outline-none focus:border-amber-500" 
+                                                        className="w-12 text-center bg-white border border-border rounded-lg p-1.5 text-xs font-black text-warning outline-none focus:border-warning" 
                                                         value={qtys.damaged} 
                                                         onChange={(e) => {
                                                             const val = parseInt(e.target.value) || 0;
@@ -575,48 +594,48 @@ export default function AdminOverviewPage() {
                     </div>
 
                     {/* Financial Summary & Payment */}
-                    <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-8 shadow-inner">
+                    <div className="bg-background rounded-2xl p-6 border border-border grid grid-cols-1 md:grid-cols-2 gap-8 shadow-inner">
                         <div className="space-y-2.5">
-                            <h4 className="text-theme-caption font-black text-slate-400 uppercase tracking-widest mb-4">Financial Summary</h4>
+                            <h4 className="text-theme-caption font-black text-muted uppercase tracking-widest mb-4">Financial Summary</h4>
                             <div className="flex justify-between text-theme-body">
-                                <span className="text-slate-500">Rental Subtotal</span>
-                                <span className="text-slate-900 font-bold">{formatCurrency(returnTotals.subtotal)}</span>
-                            </div>
-                            <div className="flex justify-between text-theme-body">
-                                <span className="text-slate-500">Late Fees</span>
-                                <span className="text-rose-600 font-bold">+{formatCurrency(returnTotals.lateFee)}</span>
+                                <span className="text-muted">Rental Subtotal</span>
+                                <span className="text-foreground font-bold">{formatCurrency(returnTotals.subtotal)}</span>
                             </div>
                             <div className="flex justify-between text-theme-body">
-                                <span className="text-slate-500">Damage/Loss Penalty</span>
-                                <span className="text-rose-600 font-bold">+{formatCurrency(returnTotals.lossFee + returnTotals.damageFee)}</span>
-                            </div>
-                            <div className="flex justify-between text-theme-body pt-2 border-t border-slate-200">
-                                <span className="text-slate-500">Total Revised Bill</span>
-                                <span className="text-theme-body-bold text-slate-900">{formatCurrency(returnTotals.total)}</span>
+                                <span className="text-muted">Late Fees</span>
+                                <span className="text-error font-bold">+{formatCurrency(returnTotals.lateFee)}</span>
                             </div>
                             <div className="flex justify-between text-theme-body">
-                                <span className="text-slate-500">Already Paid</span>
-                                <span className="text-emerald-600 font-bold">-{formatCurrency(returnOrder.amountPaid)}</span>
+                                <span className="text-muted">Damage/Loss Penalty</span>
+                                <span className="text-error font-bold">+{formatCurrency(returnTotals.lossFee + returnTotals.damageFee)}</span>
                             </div>
-                            <div className="flex justify-between text-theme-subtitle font-black pt-3 border-t-2 border-slate-900 mt-2">
-                                <span className="text-slate-900 uppercase tracking-tighter">Amount Due Now</span>
-                                <span className="text-rose-600 text-theme-header">{formatCurrency(Math.max(0, returnTotals.total - returnOrder.amountPaid))}</span>
+                            <div className="flex justify-between text-theme-body pt-2 border-t border-border">
+                                <span className="text-muted">Total Revised Bill</span>
+                                <span className="text-theme-body-bold text-foreground">{formatCurrency(returnTotals.total)}</span>
+                            </div>
+                            <div className="flex justify-between text-theme-body">
+                                <span className="text-muted">Already Paid</span>
+                                <span className="text-success font-bold">-{formatCurrency(returnOrder.amountPaid)}</span>
+                            </div>
+                            <div className="flex justify-between text-theme-subtitle font-black pt-3 border-t-2 border-foreground mt-2">
+                                <span className="text-foreground uppercase tracking-tighter">Amount Due Now</span>
+                                <span className="text-error text-theme-header">{formatCurrency(Math.max(0, returnTotals.total - returnOrder.amountPaid))}</span>
                             </div>
                         </div>
 
                         <div className="space-y-4">
-                            <h4 className="text-theme-caption font-black text-slate-400 uppercase tracking-widest mb-4">Process Payment</h4>
+                            <h4 className="text-theme-caption font-black text-muted uppercase tracking-widest mb-4">Process Payment</h4>
                             <div className="relative group">
-                                <div className={`absolute left-4 top-1/2 -translate-y-1/2 font-black text-theme-header transition-colors ${submitAttempted && (!paymentAmount || paymentAmount <= 0) ? 'text-rose-500' : 'text-slate-400 group-focus-within:text-indigo-500'}`}>¢</div>
+                                <div className={`absolute left-4 top-1/2 -translate-y-1/2 font-black text-theme-header transition-colors ${submitAttempted && (!paymentAmount || paymentAmount <= 0) ? 'text-error' : 'text-muted group-focus-within:text-primary'}`}>¢</div>
                                 <input 
                                     type="number" 
                                     step="0.01"
                                     min="0.01"
                                     required
-                                    className={`w-full pl-10 pr-4 py-5 bg-white border rounded-2xl text-theme-header font-black text-slate-900 outline-none transition-all shadow-sm ${
+                                    className={`w-full pl-10 pr-4 py-5 bg-white border rounded-2xl text-theme-header font-black text-foreground outline-none transition-all shadow-sm ${
                                         submitAttempted && (!paymentAmount || paymentAmount <= 0) 
-                                        ? 'border-rose-500 focus:ring-rose-500/10' 
-                                        : 'border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10'
+                                        ? 'border-error focus:ring-rose-500/10' 
+                                        : 'border-border focus:border-primary focus:ring-4 focus:ring-primary/10'
                                     }`}
                                     placeholder="0.00"
                                     value={paymentAmount}
@@ -627,12 +646,12 @@ export default function AdminOverviewPage() {
                                 />
                             </div>
                             <div className="flex gap-2">
-                                <button onClick={() => setPaymentAmount(Math.max(0, returnTotals.total - returnOrder.amountPaid))} className="flex-1 py-2.5 bg-indigo-50 text-indigo-600 text-theme-caption font-black uppercase rounded-xl border border-indigo-100 hover:bg-indigo-100 transition-colors shadow-sm">Pay Full Balance</button>
-                                <button onClick={() => setPaymentAmount(0)} className="flex-1 py-2.5 bg-slate-100 text-slate-500 text-theme-caption font-black uppercase rounded-xl border border-slate-200 hover:bg-slate-200 transition-colors shadow-sm">Clear</button>
+                                <button onClick={() => setPaymentAmount(Math.max(0, returnTotals.total - returnOrder.amountPaid))} className="flex-1 py-2.5 bg-primary/10 text-primary text-theme-caption font-black uppercase rounded-xl border border-primary/20 hover:bg-primary/20 transition-colors shadow-sm">Pay Full Balance</button>
+                                <button onClick={() => setPaymentAmount(0)} className="flex-1 py-2.5 bg-surface text-muted text-theme-caption font-black uppercase rounded-xl border border-border hover:bg-background transition-colors shadow-sm">Clear</button>
                             </div>
                             {returnTotals.balance > 0 && (
-                                <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100 mt-2">
-                                    <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                                <div className="flex items-start gap-2 p-3 bg-warning/10 rounded-xl border border-amber-100 mt-2">
+                                    <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
                                     <p className="text-theme-caption text-amber-700 font-bold italic leading-tight">Order remains in 'Settlement' until balance is ¢0.</p>
                                 </div>
                             )}
@@ -641,11 +660,11 @@ export default function AdminOverviewPage() {
                 </div>
 
                 {/* Footer - Sticky */}
-                <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3 flex-shrink-0">
+                <div className="p-6 bg-background border-t border-border flex gap-3 flex-shrink-0">
                     <Button variant="secondary" className="flex-1 rounded-2xl" onClick={() => setReturnOrder(null)}>Cancel</Button>
                     <Button 
                         variant="primary" 
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 rounded-2xl" 
+                        className="flex-1 bg-success hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 rounded-2xl" 
                         onClick={handleConfirmReturn}
                     >
                         {returnTotals.balance <= 0 ? 'Finalize & Close Order' : 'Record Partial Payment'}

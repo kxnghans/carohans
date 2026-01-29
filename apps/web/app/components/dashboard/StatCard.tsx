@@ -8,35 +8,38 @@ interface StatCardProps {
   trend?: number;
   trendLabel?: string;
   icon: any;
-  color: 'slate' | 'indigo' | 'emerald' | 'amber';
+  color: 'primary' | 'secondary' | 'success' | 'warning' | 'accent';
 }
 
 export const StatCard = ({ title, value, subtext, trend, trendLabel, icon: Icon, color }: StatCardProps) => {
   const { TrendingUp, TrendingDown } = Icons;
   
   const colorMap = {
-    slate: 'bg-slate-900 shadow-slate-200',
-    indigo: 'bg-indigo-600 shadow-indigo-200',
-    emerald: 'bg-emerald-600 shadow-emerald-200',
-    amber: 'bg-amber-500 shadow-amber-200'
+    primary: 'bg-primary text-primary-text shadow-primary/20 dark:shadow-none',
+    secondary: 'bg-secondary text-primary-text shadow-secondary/20 dark:shadow-none',
+    success: 'bg-success text-primary-text shadow-success/20 dark:shadow-none',
+    warning: 'bg-warning text-primary-text shadow-warning/20 dark:shadow-none',
+    accent: 'bg-accent-primary text-primary-text shadow-accent-primary/20 dark:shadow-none'
   };
 
   const accentMap = {
-    slate: 'bg-slate-900',
-    indigo: 'bg-indigo-600',
-    emerald: 'bg-emerald-600',
-    amber: 'bg-amber-500'
+    primary: 'bg-primary',
+    secondary: 'bg-secondary',
+    success: 'bg-success',
+    warning: 'bg-warning',
+    accent: 'bg-accent-primary'
   };
 
   const gradientMap = {
-    slate: 'bg-surface dark:bg-slate-900',
-    indigo: 'bg-surface dark:bg-slate-900',
-    emerald: 'bg-surface dark:bg-slate-900',
-    amber: 'bg-surface dark:bg-slate-900'
+    primary: 'bg-surface dark:bg-primary/5',
+    secondary: 'bg-surface dark:bg-secondary/5',
+    success: 'bg-surface dark:bg-success/5',
+    warning: 'bg-surface dark:bg-warning/5',
+    accent: 'bg-surface dark:bg-accent-primary/5'
   };
 
   return (
-    <Card noPadding className={`relative overflow-hidden group hover:shadow-xl dark:hover:shadow-none transition-all duration-500 border-none shadow-sm ring-1 ring-border min-h-[185px] w-full ${gradientMap[color as keyof typeof gradientMap]}`}>
+    <Card noPadding className={`relative overflow-hidden group hover:shadow-xl dark:hover:shadow-none transition-all duration-500 border-none shadow-sm ring-1 ring-border min-h-[185px] w-full ${gradientMap[color]}`}>
       {/* Decorative Ghost Icon */}
       <div className={`absolute -right-2 -top-2 p-4 opacity-[0.05] group-hover:opacity-[0.12] transition-all duration-700 group-hover:scale-110 transform rotate-12 text-foreground`}>
         <Icon className="w-24 h-24" />
@@ -44,14 +47,14 @@ export const StatCard = ({ title, value, subtext, trend, trendLabel, icon: Icon,
 
       <div className="relative z-10 p-6 pb-8">
         <div className="flex items-center justify-between mb-5">
-          <div className={`p-3 rounded-2xl ${colorMap[color]} shadow-lg dark:shadow-none transition-transform duration-500 group-hover:scale-110`}>
-            <Icon className="w-5 h-5 text-white" />
+          <div className={`p-3 rounded-2xl ${colorMap[color]} transition-all duration-500 group-hover:scale-110`}>
+            <Icon className="w-5 h-5" />
           </div>
           {trend !== undefined && (
             <div className={`flex items-center gap-1.5 px-2 py-1 rounded-xl border transition-colors ${
               trend > 0 
-              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800' 
-              : 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-800'
+              ? 'bg-success/10 text-success border-success/20' 
+              : 'bg-error/10 text-error border-error/20'
             }`}>
               {trend > 0 ? (
                 <TrendingUp className="w-3.5 h-3.5" />

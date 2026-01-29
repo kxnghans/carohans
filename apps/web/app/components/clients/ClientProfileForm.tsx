@@ -58,10 +58,10 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
                             iconString={formData.image} 
                             color={formData.color} 
                             className={compact ? "w-8 h-8" : "w-10 h-10"} 
-                            fallback={<User className={`${compact ? "w-8 h-8" : "w-10 h-10"} ${formData.color || 'text-slate-400'}`} />} 
+                            fallback={<User className={`${compact ? "w-8 h-8" : "w-10 h-10"} ${formData.color || 'text-muted'}`} />} 
                         />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Pencil className={compact ? "w-4 h-4 text-white" : "w-6 h-6 text-white"} />
+                            <Pencil className={compact ? "w-4 h-4 text-primary-text" : "w-6 h-6 text-primary-text"} />
                         </div>
                     </button>
                     <div className={`absolute -bottom-1 -right-1 bg-surface ${compact ? "p-1" : "p-1.5"} rounded-full shadow-lg border border-border cursor-pointer`} onClick={() => setShowIconPicker(!showIconPicker)}>
@@ -89,11 +89,11 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
 
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                    <label className="text-theme-caption font-black text-muted uppercase tracking-wider">First Name <span className="text-rose-500">*</span></label>
+                    <label className="text-theme-caption font-black text-muted uppercase tracking-wider">First Name <span className="text-error">*</span></label>
                     <div className="relative">
                         <User className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-3 text-muted`} />
                         <input 
-                            className={`w-full pl-10 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.firstName ? 'border-rose-400' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 shadow-sm transition-all`} 
+                            className={`w-full pl-10 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.firstName ? 'border-error' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all`} 
                             value={formData.firstName}
                             placeholder="John"
                             onChange={e => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
@@ -101,11 +101,11 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
                     </div>
                 </div>
                 <div className="space-y-1.5">
-                    <label className="text-theme-caption font-black text-muted uppercase tracking-wider">Last Name <span className="text-rose-500">*</span></label>
+                    <label className="text-theme-caption font-black text-muted uppercase tracking-wider">Last Name <span className="text-error">*</span></label>
                     <div className="relative">
                         <User className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-3 text-muted`} />
                         <input 
-                            className={`w-full pl-10 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.lastName ? 'border-rose-400' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 shadow-sm transition-all`} 
+                            className={`w-full pl-10 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.lastName ? 'border-error' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all`} 
                             value={formData.lastName}
                             placeholder="Doe"
                             onChange={e => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
@@ -119,7 +119,7 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
                 <div className="relative">
                     <User className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-3 text-muted`} />
                     <input 
-                        className={`w-full pl-10 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 border-border bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 shadow-sm transition-all`} 
+                        className={`w-full pl-10 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 border-border bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all`} 
                         value={formData.username}
                         placeholder="johndoe123"
                         onChange={e => setFormData(prev => ({ ...prev, username: e.target.value }))}
@@ -128,11 +128,11 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
             </div>
             
             <div className="space-y-1.5">
-                <label className="text-theme-caption font-black text-muted uppercase tracking-wider">Contact Number <span className="text-rose-500">*</span></label>
+                <label className="text-theme-caption font-black text-muted uppercase tracking-wider">Contact Number <span className="text-error">*</span></label>
                 <div className="relative">
                     <Phone className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-3 text-muted`} />
                                             <input 
-                                                className={`w-full pl-10 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.phone ? 'border-rose-400' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 shadow-sm transition-all`} 
+                                                className={`w-full pl-10 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.phone ? 'border-error' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all`} 
                                                 value={formData.phone}
                                                 placeholder="024 123 4567"
                                                 onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
@@ -140,11 +140,11 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
             </div>
             
             <div className="space-y-1.5">
-                <label className="text-theme-caption font-black text-muted uppercase tracking-wider">Email Address <span className="text-rose-500">*</span></label>
+                <label className="text-theme-caption font-black text-muted uppercase tracking-wider">Email Address <span className="text-error">*</span></label>
                 <div className="relative">
                     <Mail className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-3 text-muted`} />
                                             <input 
-                                                className={`w-full pl-10 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.email ? 'border-rose-400' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 shadow-sm transition-all`} 
+                                                className={`w-full pl-10 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.email ? 'border-error' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all`} 
                                                 value={formData.email}
                                                 placeholder="john@example.com"
                                                 onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
@@ -156,7 +156,7 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
                 <div className="relative">
                     <MapPin className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-3 text-muted`} />
                                             <textarea 
-                                                className={`w-full pl-10 ${compact ? "p-2 text-theme-label h-16" : "p-3 h-24"} border-2 border-border bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 shadow-sm transition-all resize-none`} 
+                                                className={`w-full pl-10 ${compact ? "p-2 text-theme-label h-16" : "p-3 h-24"} border-2 border-border bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all resize-none`} 
                                                 value={formData.address || ''}
                                                 placeholder="Enter your street address..."
                                                 onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))}
@@ -166,7 +166,7 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
             
             <div className={`flex gap-3 ${compact ? "pt-2" : "pt-4"}`}>
                 {onCancel && <Button variant="secondary" className="flex-1" size={compact ? "sm" : "md"} onClick={onCancel}>Cancel</Button>}
-                <Button className={`flex-1 bg-slate-800 dark:bg-primary hover:bg-slate-700 dark:hover:bg-primary/90 shadow-indigo-200 dark:shadow-none ${compact ? "h-10" : "h-14"}`} size={compact ? "sm" : "md"} onClick={handleSubmit}>{submitLabel}</Button>
+                <Button className={`flex-1 bg-primary dark:bg-primary hover:opacity-90 dark:hover:bg-primary/90 shadow-primary/10 dark:shadow-none ${compact ? "h-10" : "h-14"}`} size={compact ? "sm" : "md"} onClick={handleSubmit}>{submitLabel}</Button>
             </div>
         </div>
     );

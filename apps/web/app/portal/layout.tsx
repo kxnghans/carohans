@@ -17,10 +17,10 @@ export default function PortalLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { cart, portalFormData, submitOrder, showNotification, logout, user, inventory, theme, setTheme } = useAppStore();
+  const { cart, portalFormData, submitOrder, showNotification, logout, user, userRole, inventory, theme, setTheme } = useAppStore();
   const [showInvoice, setShowInvoice] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
-  const { Package, ClipboardList, User, ShoppingCart, LogOut, MapPin, Phone, Sun, Moon, Laptop } = Icons;
+  const { Package, ClipboardList, User, ShoppingCart, LogOut, MapPin, Phone, Sun, Moon, Laptop, LayoutDashboard } = Icons;
 
   const ThemeIcon = () => {
     if (theme === 'light') return <Sun className="w-4 h-4" />;
@@ -93,123 +93,271 @@ export default function PortalLayout({
     portalFormData.end
   );
 
-  return (
-    <div className="min-h-screen bg-background font-sans text-foreground selection:bg-indigo-100 pb-24">
-      <NotificationToast />
-      
-      {/* HEADER */}
-      <header className="bg-surface/80 backdrop-blur-md border-b border-border sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-             <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-slate-900 to-slate-800 dark:from-white dark:to-slate-100 rounded-xl flex items-center justify-center text-white dark:text-slate-900 font-bold shadow-lg shadow-slate-200 group-hover:scale-105 transition-transform dark:shadow-none">
-              CH
-            </div>
-            <div className="block max-w-[100px] xs:max-w-[120px] sm:max-w-none overflow-hidden">
-              <span className="font-bold text-base sm:text-lg tracking-tight block leading-none truncate">CaroHans</span>
-              <span className="text-[8px] sm:text-[10px] text-muted font-bold uppercase tracking-wider block truncate">Client Portal</span>
-            </div>
-          </Link>
-          
-          <div className="flex items-center gap-2">
-             <button 
-              onClick={() => setIsContactOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 text-theme-caption font-bold tracking-wide uppercase hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors border border-transparent dark:border-border/50"
-            >
-              <Phone className="w-3.5 h-3.5" />
-              <span className="pt-px">Contact</span>
-            </button>
-            <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
+    return (
 
-            <div className="h-6 w-px bg-border mx-1"></div>
+      <div className="h-[100dvh] flex flex-col bg-background font-sans text-foreground selection:bg-indigo-100 overflow-hidden">
 
-            {user ? (
-                <button
-                    onClick={logout}
-                    className="text-theme-caption font-bold text-muted hover:text-foreground h-[42px] px-4 rounded-xl bg-background border border-border hover:bg-surface transition-colors flex items-center gap-2"
-                >
-                  <LogOut className="w-4 h-4"/>
-                  <span className="hidden sm:inline">Sign Out</span>
-                </button>
-            ) : (
-                <button
-                    onClick={() => router.push('/login')}
-                    className="text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 h-[42px] px-4 rounded-xl transition-colors"
-                >
-                  Sign In
-                </button>
-            )}
+        <NotificationToast />
 
-                      {/* THEME TOGGLE */}
-                      <button 
-                        onClick={cycleTheme}
-                        title={`Theme: ${theme}`}
-                        className="h-[42px] aspect-square text-muted hover:text-primary dark:hover:text-amber-500 transition-colors flex items-center justify-center rounded-full bg-background border border-border hover:bg-surface"
-                      >
-                        <ThemeIcon />
-                      </button>          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
         
-        {/* CLIENT NAV & CHECKOUT */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface p-4 rounded-2xl shadow-sm border border-border sticky top-20 z-30">
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
-            {navItems.map((tab) => {
-              const isActive = pathname === tab.href;
-              return (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  className={`
-                        flex items-center gap-2 px-4 py-2 rounded-xl text-theme-subtitle transition-all whitespace-nowrap border-2
-                        ${isActive
-                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-white dark:border-slate-900 shadow-md dark:shadow-none'
-                      : 'bg-background text-muted hover:bg-surface border-transparent hover:border-border'}
-                      `}
-                >
-                  <tab.icon className="w-4 h-4" />
-                  {tab.label}
-                </Link>
-              );
-            })}
+
+        {/* STICKY HEADER */}
+
+        <header className="bg-surface/80 backdrop-blur-md border-b border-border z-40 shrink-0">
+
+          <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+
+            <Link href="/" className="flex items-center gap-3 group">
+
+               <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-slate-900 to-slate-800 dark:from-white dark:to-slate-100 rounded-xl flex items-center justify-center text-primary-text dark:text-primary-text font-bold shadow-lg shadow-primary/10 group-hover:scale-105 transition-transform dark:shadow-none">
+
+                CH
+
+              </div>
+
+              <div className="block max-w-[100px] xs:max-w-[120px] sm:max-w-none overflow-hidden">
+
+                <span className="font-bold text-base sm:text-lg tracking-tight block leading-none truncate">CaroHans</span>
+
+                <span className="text-[8px] sm:text-[10px] text-muted font-bold uppercase tracking-wider block truncate">Client Portal</span>
+
+              </div>
+
+            </Link>
+
+            
+
+            <div className="flex items-center gap-2">
+
+               {userRole === 'admin' && (
+
+                  <button 
+
+                    onClick={() => router.push('/admin/overview')}
+
+                    className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-primary dark:bg-primary/10 text-primary-text dark:text-primary border border-transparent dark:border-primary/20 hover:opacity-90 transition-all font-bold text-theme-caption uppercase tracking-wide"
+
+                  >
+
+                    <LayoutDashboard className="w-3.5 h-3.5" />
+
+                    <span className="pt-px hidden sm:inline">Admin Dashboard</span>
+
+                  </button>
+
+               )}
+
+  
+
+               <button 
+
+                onClick={() => setIsContactOpen(true)}
+
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/5 dark:bg-primary/10 text-primary border border-primary/10 hover:bg-primary/10 transition-all font-bold text-theme-caption uppercase tracking-wide"
+
+              >
+
+                <Phone className="w-3.5 h-3.5" />
+
+                <span className="pt-px">Contact</span>
+
+              </button>
+
+              <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
+
+  
+
+              <div className="h-6 w-px bg-border mx-1"></div>
+
+  
+
+              {user ? (
+
+                  <button
+
+                      onClick={logout}
+
+                      className="text-theme-caption font-bold text-muted hover:text-foreground h-[42px] px-4 rounded-xl bg-background border border-border hover:bg-surface transition-colors flex items-center gap-2"
+
+                  >
+
+                    <LogOut className="w-4 h-4"/>
+
+                    <span className="hidden sm:inline">Sign Out</span>
+
+                  </button>
+
+              ) : (
+
+                  <button
+
+                      onClick={() => router.push('/login')}
+
+                      className="text-sm font-bold text-primary dark:text-indigo-400 hover:text-indigo-700 bg-primary/10 dark:bg-indigo-900/30 hover:bg-indigo-100 h-[42px] px-4 rounded-xl transition-colors"
+
+                  >
+
+                    Sign In
+
+                  </button>
+
+              )}
+
+  
+
+              <button 
+
+                onClick={cycleTheme}
+
+                title={`Theme: ${theme}`}
+
+                className="h-[42px] aspect-square text-muted hover:text-primary dark:hover:text-warning transition-colors flex items-center justify-center rounded-full bg-background border border-border hover:bg-surface"
+
+              >
+
+                <ThemeIcon />
+
+              </button>
+
+            </div>
+
           </div>
 
-          <button
-            onClick={handleAction}
-            className={`
-              flex items-center gap-2 px-5 py-2.5 rounded-xl text-theme-subtitle transition-all shadow-lg border-2
-              bg-slate-900 text-white border-slate-900 hover:bg-slate-800
-              dark:bg-white dark:text-slate-900 dark:border-white dark:hover:bg-slate-100
-              shadow-indigo-500/10 dark:shadow-none
-            `}
-          >
-            <ShoppingCart className="w-4 h-4" />
-            {buttonLabel}
-            {hasItems && (
-              <span className="bg-white/20 dark:bg-slate-900/10 px-2 py-0.5 rounded-full text-[10px] leading-none">
-                {cart.length}
-              </span>
-            )}
-          </button>
-        </div>
-        {/* PAGE CONTENT */}
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
-            {children}
-        </div>
-      </main>
+        </header>
 
-      {/* CHECKOUT MODAL */}
-          <InvoiceModal
-            isOpen={showInvoice}
-            onClose={() => setShowInvoice(false)}
-            cart={cart}
-            client={{ name: `${portalFormData.firstName} ${portalFormData.lastName}`.trim(), email: portalFormData.email, phone: portalFormData.phone }}
-            onConfirm={handleConfirmOrder}
-            total={totalAmount}
-            startDate={portalFormData.start}
-            endDate={portalFormData.end}
-          />
-    </div>
-  );
+  
+
+        {/* INDEPENDENTLY SCROLLABLE CONTENT */}
+
+        <main className="flex-1 overflow-y-auto custom-scrollbar bg-background">
+
+          <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+
+                  {children}
+
+              </div>
+
+          </div>
+
+        </main>
+
+  
+
+        {/* STICKY FOOTER (NAV & CHECKOUT) */}
+
+        <div className="shrink-0 p-4 bg-gradient-to-t from-background via-background/95 to-transparent z-30">
+
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface p-4 rounded-[2rem] shadow-2xl border border-border/50 backdrop-blur-xl">
+
+            <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar-hide pb-1 md:pb-0">
+
+              {navItems.map((tab) => {
+
+                const isActive = pathname === tab.href;
+
+                return (
+
+                  <Link
+
+                    key={tab.href}
+
+                    href={tab.href}
+
+                    className={`
+
+                          flex items-center gap-2 px-5 py-2.5 rounded-2xl text-theme-subtitle transition-all whitespace-nowrap border-2
+
+                          ${isActive
+
+                        ? 'bg-primary dark:bg-primary text-primary-text dark:text-primary-text border-white dark:border-slate-900 shadow-xl dark:shadow-none'
+
+                        : 'bg-background text-muted hover:bg-surface border-transparent hover:border-border'}
+
+                        `}
+
+                  >
+
+                    <tab.icon className="w-4 h-4" />
+
+                    {tab.label}
+
+                  </Link>
+
+                );
+
+              })}
+
+            </div>
+
+  
+
+            <button
+
+              onClick={handleAction}
+
+              className={`
+
+                flex items-center justify-center gap-3 px-8 py-3.5 rounded-[1.5rem] text-theme-subtitle transition-all shadow-2xl border-2
+
+                bg-primary text-primary-text border-slate-900 hover:opacity-90
+
+                dark:bg-primary dark:text-primary-text dark:border-white dark:hover:bg-surface
+
+                shadow-indigo-500/20 dark:shadow-none active:scale-[0.98]
+
+              `}
+
+            >
+
+              <ShoppingCart className="w-5 h-5" />
+
+              <span className="font-black uppercase tracking-widest">{buttonLabel}</span>
+
+              {hasItems && (
+
+                <span className="bg-white/20 dark:bg-primary/10 px-2.5 py-1 rounded-full text-[11px] font-black leading-none border border-white/10">
+
+                  {cart.length}
+
+                </span>
+
+              )}
+
+            </button>
+
+          </div>
+
+        </div>
+
+  
+
+        {/* CHECKOUT MODAL */}
+
+        <InvoiceModal
+
+          isOpen={showInvoice}
+
+          onClose={() => setShowInvoice(false)}
+
+          cart={cart}
+
+          client={{ name: `${portalFormData.firstName} ${portalFormData.lastName}`.trim(), email: portalFormData.email, phone: portalFormData.phone }}
+
+          onConfirm={handleConfirmOrder}
+
+          total={totalAmount}
+
+          startDate={portalFormData.start}
+
+          endDate={portalFormData.end}
+
+        />
+
+      </div>
+
+    );
+
+  
 }

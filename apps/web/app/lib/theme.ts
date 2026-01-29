@@ -1,5 +1,5 @@
 export const typography = {
-  header: { fontSize: '20px', fontWeight: '700' },
+  header: { fontSize: '22px', fontWeight: '700' },
   title: { fontSize: '17px', fontWeight: '700' },
   subtitle: { fontSize: '14px', fontWeight: '600' },
   label: { fontSize: '15px', fontWeight: '400' },
@@ -10,19 +10,33 @@ export const typography = {
 
 export const colors = {
   light: {
-    background: '#f8fafc', // Slate-50
+    primary: '#0f172a',
+    secondary: '#4f46e5',
+    live: '#f59e0b',
+    background: '#f8fafc',
     surface: '#ffffff',
-    foreground: '#0f172a', // Slate-900
-    muted: '#64748b', // Slate-500
-    border: '#e2e8f0', // Slate-200
-    primary: '#4f46e5', // Indigo-600
+    text: '#0f172a',
+    primaryText: '#ffffff',
+    success: '#10b981',
+    error: '#ef4444',
+    warning: '#f59e0b',
+    accentPrimary: '#64748b',
+    accentSecondary: '#f1f5f9',
+    neutral: '#334155',
   },
   dark: {
-    background: '#0f172a', // Slate-900
-    surface: '#1e293b', // Slate-800
-    foreground: '#f8fafc', // Slate-50
-    muted: '#94a3b8', // Slate-400
-    border: '#334155', // Slate-700
-    primary: '#6366f1', // Indigo-500
+    primary: '#f8fafc',
+    secondary: '#6366f1',
+    live: '#a78bfa',
+    background: '#0f172a',
+    surface: '#1e293b',
+    text: '#f8fafc',
+    primaryText: '#0f172a',
+    success: '#34d399',
+    error: '#f87171',
+    warning: '#fbbf24',
+    accentPrimary: '#94a3b8',
+    accentSecondary: '#334155',
+    neutral: '#e2e8f0',
   },
 };

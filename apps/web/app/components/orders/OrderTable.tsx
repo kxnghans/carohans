@@ -36,8 +36,8 @@ export const OrderTable = ({
     const SortIcon = ({ column }: { column: string }) => {
         if (sortConfig?.key !== column) return <ChevronUp className="w-3.5 h-3.5 text-muted opacity-30" />;
         return sortConfig.direction === 'asc' 
-            ? <ChevronUp className="w-3.5 h-3.5 text-primary dark:text-amber-500" /> 
-            : <ChevronDown className="w-3.5 h-3.5 text-primary dark:text-amber-500" />;
+            ? <ChevronUp className="w-3.5 h-3.5 text-primary dark:text-warning" /> 
+            : <ChevronDown className="w-3.5 h-3.5 text-primary dark:text-warning" />;
     };
 
         return (
@@ -97,22 +97,40 @@ export const OrderTable = ({
                                                     <div className="flex gap-1.5">
                                                         {order.status === 'Pending' && (
                                                             <>
-                                                                <button onClick={() => onUpdateStatus?.(order.id, 'Canceled')} className="p-2 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors shadow-sm" title="Cancel"><X className="w-4 h-4" /></button>
-                                                                <button onClick={() => onUpdateStatus?.(order.id, 'Approved')} className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors shadow-sm" title="Approve"><Check className="w-4 h-4" /></button>
+                                                                <button onClick={() => onUpdateStatus?.(order.id, 'Rejected')} className="px-3 py-1.5 bg-status-rejected-bg text-status-rejected border border-status-rejected/20 rounded-xl text-theme-body uppercase tracking-tight hover:bg-status-rejected/20 transition-colors shadow-sm flex items-center gap-1.5" title="Reject Order">
+                                                                    <X className="w-3.5 h-3.5" /> 
+                                                                    <span className="hidden sm:inline">Reject</span>
+                                                                </button>
+                                                                <button onClick={() => onUpdateStatus?.(order.id, 'Approved')} className="px-3 py-1.5 bg-status-approved-bg text-status-approved border border-status-approved/20 rounded-xl text-theme-body uppercase tracking-tight hover:bg-status-approved/20 transition-colors shadow-sm flex items-center gap-1.5" title="Approve Order">
+                                                                    <Check className="w-3.5 h-3.5" /> 
+                                                                    <span className="hidden sm:inline">Approve</span>
+                                                                </button>
                                                             </>
                                                         )}
                                                         {order.status === 'Approved' && (
                                                             <div className="flex gap-1.5">
-                                                                <button onClick={() => onUpdateStatus?.(order.id, 'Pending')} className="p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors shadow-sm" title="Pull Back"><Undo className="w-4 h-4" /></button>
-                                                                <button onClick={() => onUpdateStatus?.(order.id, 'Active')} className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors shadow-sm" title="Process Dispatch"><ReturnIcon className="w-4 h-4" /></button>
+                                                                <button onClick={() => onUpdateStatus?.(order.id, 'Pending')} className="px-3 py-1.5 bg-status-pending-bg text-status-pending border border-status-pending/20 rounded-xl text-theme-body uppercase tracking-tight hover:bg-status-pending/20 transition-colors shadow-sm flex items-center gap-1.5" title="Move back to Pending">
+                                                                    <Undo className="w-3.5 h-3.5" /> 
+                                                                    <span className="hidden sm:inline">Pull Back</span>
+                                                                </button>
+                                                                <button onClick={() => onUpdateStatus?.(order.id, 'Active')} className="px-3 py-1.5 bg-status-active-bg text-status-active border border-status-active/20 rounded-xl text-theme-body uppercase tracking-tight hover:bg-status-active/20 transition-colors shadow-sm flex items-center gap-1.5" title="Dispatch Pickup">
+                                                                    <Truck className="w-3.5 h-3.5" /> 
+                                                                    <span className="hidden sm:inline">Dispatch</span>
+                                                                </button>
                                                             </div>
                                                         )}
                                                         {(order.status === 'Active' || order.status === 'Late' || order.status === 'Settlement') && (
-                                                            <button onClick={() => onUpdateStatus?.(order.id, 'Completed')} className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-xl text-theme-body uppercase tracking-tight hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors shadow-sm flex items-center gap-1.5"><ReturnIcon className="w-3.5 h-3.5" /> Return</button>
+                                                            <button onClick={() => onUpdateStatus?.(order.id, 'Completed')} className="px-3 py-1.5 bg-status-completed-bg text-status-completed border border-status-completed/20 rounded-xl text-theme-body uppercase tracking-tight hover:bg-status-completed/20 transition-colors shadow-sm flex items-center gap-1.5" title="Complete Return">
+                                                                <ReturnIcon className="w-3.5 h-3.5" /> 
+                                                                <span className="hidden sm:inline">Return</span>
+                                                            </button>
                                                         )}
-                                                                                                            {['Completed', 'Rejected', 'Canceled'].includes(order.status) && (
-                                                                                                                <span className="text-theme-body text-muted dark:text-slate-500 uppercase italic px-2.5 py-1 bg-background dark:bg-slate-800/50 rounded-lg border border-border dark:border-slate-700">Closed</span>
-                                                                                                            )}                                                    </div>
+                                                        {['Completed', 'Rejected', 'Canceled'].includes(order.status) && (
+                                                            <span className="text-theme-caption font-bold text-muted uppercase italic px-3 py-1 bg-background border border-border rounded-lg shadow-sm">
+                                                                Closed
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                         )}
@@ -132,7 +150,7 @@ export const OrderTable = ({
                                         </td>
                                         <td className="p-4 pr-6 text-right">
                                             <div className={`transition-transform duration-200 ${expandedOrderId === order.id ? 'rotate-90' : ''}`}>
-                                                <ChevronRight className={`w-5 h-5 ${expandedOrderId === order.id ? 'text-primary dark:text-amber-500' : 'text-muted'}`} />
+                                                <ChevronRight className={`w-5 h-5 ${expandedOrderId === order.id ? 'text-primary dark:text-warning' : 'text-muted'}`} />
                                             </div>
                                         </td>
                                     </tr>
@@ -184,15 +202,15 @@ export const OrderTable = ({
                                                                                             <span className="text-theme-body-bold text-foreground">{invItem?.name || 'Deleted Item'}</span>
                                                                                             {((item.lostQty ?? 0) > 0 || (item.damagedQty ?? 0) > 0) && (
                                                                                                 <div className="flex gap-2">
-                                                                                                    {(item.lostQty ?? 0) > 0 && <span className="text-[9px] font-black text-rose-600 uppercase">Lost: {item.lostQty}</span>}
-                                                                                                    {(item.damagedQty ?? 0) > 0 && <span className="text-[9px] font-black text-amber-600 uppercase">Damaged: {item.damagedQty}</span>}
+                                                                                                    {(item.lostQty ?? 0) > 0 && <span className="text-[9px] font-black text-error uppercase">Lost: {item.lostQty}</span>}
+                                                                                                    {(item.damagedQty ?? 0) > 0 && <span className="text-[9px] font-black text-warning uppercase">Damaged: {item.damagedQty}</span>}
                                                                                                 </div>
                                                                                             )}
                                                                                         </div>
                                                                                     </div>
                                                                                 </td>
                                                                                 <td className="p-3 text-theme-body text-muted">{invItem?.category || 'N/A'}</td>
-                                                                                <td className="p-3 text-right text-theme-body text-rose-600">{formatCurrency(invItem?.replacementCost || 0)}</td>
+                                                                                <td className="p-3 text-right text-theme-body text-error">{formatCurrency(invItem?.replacementCost || 0)}</td>
                                                                                 <td className="p-3 text-right text-theme-body-bold text-foreground">{item.qty}</td>
                                                                                 <td className="p-3 text-right text-theme-body text-muted">{formatCurrency(price)}</td>
                                                                                 <td className="p-3 text-right text-theme-body text-muted">{duration} {duration === 1 ? 'day' : 'days'}</td>
@@ -201,11 +219,11 @@ export const OrderTable = ({
                                                             );
                                                         })}
                                                         {(order.penaltyAmount ?? 0) > 0 && (
-                                                            <tr className="bg-rose-50/30 dark:bg-rose-900/10">
-                                                                <td colSpan={6} className="p-3 pl-6 text-right text-theme-body text-rose-600 dark:text-rose-400 uppercase tracking-widest">
+                                                            <tr className="bg-error/10/30 dark:bg-rose-900/10">
+                                                                <td colSpan={6} className="p-3 pl-6 text-right text-theme-body text-error dark:text-rose-400 uppercase tracking-widest">
                                                                     Penalties (Late/Damage/Loss)
                                                                 </td>
-                                                                <td className="p-3 text-right pr-6 text-theme-body-bold text-rose-600 dark:text-rose-400">
+                                                                <td className="p-3 text-right pr-6 text-theme-body-bold text-error dark:text-rose-400">
                                                                     +{formatCurrency(order.penaltyAmount)}
                                                                 </td>
                                                             </tr>

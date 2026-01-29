@@ -187,9 +187,9 @@ export default function AdminUsersPage() {
             >
                 <h3 className="text-theme-subtitle font-bold text-foreground flex items-center gap-2">
                     {title} 
-                    <span className="text-theme-caption bg-background dark:bg-slate-800 text-muted px-2 py-0.5 rounded-full border border-border">{data.length}</span>
+                    <span className="text-theme-caption bg-background dark:bg-primary text-muted px-2 py-0.5 rounded-full border border-border">{data.length}</span>
                 </h3>
-                <ChevronRight className={`w-5 h-5 transition-all duration-200 ${isOpen ? 'rotate-90 text-primary dark:text-amber-500' : 'text-muted'}`} />
+                <ChevronRight className={`w-5 h-5 transition-all duration-200 ${isOpen ? 'rotate-90 text-primary dark:text-warning' : 'text-muted'}`} />
             </div>
             
             {isOpen && (
@@ -226,10 +226,10 @@ export default function AdminUsersPage() {
                                         {user.username}
                                     </td>
                                     <td className="p-4 text-center">
-                                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-tight ${
+                                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-tight border ${
                                             user.role === 'admin' 
-                                            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' 
-                                            : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                                            ? 'bg-status-settlement-bg text-status-settlement border-status-settlement/20' 
+                                            : 'bg-status-completed-bg text-status-completed border-status-completed/20'
                                         }`}>
                                             {user.role === 'admin' ? <Shield className="w-3 h-3" /> : <User className="w-3 h-3" />}
                                             {user.role}
@@ -240,7 +240,7 @@ export default function AdminUsersPage() {
                                             {user.role === 'client' ? (
                                                 <button 
                                                     onClick={() => handleActionClick(user)}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-xl text-theme-caption font-black uppercase tracking-tight hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all shadow-sm group/btn"
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-status-active-bg text-status-active border border-status-active/20 rounded-xl text-theme-caption font-black uppercase tracking-tight hover:bg-status-active/20 transition-all shadow-sm group/btn"
                                                 >
                                                     <TrendingUp className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
                                                     Promote
@@ -248,7 +248,7 @@ export default function AdminUsersPage() {
                                             ) : (
                                                 <button 
                                                     onClick={() => handleActionClick(user)}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-xl text-theme-caption font-black uppercase tracking-tight hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-all shadow-sm group/btn"
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-status-rejected-bg text-status-rejected border border-status-rejected/20 rounded-xl text-theme-caption font-black uppercase tracking-tight hover:bg-status-rejected/20 transition-all shadow-sm group/btn"
                                                 >
                                                     <TrendingDown className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
                                                     Demote

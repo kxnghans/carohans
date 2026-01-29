@@ -73,8 +73,8 @@ export const InventoryTable = ({
   const SortIcon = ({ column }: { column: keyof InventoryItem }) => {
     if (sortConfig?.key !== column) return <SortUp className="w-3.5 h-3.5 text-muted opacity-30" />;
     return sortConfig.direction === 'asc' 
-        ? <SortUp className="w-3.5 h-3.5 text-primary dark:text-amber-500" /> 
-        : <SortDown className="w-3.5 h-3.5 text-primary dark:text-amber-500" />;
+        ? <SortUp className="w-3.5 h-3.5 text-primary dark:text-warning" /> 
+        : <SortDown className="w-3.5 h-3.5 text-primary dark:text-warning" />;
   };
 
   const dataRef = useRef(data);
@@ -194,9 +194,12 @@ export const InventoryTable = ({
               className="p-4 pl-6 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] cursor-pointer group hover:bg-surface transition-colors"
               onClick={() => requestSort('name')}
             >
-              <div className="flex items-center gap-2">
-                Item Details
-                <SortIcon column="name" />
+              <div className="flex items-center">
+                <div className="w-12 shrink-0" />
+                <div className="ml-4 flex items-center gap-2">
+                  Item Details
+                  <SortIcon column="name" />
+                </div>
               </div>
             </th>
             <th
@@ -227,16 +230,16 @@ export const InventoryTable = ({
               </div>
             </th>
             <th
-              className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-center cursor-pointer group hover:bg-surface transition-colors"
+              className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
               onClick={() => requestSort('stock')}
             >
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center justify-end gap-2">
                 Stock
                 <SortIcon column="stock" />
               </div>
             </th>
-            {showOrderColumn && <th className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-center">Order</th>}
-            {isEditMode && <th className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-center pr-6">Action</th>}
+            {showOrderColumn && <th className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-right">Order</th>}
+            {isEditMode && <th className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-left pr-6">Action</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-border">

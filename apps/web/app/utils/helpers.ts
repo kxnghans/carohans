@@ -22,14 +22,14 @@ export const formatDate = (dateString: string | undefined | null) => {
 
 export const getStatusColor = (status: string) => {
   switch (status) {
-    case 'Pending': return 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-500 dark:border-amber-800';
-    case 'Approved': return 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-500 dark:border-blue-800';
-    case 'Active': return 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border-indigo-500 dark:border-indigo-800';
-    case 'Late': return 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-500 dark:border-rose-800';
-    case 'Completed': return 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-500 dark:border-emerald-800';
-    case 'Settlement': return 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-500 dark:border-purple-800';
-    case 'Rejected': return 'bg-slate-50 dark:bg-slate-800 text-muted dark:text-slate-400 border-slate-400 dark:border-slate-700';
-    case 'Canceled': return 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-500 dark:border-rose-800';
+    case 'Pending': return 'bg-status-pending-bg text-status-pending border-status-pending/50';
+    case 'Approved': return 'bg-status-approved-bg text-status-approved border-status-approved/50';
+    case 'Active': return 'bg-status-active-bg text-status-active border-status-active/50';
+    case 'Late': return 'bg-status-late-bg text-status-late border-status-late/50';
+    case 'Completed': return 'bg-status-completed-bg text-status-completed border-status-completed/50';
+    case 'Settlement': return 'bg-status-settlement-bg text-status-settlement border-status-settlement/50';
+    case 'Rejected': return 'bg-status-rejected-bg text-status-rejected border-status-rejected/80';
+    case 'Canceled': return 'bg-status-canceled-bg text-status-canceled border-status-canceled/80';
     default: return 'bg-background text-muted border-border';
   }
 };
@@ -43,28 +43,28 @@ export const getStatusDescription = (status: string) => {
     case 'Settlement': return 'Items returned but financial balance or audit is outstanding.';
     case 'Completed': return 'Order finalized, all items returned and balance paid.';
     case 'Rejected': return 'Order was declined by administration.';
-    case 'Canceled': return 'Order was withdrawn before processing.';
+    case 'Canceled': return 'Order was withdrawn by the client.';
     default: return 'Current status of the order.';
   }
 };
 
 export const getReturnStatusColor = (status: string | undefined) => {
   switch (status) {
-    case 'Early': return 'bg-blue-500 text-white border-blue-600';
-    case 'On Time': return 'bg-emerald-500 text-white border-emerald-600';
-    case 'Late': return 'bg-rose-500 text-white border-rose-600';
-    default: return 'bg-slate-50 text-slate-400 border-slate-100';
+    case 'Early': return 'bg-accent-primary text-primary-text border-accent-primary/50';
+    case 'On Time': return 'bg-success text-primary-text border-success/50';
+    case 'Late': return 'bg-error text-primary-text border-error/50';
+    default: return 'bg-surface text-muted border-border';
   }
 };
 
 export const getItemIntegrityColor = (status: string | undefined) => {
-  if (!status) return 'bg-slate-50 text-slate-400 border-slate-100';
+  if (!status) return 'bg-surface text-muted border-border';
   
-  if (status.includes('Lost')) return 'bg-rose-500 text-white border-rose-600';
-  if (status.includes('Damaged')) return 'bg-amber-400 text-white border-amber-500';
-  if (status === 'Good') return 'bg-emerald-500 text-white border-emerald-600';
+  if (status.includes('Lost')) return 'bg-error text-primary-text border-error/50';
+  if (status.includes('Damaged')) return 'bg-warning text-primary-text border-warning/50';
+  if (status === 'Good') return 'bg-success text-primary-text border-success/50';
   
-  return 'bg-slate-50 text-slate-400 border-slate-100';
+  return 'bg-surface text-muted border-border';
 };
 
 export const getDurationDays = (start: string | undefined, end: string | undefined) => {
@@ -94,6 +94,7 @@ export const calculateMetrics = (orders: Order[]): Metrics => {
   
   const pendingRequests = orders.filter(o => o.status === 'Pending').length;
   const approvedOrders = orders.filter(o => o.status === 'Approved').length;
+  const settlementOrders = orders.filter(o => o.status === 'Settlement').length;
   const completedRentals = orders.filter(o => o.status === 'Completed').length;
   
   // Real late: Status is 'Late' OR status is 'Active' but end date is before today
@@ -134,6 +135,7 @@ export const calculateMetrics = (orders: Order[]): Metrics => {
     approvedOrders,
     lateRentals, 
     completedRentals, 
+    settlementOrders,
     revenueGrowth, 
     avgOrderValue,
     pickupsToday,

@@ -11,7 +11,7 @@ import { InventoryIcons } from '../../lib/icons';
 import { OrderTable } from '../../components/orders/OrderTable';
 
 export default function PortalOrdersPage() {
-  const { orders, user, loading, inventory } = useAppStore();
+  const { orders, user, userRole, portalFormData, loading, inventory } = useAppStore();
   const { Printer } = Icons;
   
   const [viewingInvoice, setViewingInvoice] = useState<any>(null);
@@ -20,8 +20,12 @@ export default function PortalOrdersPage() {
     direction: 'desc'
   });
 
-  // Filter orders for the current user email
-  const myOrders = useMemo(() => orders.filter(o => o.email === user?.email), [orders, user]);
+  // Filter orders for the current user email (or impersonated client if admin)
+  const myOrders = useMemo(() => {
+    const targetEmail = userRole === 'admin' ? portalFormData.email : user?.email;
+    if (!targetEmail) return [];
+    return orders.filter(o => o.email === targetEmail);
+  }, [orders, user, userRole, portalFormData.email]);
 
   // Sorting Logic
   const sortedOrders = useMemo(() => {

@@ -7,7 +7,15 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+  const isProtectedRoute = request.nextUrl.pathname.startsWith('/admin') || 
+                          (request.nextUrl.pathname.startsWith('/portal') && request.nextUrl.pathname !== '/portal/inventory');
+
   if (!supabaseUrl || !supabaseAnonKey) {
+    if (isProtectedRoute) {
+        // If it's a protected route and config is missing, we must block it.
+        // Returning a 500 or redirecting to an error page is safer than NextResponse.next()
+        return new NextResponse('Internal Server Error: Missing Configuration', { status: 500 });
+    }
     return NextResponse.next();
   }
 

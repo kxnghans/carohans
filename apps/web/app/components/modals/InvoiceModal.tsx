@@ -62,12 +62,12 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
         className="invoice-modal-content bg-surface rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-slate-800 text-white p-6 flex justify-between items-center flex-shrink-0 print:hidden">
+        <div className="bg-primary text-primary-text p-6 flex justify-between items-center flex-shrink-0 print:hidden">
           <div className="flex items-center gap-3">
             <div className="bg-white/10 p-2 rounded-lg"><Printer className="w-5 h-5" /></div>
             <div>
               <h2 className="text-theme-title font-bold">Review Invoice</h2>
-              <p className="text-slate-400 text-theme-caption">Draft Order for {client?.name}</p>
+              <p className="text-muted text-theme-caption">Draft Order for {client?.name || `${client?.firstName || ''} ${client?.lastName || ''}`.trim()}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
@@ -91,7 +91,7 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
               <div className="flex justify-between mb-8 border-b border-border pb-8">
                 <div>
                   <h3 className="font-bold text-muted text-theme-caption uppercase tracking-wider mb-2">Bill To</h3>
-                  <p className="text-theme-title text-foreground">{client?.name}</p>
+                  <p className="text-theme-title text-foreground">{client?.name || `${client?.firstName || ''} ${client?.lastName || ''}`.trim()}</p>
                   <p className="text-muted text-theme-body">{client?.email}</p>
                   <p className="text-muted text-theme-body">{client?.phone}</p>
                 </div>
@@ -99,7 +99,7 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
                   <h3 className="font-bold text-muted text-theme-caption uppercase tracking-wider mb-2">Invoice Details</h3>
                   <p className="text-theme-body-bold text-foreground">INV-#{invoiceId}</p>
                   <p className="text-muted text-theme-caption font-bold mt-1 uppercase tracking-tighter">Date: {formatDate(new Date().toISOString())}</p>
-                  <p className="text-emerald-600 font-bold text-theme-caption bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded inline-block mt-2 print:border print:border-emerald-200">Draft Invoice</p>
+                  <p className="text-success font-bold text-theme-caption bg-success/10 dark:bg-emerald-900/30 px-2 py-0.5 rounded inline-block mt-2 print:border print:border-emerald-200">Draft Invoice</p>
                 </div>
               </div>
 
@@ -128,7 +128,7 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
                     </tr>
                   ))}
                   {lateFees > 0 && (
-                    <tr className="bg-rose-50/30 dark:bg-rose-900/20 break-inside-avoid">
+                    <tr className="bg-error/10/30 dark:bg-rose-900/20 break-inside-avoid">
                       <td className="py-4" colSpan={3}>
                         <p className="font-bold text-rose-700 dark:text-rose-400 text-theme-body">Late Fees</p>
                         <p className="text-theme-caption text-rose-400 uppercase font-bold tracking-tight">Daily penalty for overdue return</p>
@@ -143,8 +143,8 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
               {lossDamageTotal > 0 && (
                 <div className="break-inside-avoid mb-8">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-                    <h3 className="font-black text-rose-600 text-theme-caption uppercase tracking-[0.2em]">
+                    <div className="w-1.5 h-1.5 rounded-full bg-error"></div>
+                    <h3 className="font-black text-error text-theme-caption uppercase tracking-[0.2em]">
                       Loss & Damage Audit
                     </h3>
                   </div>
@@ -167,7 +167,7 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
                           <tr key={`audit-${item.id}-${idx}`}>
                             <td className="py-3">
                               <p className="text-theme-body-bold text-foreground">{item.name}</p>
-                              <p className="text-theme-caption font-black text-rose-500 uppercase tracking-tighter">{audit.type}</p>
+                              <p className="text-theme-caption font-black text-error uppercase tracking-tighter">{audit.type}</p>
                             </td>
                             <td className="py-3 text-center font-bold text-muted text-theme-body">{audit.qty}</td>
                             <td className="py-3 text-right text-muted text-theme-body">{formatCurrency(item.replacementCost)}</td>
@@ -194,7 +194,7 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
                     <li className="flex items-start gap-2">
                       <div className="w-1 h-1 rounded-full bg-muted mt-1.5"></div>
                       <p className="text-theme-caption font-medium text-muted leading-relaxed">
-                        <span className="font-black text-foreground">Late Penalty:</span> A daily fee of <span className="text-rose-600 font-black">{formatCurrency(latePenaltyPerDay)}</span> applies for every day items are returned after the scheduled date.
+                        <span className="font-black text-foreground">Late Penalty:</span> A daily fee of <span className="text-error font-black">{formatCurrency(latePenaltyPerDay)}</span> applies for every day items are returned after the scheduled date.
                       </p>
                     </li>
                     <li className="flex items-start gap-2">
@@ -216,13 +216,13 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
                     <span>¢0.00</span>
                   </div>
                   {lateFees > 0 && (
-                    <div className="flex justify-between text-rose-600 dark:text-rose-400 text-theme-body font-medium">
+                    <div className="flex justify-between text-error dark:text-rose-400 text-theme-body font-medium">
                       <span>Late Fees</span>
                       <span>+{formatCurrency(lateFees)}</span>
                     </div>
                   )}
                   {lossDamageTotal > 0 && (
-                    <div className="flex justify-between text-rose-600 dark:text-rose-400 text-theme-body font-medium">
+                    <div className="flex justify-between text-error dark:text-rose-400 text-theme-body font-medium">
                       <span>Loss & Damage Penalty</span>
                       <span>+{formatCurrency(lossDamageTotal)}</span>
                     </div>

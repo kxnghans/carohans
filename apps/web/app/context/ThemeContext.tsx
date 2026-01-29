@@ -37,7 +37,41 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       }
       
       root.classList.add(effectiveTheme);
-      root.setAttribute('data-theme', targetTheme); // For potential CSS targeting
+      root.setAttribute('data-theme', targetTheme);
+      root.style.colorScheme = effectiveTheme;
+
+      // Robust theme-color update
+      const themeColor = effectiveTheme === 'dark' ? '#0f172a' : '#f8fafc';
+      
+      // Remove all existing theme-color tags to avoid media query conflicts
+      const existingTags = document.querySelectorAll('meta[name="theme-color"]');
+      existingTags.forEach(tag => tag.remove());
+
+      // Create new tag
+      const metaTag = document.createElement('meta');
+      metaTag.setAttribute('name', 'theme-color');
+      metaTag.setAttribute('content', themeColor);
+      document.head.appendChild(metaTag);
+
+      // Handle iOS Status Bar Style
+      let appleTag = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+      if (!appleTag) {
+        appleTag = document.createElement('meta');
+        appleTag.setAttribute('name', 'apple-mobile-web-app-status-bar-style');
+        document.head.appendChild(appleTag);
+      }
+      // "default" is white bg/black text, "black-translucent" is transparent bg/white text
+      // This combined with viewport-fit=cover lets the html bg bleed into safe areas
+      appleTag.setAttribute('content', effectiveTheme === 'dark' ? 'black-translucent' : 'default');
+
+      // Web app capability for standalone behavior
+      let capableTag = document.querySelector('meta[name="apple-mobile-web-app-capable"]');
+      if (!capableTag) {
+        capableTag = document.createElement('meta');
+        capableTag.setAttribute('name', 'apple-mobile-web-app-capable');
+        capableTag.setAttribute('content', 'yes');
+        document.head.appendChild(capableTag);
+      }
     };
 
     applyTheme(theme);
