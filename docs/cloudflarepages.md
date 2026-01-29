@@ -1,27 +1,27 @@
 # Cloudflare Pages Implementation Guide (OpenNext)
 
-**Project:** CaroHans Ventures ERMS
-**Target Platform:** Cloudflare Pages / Workers
-**Runtime:** Cloudflare Edge Runtime
+**Project:** CaroHans Ventures ERMS  
+**Target Platform:** Cloudflare Pages  
+**Runtime:** Cloudflare Edge Runtime  
 **Adapter:** `@opennextjs/cloudflare` (OpenNext)
 
-This document details the configuration and workflows used to deploy the Next.js application to Cloudflare using the **OpenNext** adapter, which is the currently recommended path by Cloudflare for full Next.js feature support.
+This guide provides the necessary technical configuration and deployment workflows for hosting the CaroHans Ventures ERMS on Cloudflare Pages using the OpenNext adapter.
 
 ---
 
 ## 1. Architecture Overview
 
-The application uses the **Next.js App Router**. To run on Cloudflare's global edge network, we utilize `@opennextjs/cloudflare`. This utility:
-1.  Builds the Next.js application using the standard `next build`.
-2.  Transforms the build output into a Cloudflare-compatible Worker script and asset bundle.
-3.  Outputs the result to `apps/web/.open-next/`.
+The application utilizes the **Next.js App Router**. To ensure compatibility with Cloudflare’s global edge network, we utilize `@opennextjs/cloudflare`.
+
+*   **Build Logic:** Standard `next build` output is transformed into a Cloudflare-compatible Worker script and asset bundle.
+*   **Output Path:** The final assets and worker script are generated in `apps/web/.open-next/`.
 
 ---
 
 ## 2. Configuration
 
 ### 2.1 `apps/web/wrangler.toml`
-Governs the Cloudflare deployment for the web application.
+Governs the Cloudflare deployment environment.
 
 ```toml
 name = "carohans"
@@ -37,7 +37,7 @@ binding = "ASSETS"
 ```
 
 ### 2.2 `apps/web/open-next.config.ts`
-The configuration file for the OpenNext adapter.
+The configuration for the OpenNext adapter.
 
 ```typescript
 import { defineCloudflareConfig } from "@opennextjs/cloudflare";
@@ -45,74 +45,65 @@ import { defineCloudflareConfig } from "@opennextjs/cloudflare";
 export default defineCloudflareConfig();
 ```
 
-### 2.3 `apps/web/next.config.ts`
-Standard Next.js configuration. Note that OpenNext handles monorepo resolution more gracefully than previous adapters.
+---
 
-```typescript
-import type { NextConfig } from "next";
+## 3. Environment Variables & Secrets
 
-const nextConfig: NextConfig = {
-  transpilePackages: [],
-};
+Environment variables are critical for connecting the Edge Runtime to external services like Supabase.
 
-export default nextConfig;
+### 3.1 Required Variables
+*   **`NEXT_PUBLIC_SUPABASE_URL`**: The API URL for your Supabase project.
+*   **`NEXT_PUBLIC_SUPABASE_ANON_KEY`**: The anonymous public key for Supabase.
+
+### 3.2 Management via Dashboard
+1.  Navigate to **Workers & Pages** > **[Project Name]** > **Settings** > **Variables and Secrets**.
+2.  Add variables for both **Production** and **Preview** environments.
+3.  **Redeploy Requirement:** Variables prefixed with `NEXT_PUBLIC_` are statically bundled into the client-side code during build. You **must redeploy** after any change.
+
+### 3.3 Management via Wrangler
+Variables can be defined in `wrangler.toml` under the `[vars]` block or per environment:
+
+```toml
+[vars]
+NEXT_PUBLIC_SUPABASE_URL = "https://your-project.supabase.co"
+
+[env.production.vars]
+NEXT_PUBLIC_SUPABASE_URL = "https://prod-project.supabase.co"
 ```
 
+### 3.4 Local Development & Secrets
+*   **`.dev.vars` File:** Put secrets for local development in a `.dev.vars` file in the same directory as `wrangler.toml`. This file should **never** be committed to git.
+*   **Precedence:** If `.dev.vars` exists, `.env` files will not be loaded. Otherwise, `.env` files are merged with the following precedence (most to least specific):
+    1. `.env.<environment>.local`
+    2. `.env.local`
+    3. `.env.<environment>`
+    4. `.env`
+*   **Node.js Compatibility:** With `nodejs_compat` enabled, environment variables are exposed via the global `process.env`. Text variables are exposed as strings; JSON values are exposed as raw JSON strings.
+
 ---
 
-## 3. Build Scripts & Commands
+## 4. Authentication at the Edge
 
-The deployment pipeline is managed via `pnpm` and `turbo`.
+The system utilizes `@supabase/ssr` to manage sessions directly on the edge.
 
-### Root `package.json`
-| Command | Script | Description |
+*   **Middleware:** `apps/web/middleware.ts` runs on the Cloudflare Edge Runtime to intercept and validate requests.
+*   **Security:** It validates JWTs and performs role-based checks (via the `profiles` table) before granting access to `/admin/*` routes.
+*   **Fail-Safe:** If critical environment variables are missing, the middleware blocks protected routes to prevent unauthorized access.
+
+---
+
+## 5. Build & Deployment Commands
+
+| Command | Level | Description |
 | :--- | :--- | :--- |
-| **Build** | `pnpm build:pages` | Runs `turbo run pages:build`. This triggers `opennextjs-cloudflare build` in the `web` app. |
-| **Deploy** | `pnpm deploy` | Runs `wrangler deploy -c apps/web/wrangler.toml`. Deploys the OpenNext worker using the specific config file. |
-
-### `apps/web/package.json`
-| Command | Script | Description |
-| :--- | :--- | :--- |
-| **Adapter Build** | `pnpm pages:build` | Executes `opennextjs-cloudflare build`. |
-| **Preview** | `pnpm preview` | Builds and starts a local instance of the app running in the `workerd` runtime. |
+| `pnpm build:pages` | Root | Triggers `turbo run pages:build`, executing the OpenNext build. |
+| `pnpm deploy` | Root | Deploys the `.open-next` artifacts via Wrangler. |
+| `pnpm preview` | App | Local simulation of the Cloudflare environment using `wrangler dev`. |
 
 ---
 
-## 4. Deployment Workflow
+## 6. Runtime Considerations
 
-### 4.1 Manual Deployment (CLI)
-To deploy the application manually from your local machine:
-
-1.  **Build the Project:**
-    ```bash
-    pnpm build:pages
-    ```
-2.  **Deploy to Cloudflare:**
-    ```bash
-    pnpm deploy
-    ```
-
-### 4.2 CI/CD (Workers Builds)
-When using Cloudflare **Workers Builds** (recommended for OpenNext):
-
-1.  **Build Command:** `pnpm run build:pages`
-2.  **Deploy Command:** `pnpm run deploy`
-3.  **Path:** `/`
-4.  **Environment Variables:** Add any required keys (e.g., `NEXT_PUBLIC_...`) in the Cloudflare settings.
-
----
-
-## 5. Runtime Considerations
-
-OpenNext utilizes the **Edge Runtime** with `nodejs_compat` enabled.
-*   **Node.js Support:** Many Node.js APIs are available via the `nodejs_compat` flag.
-*   **Edge Compatibility:** Ensure all libraries used in server components are compatible with the Cloudflare Workers environment.
-
----
-
-## 6. Local Testing
-The best way to test the production environment locally is:
-```bash
-pnpm --filter web preview
-```
-This runs the application in `wrangler dev`, which is much closer to the actual Cloudflare environment than `next dev`.
+*   **`nodejs_compat`**: Required for Supabase and Next.js internal APIs.
+*   **Edge Compliance**: All server-side logic (Middleware, Server Actions, API Routes) must be compatible with the Cloudflare Workers/Pages environment.
+*   **Local Testing**: Use `pnpm --filter web preview` to run in a environment that closely mimics production (`workerd`).
