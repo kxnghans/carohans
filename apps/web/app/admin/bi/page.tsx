@@ -4,8 +4,10 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Icons } from '../../lib/icons';
 import {
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
-  Legend, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, BarChart, Bar, LabelList, Sector, Rectangle
+  Legend, ResponsiveContainer, AreaChart, Area, PieChart, Pie as RechartsPie, Cell, BarChart, Bar, LabelList, Sector, Rectangle
 } from 'recharts';
+
+const Pie = RechartsPie as any;
 import { useAppStore } from '../../context/AppContext';
 import { StatCard } from '../../components/dashboard/StatCard';
 import { Card } from '../../components/ui/Card';
