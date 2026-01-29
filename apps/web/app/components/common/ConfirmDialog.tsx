@@ -1,4 +1,3 @@
-import React from 'react';
 import { Icons } from '../../lib/icons';
 
 interface ConfirmDialogProps {

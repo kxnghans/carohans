@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Icons } from './lib/icons';
 import { ContactModal } from './components/modals/ContactModal';
 
 export default function LandingPage() {
-  const { User, Search, LayoutDashboard, MapPin, Phone } = Icons;
+  const { User, Search, LayoutDashboard, Phone } = Icons;
   const [isContactOpen, setIsContactOpen] = useState(false);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function LandingPage() {
           <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
             <h1 className="text-theme-hero text-foreground leading-tight mb-4">
               CaroHans <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600 dark:from-indigo-400 dark:to-purple-300">Ventures</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600 dark:from-blue-400 dark:to-blue-300">Ventures</span>
             </h1>
 
           <p className="text-muted text-theme-label max-w-sm leading-relaxed">
@@ -54,7 +54,7 @@ export default function LandingPage() {
                 <User className="w-10 h-10" />
               </div>
               <div>
-                <h3 className="text-theme-subtitle text-foreground">Client Login</h3>
+                <h3 className="text-theme-title text-foreground">Client Login</h3>
                 <p className="text-muted text-theme-body">Access your orders & profile</p>
               </div>
             </div>
@@ -73,7 +73,7 @@ export default function LandingPage() {
                 <Search className="w-10 h-10" />
               </div>
               <div>
-                <h3 className="text-theme-subtitle text-foreground">Browse as Guest</h3>
+                <h3 className="text-theme-title text-foreground">Browse as Guest</h3>
                 <p className="text-muted text-theme-body">Explore catalog without signing in</p>
               </div>
             </div>
@@ -92,7 +92,7 @@ export default function LandingPage() {
                 <LayoutDashboard className="w-10 h-10" />
               </div>
               <div>
-                <h3 className="text-theme-subtitle text-primary-text dark:text-primary-text">Admin Dashboard</h3>
+                <h3 className="text-theme-title text-primary-text dark:text-primary-text">Admin Dashboard</h3>
                 <p className="text-muted dark:text-slate-600 text-theme-body">Internal operations & Analytics</p>
               </div>
             </div>

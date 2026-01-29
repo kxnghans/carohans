@@ -5,10 +5,25 @@ import { Icons } from '../../lib/icons';
 import { InventoryItem, CartItem } from '../../types';
 import { InventoryRow } from './InventoryRow';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { ScrollableContainer } from '../common/ScrollableContainer';
 
 interface TableItem extends InventoryItem {
   isNew?: boolean;
 }
+
+const SortIcon = ({ 
+    column, 
+    sortConfig 
+}: { 
+    column: keyof InventoryItem, 
+    sortConfig: { key: keyof InventoryItem; direction: 'asc' | 'desc' } | null 
+}) => {
+    const { SortUp, SortDown } = Icons;
+    if (sortConfig?.key !== column) return <SortUp className="w-3.5 h-3.5 text-muted opacity-30" />;
+    return sortConfig.direction === 'asc' 
+        ? <SortUp className="w-3.5 h-3.5 text-primary dark:text-warning" /> 
+        : <SortDown className="w-3.5 h-3.5 text-primary dark:text-warning" />;
+};
 
 interface InventoryTableProps {
   data: InventoryItem[];
@@ -31,7 +46,7 @@ export const InventoryTable = ({
   cart,
   showOrderColumn = true
 }: InventoryTableProps) => {
-  const { Plus, SortUp, SortDown } = Icons;
+  const { Plus } = Icons;
   const [editingCell, setEditingCell] = useState<{ id: number, field: string } | null>(null);
   const [editValue, setEditValue] = useState<string | number | undefined>(undefined);
   const [showDiscardWarning, setShowDiscardWarning] = useState(false);
@@ -45,7 +60,7 @@ export const InventoryTable = ({
   });
 
   const sortedData = useMemo(() => {
-    let sortableItems = [...data];
+    const sortableItems = [...data];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         const aVal = a[sortConfig.key];
@@ -70,13 +85,6 @@ export const InventoryTable = ({
     setSortConfig({ key, direction });
   };
 
-  const SortIcon = ({ column }: { column: keyof InventoryItem }) => {
-    if (sortConfig?.key !== column) return <SortUp className="w-3.5 h-3.5 text-muted opacity-30" />;
-    return sortConfig.direction === 'asc' 
-        ? <SortUp className="w-3.5 h-3.5 text-primary dark:text-warning" /> 
-        : <SortDown className="w-3.5 h-3.5 text-primary dark:text-warning" />;
-  };
-
   const dataRef = useRef(data);
   useEffect(() => {
     dataRef.current = data;
@@ -84,8 +92,10 @@ export const InventoryTable = ({
 
   useEffect(() => {
     if (!isEditMode) {
-        setDeleteMode('ask');
+        const timer = setTimeout(() => setDeleteMode('ask'), 0);
+        return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isEditMode]);
 
   const startEditing = (id: number, field: string, value: string | number) => {
@@ -113,20 +123,20 @@ export const InventoryTable = ({
 
   const handleAddItem = (index: number) => {
     if (!setInventory || !isEditMode) return;
-    const newItem: TableItem = {
-      id: Date.now(),
-      name: "Enter Name",
-      category: "Furniture",
-      price: 0,
-      replacementCost: 0,
-      stock: 0,
-      image: "📦",
-      maintenance: 0,
-      color: "text-slate-600",
-      isNew: true
-    };
     
     setInventory((prev) => {
+      const newItem: TableItem = {
+        id: Date.now(),
+        name: "Enter Name",
+        category: "Furniture",
+        price: 0,
+        replacementCost: 0,
+        stock: 0,
+        image: "📦",
+        maintenance: 0,
+        color: "text-slate-600",
+        isNew: true
+      };
       const newData = [...prev];
       newData.splice(index + 1, 0, newItem);
       return newData;
@@ -149,6 +159,7 @@ export const InventoryTable = ({
            } else {
                setInventory((prev) => prev.map((i) => {
                    if (i.id === currentItem.id) {
+                       // eslint-disable-next-line @typescript-eslint/no-unused-vars
                        const { isNew, ...rest } = i as TableItem; 
                        return rest as InventoryItem; 
                    }
@@ -186,60 +197,60 @@ export const InventoryTable = ({
 
   return (
     <>
-    <div className="overflow-x-auto pb-12 custom-scrollbar">
+    <ScrollableContainer className="mb-8">
       <table className="w-full text-left border-collapse min-w-[1000px]">
         <thead>
           <tr className="bg-background/50 border-b border-border">
             <th
-              className="p-4 pl-6 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] cursor-pointer group hover:bg-surface transition-colors"
+              className="p-4 pl-6 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] cursor-pointer group hover:bg-surface transition-colors"
               onClick={() => requestSort('name')}
             >
               <div className="flex items-center">
                 <div className="w-12 shrink-0" />
                 <div className="ml-4 flex items-center gap-2">
                   Item Details
-                  <SortIcon column="name" />
+                  <SortIcon column="name" sortConfig={sortConfig} />
                 </div>
               </div>
             </th>
             <th
-              className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] cursor-pointer group hover:bg-surface transition-colors"
+              className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] cursor-pointer group hover:bg-surface transition-colors"
               onClick={() => requestSort('category')}
             >
               <div className="flex items-center gap-2">
                 Category
-                <SortIcon column="category" />
+                <SortIcon column="category" sortConfig={sortConfig} />
               </div>
             </th>
             <th
-              className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
+              className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
               onClick={() => requestSort('price')}
             >
               <div className="flex items-center justify-end gap-2">
                 Rate
-                <SortIcon column="price" />
+                <SortIcon column="price" sortConfig={sortConfig} />
               </div>
             </th>
             <th
-              className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
+              className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
               onClick={() => requestSort('replacementCost')}
             >
               <div className="flex items-center justify-end gap-2">
                 Replacement
-                <SortIcon column="replacementCost" />
+                <SortIcon column="replacementCost" sortConfig={sortConfig} />
               </div>
             </th>
             <th
-              className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
+              className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
               onClick={() => requestSort('stock')}
             >
               <div className="flex items-center justify-end gap-2">
                 Stock
-                <SortIcon column="stock" />
+                <SortIcon column="stock" sortConfig={sortConfig} />
               </div>
             </th>
-            {showOrderColumn && <th className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-right">Order</th>}
-            {isEditMode && <th className="p-4 text-theme-caption font-bold text-muted uppercase tracking-[0.15em] text-left pr-6">Action</th>}
+            {showOrderColumn && <th className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right">Order</th>}
+            {isEditMode && <th className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-left pr-6">Action</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -257,7 +268,7 @@ export const InventoryTable = ({
                     editingCell={editingCell}
                     editValue={editValue}
                     startEditing={startEditing}
-                    setEditValue={setEditValue as any}
+                    setEditValue={(val: string | number) => setEditValue(val)}
                     handleSave={handleSave}
                     handleKeyDown={handleKeyDown}
                     handleRowBlur={(e) => handleRowBlur(e, item)}
@@ -314,7 +325,7 @@ export const InventoryTable = ({
           )}
         </tbody>
       </table>
-    </div>
+    </ScrollableContainer>
 
     <ConfirmDialog 
         isOpen={showDiscardWarning}

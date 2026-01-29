@@ -1,32 +1,34 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Icons } from '../lib/icons';
 import { useAppStore } from '../context/AppContext';
+import { InventoryItem } from '../types';
 import { InvoiceModal } from '../components/modals/InvoiceModal';
 import { ContactModal } from '../components/modals/ContactModal';
 import { NotificationToast } from '../components/common/NotificationToast';
-import { calculateOrderTotal } from '../utils/helpers';
+import { ScrollableContainer } from '../components/common/ScrollableContainer';
+
+const ThemeIcon = ({ theme }: { theme: 'light' | 'dark' | 'system' }) => {
+  const { Sun, Moon, Laptop } = Icons;
+  if (theme === 'light') return <Sun className="w-4 h-4" />;
+  if (theme === 'dark') return <Moon className="w-4 h-4" />;
+  return <Laptop className="w-4 h-4" />;
+};
 
 export default function PortalLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { cart, portalFormData, submitOrder, showNotification, logout, user, userRole, inventory, theme, setTheme } = useAppStore();
+  const { cart, portalFormData, submitOrder, showNotification, logout, user, userRole, theme, setTheme } = useAppStore();
   const [showInvoice, setShowInvoice] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
-  const { Package, ClipboardList, User, ShoppingCart, LogOut, MapPin, Phone, Sun, Moon, Laptop, LayoutDashboard } = Icons;
-
-  const ThemeIcon = () => {
-    if (theme === 'light') return <Sun className="w-4 h-4" />;
-    if (theme === 'dark') return <Moon className="w-4 h-4" />;
-    return <Laptop className="w-4 h-4" />;
-  };
+  const { Package, ClipboardList, User, ShoppingCart, LogOut, Phone, LayoutDashboard } = Icons;
 
   const cycleTheme = () => {
     if (theme === 'system') setTheme('light');
@@ -84,15 +86,6 @@ export default function PortalLayout({
     ] : [])
   ];
 
-  const totalAmount = calculateOrderTotal(
-    cart.map(i => {
-        const item = inventory.find(inv => inv.id === i.id);
-        return { price: item?.price || 0, qty: i.qty };
-    }),
-    portalFormData.start,
-    portalFormData.end
-  );
-
     return (
 
       <div className="h-[100dvh] flex flex-col bg-background font-sans text-foreground selection:bg-indigo-100 overflow-hidden">
@@ -105,21 +98,21 @@ export default function PortalLayout({
 
         <header className="bg-surface/80 backdrop-blur-md border-b border-border z-40 shrink-0">
 
-          <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+          <div className="max-w-[1440px] mx-auto px-4 md:px-8 h-20 md:h-22 flex items-center justify-between">
 
-            <Link href="/" className="flex items-center gap-3 group">
+            <Link href="/portal/inventory" className="flex items-center gap-4 group">
 
-               <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-slate-900 to-slate-800 dark:from-white dark:to-slate-100 rounded-xl flex items-center justify-center text-primary-text dark:text-primary-text font-bold shadow-lg shadow-primary/10 group-hover:scale-105 transition-transform dark:shadow-none">
+               <div className="flex-shrink-0 w-11 h-11 bg-gradient-to-br from-slate-900 to-slate-800 dark:from-white dark:to-slate-100 rounded-xl flex items-center justify-center text-primary-text dark:text-primary-text font-black shadow-lg shadow-primary/10 group-hover:scale-105 transition-transform dark:shadow-none">
 
                 CH
 
               </div>
 
-              <div className="block max-w-[100px] xs:max-w-[120px] sm:max-w-none overflow-hidden">
+              <div className="block max-w-[140px] xs:max-w-[160px] sm:max-w-none overflow-hidden">
 
-                <span className="font-bold text-base sm:text-lg tracking-tight block leading-none truncate">CaroHans</span>
+                <span className="text-theme-title tracking-tight block leading-none truncate font-bold">CaroHans</span>
 
-                <span className="text-[8px] sm:text-[10px] text-muted font-bold uppercase tracking-wider block truncate">Client Portal</span>
+                <span className="text-[10px] text-muted font-semibold uppercase tracking-[0.2em] block truncate mt-1.5">Client Portal</span>
 
               </div>
 
@@ -127,7 +120,7 @@ export default function PortalLayout({
 
             
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
 
                {userRole === 'admin' && (
 
@@ -135,7 +128,7 @@ export default function PortalLayout({
 
                     onClick={() => router.push('/admin/overview')}
 
-                    className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-primary dark:bg-primary/10 text-primary-text dark:text-primary border border-transparent dark:border-primary/20 hover:opacity-90 transition-all font-bold text-theme-caption uppercase tracking-wide"
+                    className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-primary dark:bg-primary/10 text-primary-text dark:text-primary border border-transparent dark:border-primary/20 hover:opacity-90 transition-all font-semibold text-theme-caption uppercase tracking-wide"
 
                   >
 
@@ -153,7 +146,7 @@ export default function PortalLayout({
 
                 onClick={() => setIsContactOpen(true)}
 
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/5 dark:bg-primary/10 text-primary border border-primary/10 hover:bg-primary/10 transition-all font-bold text-theme-caption uppercase tracking-wide"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/5 dark:bg-primary/10 text-primary border border-primary/10 hover:bg-primary/10 transition-all font-semibold text-theme-caption uppercase tracking-wide"
 
               >
 
@@ -177,7 +170,7 @@ export default function PortalLayout({
 
                       onClick={logout}
 
-                      className="text-theme-caption font-bold text-muted hover:text-foreground h-[42px] px-4 rounded-xl bg-background border border-border hover:bg-surface transition-colors flex items-center gap-2"
+                      className="text-theme-caption font-semibold text-muted hover:text-foreground h-[42px] px-4 rounded-xl bg-background border border-border hover:bg-surface transition-colors flex items-center gap-2"
 
                   >
 
@@ -193,7 +186,7 @@ export default function PortalLayout({
 
                       onClick={() => router.push('/login')}
 
-                      className="text-sm font-bold text-primary dark:text-indigo-400 hover:text-indigo-700 bg-primary/10 dark:bg-indigo-900/30 hover:bg-indigo-100 h-[42px] px-4 rounded-xl transition-colors"
+                      className="text-sm font-semibold text-primary dark:text-indigo-400 hover:text-indigo-700 bg-primary/10 dark:bg-indigo-900/30 hover:bg-indigo-100 h-[42px] px-4 rounded-xl transition-colors"
 
                   >
 
@@ -205,19 +198,31 @@ export default function PortalLayout({
 
   
 
-              <button 
+                            <button 
 
-                onClick={cycleTheme}
+  
 
-                title={`Theme: ${theme}`}
+                              onClick={cycleTheme}
 
-                className="h-[42px] aspect-square text-muted hover:text-primary dark:hover:text-warning transition-colors flex items-center justify-center rounded-full bg-background border border-border hover:bg-surface"
+  
 
-              >
+                              title={`Theme: ${theme}`}
 
-                <ThemeIcon />
+  
 
-              </button>
+                              className="h-[42px] aspect-square text-muted hover:text-primary dark:hover:text-warning transition-colors flex items-center justify-center rounded-full bg-background border border-border hover:bg-surface"
+
+  
+
+                            >
+
+  
+
+                              <ThemeIcon theme={theme} />
+
+  
+
+                            </button>
 
             </div>
 
@@ -225,139 +230,70 @@ export default function PortalLayout({
 
         </header>
 
-  
-
-        {/* INDEPENDENTLY SCROLLABLE CONTENT */}
-
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-background">
-
-          <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
-
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
-
-                  {children}
-
+        {/* SUB-HEADER NAVIGATION & ACTIONS */}
+        <div className="bg-surface/60 backdrop-blur-md border-b border-border z-30">
+          <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <ScrollableContainer className="w-full sm:w-auto" innerClassName="pb-0">
+              <div className="flex items-center gap-2 min-w-max">
+                {navItems.map((tab) => {
+                  const isActive = pathname === tab.href;
+                  return (
+                    <Link
+                      key={tab.href}
+                      href={tab.href}
+                      className={`
+                        flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all whitespace-nowrap border-2 font-semibold
+                        ${isActive
+                          ? 'bg-primary text-primary-text border-primary shadow-lg shadow-primary/20'
+                          : 'bg-background/50 text-muted hover:bg-surface border-transparent hover:border-border'}
+                      `}
+                    >
+                      <tab.icon className="w-4 h-4" />
+                      {tab.label}
+                    </Link>
+                  );
+                })}
               </div>
-
-          </div>
-
-        </main>
-
-  
-
-        {/* STICKY FOOTER (NAV & CHECKOUT) */}
-
-        <div className="shrink-0 p-4 bg-gradient-to-t from-background via-background/95 to-transparent z-30">
-
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface p-4 rounded-[2rem] shadow-2xl border border-border/50 backdrop-blur-xl">
-
-            <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar-hide pb-1 md:pb-0">
-
-              {navItems.map((tab) => {
-
-                const isActive = pathname === tab.href;
-
-                return (
-
-                  <Link
-
-                    key={tab.href}
-
-                    href={tab.href}
-
-                    className={`
-
-                          flex items-center gap-2 px-5 py-2.5 rounded-2xl text-theme-subtitle transition-all whitespace-nowrap border-2
-
-                          ${isActive
-
-                        ? 'bg-primary dark:bg-primary text-primary-text dark:text-primary-text border-white dark:border-slate-900 shadow-xl dark:shadow-none'
-
-                        : 'bg-background text-muted hover:bg-surface border-transparent hover:border-border'}
-
-                        `}
-
-                  >
-
-                    <tab.icon className="w-4 h-4" />
-
-                    {tab.label}
-
-                  </Link>
-
-                );
-
-              })}
-
-            </div>
-
-  
+            </ScrollableContainer>
 
             <button
-
               onClick={handleAction}
-
               className={`
-
-                flex items-center justify-center gap-3 px-8 py-3.5 rounded-[1.5rem] text-theme-subtitle transition-all shadow-2xl border-2
-
-                bg-primary text-primary-text border-slate-900 hover:opacity-90
-
-                dark:bg-primary dark:text-primary-text dark:border-white dark:hover:bg-surface
-
-                shadow-indigo-500/20 dark:shadow-none active:scale-[0.98]
-
+                w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-2.5 rounded-xl text-sm transition-all shadow-lg border border-transparent
+                bg-primary text-primary-text hover:opacity-90 active:scale-[0.98]
+                shadow-primary/20 dark:shadow-none font-bold uppercase tracking-widest
               `}
-
             >
-
-              <ShoppingCart className="w-5 h-5" />
-
-              <span className="font-black uppercase tracking-widest">{buttonLabel}</span>
-
+              <ShoppingCart className="w-4 h-4" />
+              <span>{buttonLabel}</span>
               {hasItems && (
-
-                <span className="bg-white/20 dark:bg-primary/10 px-2.5 py-1 rounded-full text-[11px] font-black leading-none border border-white/10">
-
+                <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-bold">
                   {cart.length}
-
                 </span>
-
               )}
-
             </button>
-
           </div>
-
         </div>
 
-  
+        {/* INDEPENDENTLY SCROLLABLE CONTENT */}
+        <main className="flex-1 overflow-y-auto custom-scrollbar bg-background">
+          <div className="max-w-[1440px] mx-auto p-4 md:p-8 space-y-6">
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+                  {children}
+              </div>
+          </div>
+        </main>
 
         {/* CHECKOUT MODAL */}
-
         <InvoiceModal
-
           isOpen={showInvoice}
-
           onClose={() => setShowInvoice(false)}
-
-          cart={cart}
-
-          client={{ name: `${portalFormData.firstName} ${portalFormData.lastName}`.trim(), email: portalFormData.email, phone: portalFormData.phone }}
-
+          cart={cart as (InventoryItem & { qty: number, lostQty?: number, damagedQty?: number })[]}
+          client={{ firstName: `${portalFormData.firstName} ${portalFormData.lastName}`.trim(), email: portalFormData.email, phone: portalFormData.phone }}
           onConfirm={handleConfirmOrder}
-
-          total={totalAmount}
-
           startDate={portalFormData.start}
-
           endDate={portalFormData.end}
-
         />
-
       </div>
-
     );
-
-  
 }

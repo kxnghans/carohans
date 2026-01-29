@@ -9,13 +9,13 @@
 :root {
   /* Global Palette */
   --primary: #0f172a;           /* Navy */
-  --secondary: #4f46e5;         /* Indigo/Purple */
+  --secondary: #2563eb;         /* Blue */
   --accent-primary: #2563eb;    /* Vibrant Blue */
   --accent-secondary: #64748b;  /* Slate/Grey */
   
   /* System States */
   --success: #10b981;
-  --error: #e11d48;             /* Refined Rose Crimson */
+  --error: #be123c;             /* Rose 700 - Old Styling Match */
   --warning: #f59e0b;
   --neutral: #334155;
   
@@ -38,14 +38,14 @@
   --status-canceled: var(--muted); /* Neutral Grey for Canceled */
 
   /* Transparent Variants */
-  --status-pending-bg: color-mix(in srgb, var(--status-pending), transparent 90%);
-  --status-approved-bg: color-mix(in srgb, var(--status-approved), transparent 90%);
-  --status-active-bg: color-mix(in srgb, var(--status-active), transparent 90%);
-  --status-late-bg: color-mix(in srgb, var(--status-late), transparent 90%);
-  --status-completed-bg: color-mix(in srgb, var(--status-completed), transparent 90%);
-  --status-settlement-bg: color-mix(in srgb, var(--status-settlement), transparent 90%);
-  --status-rejected-bg: color-mix(in srgb, var(--status-rejected), transparent 90%);
-  --status-canceled-bg: color-mix(in srgb, var(--status-canceled), transparent 90%);
+  --status-pending-bg: color-mix(in srgb, var(--status-pending), transparent 85%);
+  --status-approved-bg: color-mix(in srgb, var(--status-approved), transparent 85%);
+  --status-active-bg: color-mix(in srgb, var(--status-active), transparent 85%);
+  --status-late-bg: color-mix(in srgb, var(--status-late), transparent 85%);
+  --status-completed-bg: color-mix(in srgb, var(--status-completed), transparent 85%);
+  --status-settlement-bg: color-mix(in srgb, var(--status-settlement), transparent 85%);
+  --status-rejected-bg: color-mix(in srgb, var(--status-rejected), transparent 85%);
+  --status-canceled-bg: color-mix(in srgb, var(--status-canceled), transparent 85%);
 
   /* Chart & UI Overrides */
   --chart-label: var(--secondary);
@@ -72,6 +72,8 @@
   --color-status-active: var(--status-active);
   --color-status-completed: var(--status-completed);
   --color-status-settlement: var(--status-settlement);
+  --color-status-rejected: var(--status-rejected);
+  --color-status-canceled: var(--status-canceled);
   
   --color-status-pending-bg: var(--status-pending-bg);
   --color-status-approved-bg: var(--status-approved-bg);
@@ -90,7 +92,7 @@
 .dark {
   color-scheme: dark;
   --primary: #f8fafc;
-  --secondary: #6366f1;
+  --secondary: #3b82f6;
   --accent-primary: #60a5fa;
   --accent-secondary: #94a3b8;
   
@@ -107,6 +109,16 @@
   
   --neutral: #e2e8f0;
 
+  /* Status Overrides for Dark Mode */
+  --status-pending: #fbbf24;    /* Amber 400 */
+  --status-approved: #818cf8;   /* Indigo 400 */
+  --status-active: #60a5fa;     /* Blue 400 */
+  --status-late: #f87171;       /* Red 400 */
+  --status-completed: #34d399;  /* Emerald 400 */
+  --status-settlement: #fb923c; /* Orange 400 */
+  --status-rejected: #fb7185;   /* Rose 400 */
+  --status-canceled: #94a3b8;   /* Slate 400 */
+
   /* Chart & UI Overrides */
   --chart-label: var(--primary);
 }
@@ -119,12 +131,12 @@
 
 @utility text-theme-header {
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 @utility text-theme-title {
   font-size: 17px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 @utility text-theme-subtitle {
@@ -182,7 +194,7 @@
 
 html {
   background: var(--color-background);
-  color-scheme: light;
+  color-scheme: light dark;
 }
 
 body {

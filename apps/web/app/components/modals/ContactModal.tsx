@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
@@ -20,15 +20,19 @@ export const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     if (isOpen) {
-      setFormData(businessSettings);
-      setIsEditMode(false);
+      const timer = setTimeout(() => {
+        setFormData(businessSettings);
+        setIsEditMode(false);
+      }, 0);
       document.body.style.overflow = 'hidden';
       document.documentElement.style.overflow = 'hidden';
+      return () => clearTimeout(timer);
     } else {
       document.body.style.overflow = 'unset';
       document.documentElement.style.overflow = 'unset';
@@ -91,41 +95,41 @@ export const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
           {isEditing ? (
             <div className="space-y-4">
               <div className="space-y-1">
-                <label className="text-theme-caption font-black text-muted uppercase tracking-widest ml-1">Business Name</label>
+                <label className="text-theme-caption font-semibold text-muted uppercase tracking-widest ml-1">Business Name</label>
                 <input 
-                  className="w-full p-3 bg-background border border-border rounded-xl text-theme-body-bold text-foreground outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all"
+                  className="w-full p-3 bg-background border border-border rounded-xl text-theme-body-bold text-foreground outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all font-medium"
                   value={formData.business_name}
                   onChange={e => setFormData({ ...formData, business_name: e.target.value })}
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-theme-caption font-black text-muted uppercase tracking-widest ml-1">Phone Number</label>
+                <label className="text-theme-caption font-semibold text-muted uppercase tracking-widest ml-1">Phone Number</label>
                 <input 
-                  className="w-full p-3 bg-background border border-border rounded-xl text-theme-body-bold text-foreground outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all"
+                  className="w-full p-3 bg-background border border-border rounded-xl text-theme-body-bold text-foreground outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all font-medium"
                   value={formData.business_phone}
                   onChange={e => setFormData({ ...formData, business_phone: e.target.value })}
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-theme-caption font-black text-muted uppercase tracking-widest ml-1">Email Address</label>
+                <label className="text-theme-caption font-semibold text-muted uppercase tracking-widest ml-1">Email Address</label>
                 <input 
-                  className="w-full p-3 bg-background border border-border rounded-xl text-theme-body-bold text-foreground outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all"
+                  className="w-full p-3 bg-background border border-border rounded-xl text-theme-body-bold text-foreground outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all font-medium"
                   value={formData.business_email}
                   onChange={e => setFormData({ ...formData, business_email: e.target.value })}
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-theme-caption font-black text-muted uppercase tracking-widest ml-1">Location Description</label>
+                <label className="text-theme-caption font-semibold text-muted uppercase tracking-widest ml-1">Location Description</label>
                 <textarea 
-                  className="w-full p-3 bg-background border border-border rounded-xl text-theme-body-bold text-foreground outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all min-h-[80px] resize-none"
+                  className="w-full p-3 bg-background border border-border rounded-xl text-theme-body-bold text-foreground outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all min-h-[80px] resize-none font-medium"
                   value={formData.business_location}
                   onChange={e => setFormData({ ...formData, business_location: e.target.value })}
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-theme-caption font-black text-muted uppercase tracking-widest ml-1">Google Maps Link</label>
+                <label className="text-theme-caption font-semibold text-muted uppercase tracking-widest ml-1">Google Maps Link</label>
                 <input 
-                  className="w-full p-3 bg-background border border-border rounded-xl text-theme-body-bold text-foreground outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all"
+                  className="w-full p-3 bg-background border border-border rounded-xl text-theme-body-bold text-foreground outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all font-medium"
                   value={formData.maps_link}
                   onChange={e => setFormData({ ...formData, maps_link: e.target.value })}
                 />
@@ -136,28 +140,28 @@ export const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
               <div className="flex items-start gap-4">
                 <div className="p-2 bg-primary/10 dark:bg-indigo-900/20 text-primary dark:text-indigo-400 rounded-xl"><Globe className="w-5 h-5" /></div>
                 <div>
-                  <p className="text-theme-caption font-black text-muted uppercase tracking-widest mb-0.5">Business Name</p>
-                  <p className="text-theme-body-bold text-foreground">{businessSettings.business_name}</p>
+                  <p className="text-theme-caption font-semibold text-muted uppercase tracking-widest mb-0.5">Business Name</p>
+                  <p className="text-theme-body-bold text-foreground font-bold">{businessSettings.business_name}</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
                 <div className="p-2 bg-success/10 dark:bg-emerald-900/20 text-success dark:text-emerald-400 rounded-xl"><Phone className="w-5 h-5" /></div>
                 <div>
-                  <p className="text-theme-caption font-black text-muted uppercase tracking-widest mb-0.5">Phone Number</p>
+                  <p className="text-theme-caption font-semibold text-muted uppercase tracking-widest mb-0.5">Phone Number</p>
                   <div className="flex flex-wrap gap-2.5">
-                    <a href={`tel:${businessSettings.business_phone}`} className="text-theme-body-bold text-foreground hover:text-primary transition-colors">
+                    <a href={`tel:${businessSettings.business_phone}`} className="text-theme-body-bold text-foreground hover:text-primary transition-colors font-bold">
                       {formatPhoneNumber(businessSettings.business_phone)}
                     </a>
                     <div className="flex gap-1.5">
                       <a 
                         href={`tel:${businessSettings.business_phone}`} 
-                        className="text-[9px] font-black text-success dark:text-emerald-400 uppercase border border-emerald-100 dark:border-emerald-800 bg-success/10 dark:bg-emerald-900/30 px-2 py-0.5 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all active:scale-95"
+                        className="text-[9px] font-black text-success dark:text-emerald-400 uppercase border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all active:scale-95 shadow-sm"
                       >
                         Call Now
                       </a>
                       <a 
                         href={`sms:${businessSettings.business_phone}`} 
-                        className="text-[9px] font-black text-primary dark:text-indigo-400 uppercase border border-indigo-100 dark:border-indigo-800 bg-primary/10 dark:bg-indigo-900/30 px-2 py-0.5 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all active:scale-95"
+                        className="text-[9px] font-black text-primary dark:text-blue-400 uppercase border border-indigo-100 dark:border-blue-800/50 bg-primary/5 dark:bg-blue-900/40 px-2.5 py-1 rounded-lg hover:bg-indigo-100 dark:hover:bg-blue-900/60 transition-all active:scale-95 shadow-sm"
                       >
                         Send Text
                       </a>
@@ -168,8 +172,8 @@ export const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
               <div className="flex items-start gap-4">
                 <div className="p-2 bg-blue-50 dark:bg-blue-900/20 text-accent-primary dark:text-blue-400 rounded-xl"><Mail className="w-5 h-5" /></div>
                 <div>
-                  <p className="text-theme-caption font-black text-muted uppercase tracking-widest mb-0.5">Email Address</p>
-                  <a href={`mailto:${businessSettings.business_email}`} className="text-theme-body-bold text-foreground hover:text-primary transition-colors">
+                  <p className="text-theme-caption font-semibold text-muted uppercase tracking-widest mb-0.5">Email Address</p>
+                  <a href={`mailto:${businessSettings.business_email}`} className="text-theme-body-bold text-foreground hover:text-primary transition-colors font-bold">
                     {businessSettings.business_email}
                   </a>
                 </div>
@@ -177,12 +181,12 @@ export const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
               <div className="flex items-start gap-4">
                 <div className="p-2 bg-warning/10 dark:bg-amber-900/20 text-warning dark:text-amber-400 rounded-xl"><MapPin className="w-5 h-5" /></div>
                 <div>
-                  <p className="text-theme-caption font-black text-muted uppercase tracking-widest mb-0.5">Location</p>
+                  <p className="text-theme-caption font-semibold text-muted uppercase tracking-widest mb-0.5">Location</p>
                   <p className="text-theme-body text-foreground leading-relaxed font-medium">{businessSettings.business_location}</p>
                   <Button 
                     variant="primary" 
                     size="md"
-                    className="mt-3 w-full md:w-auto rounded-full px-8 dark:bg-primary dark:hover:bg-primary/90 dark:text-primary-text"
+                    className="mt-3 w-full md:w-auto rounded-full px-8 dark:bg-primary dark:hover:bg-primary/90 dark:text-primary-text font-bold"
                     onClick={() => window.open(businessSettings.maps_link, '_blank')}
                   >
                     <MapPin className="w-4 h-4 mr-2" />

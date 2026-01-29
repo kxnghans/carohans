@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
 import { getStatusColor, getStatusDescription } from '../../utils/helpers';
-import { Order, InventoryItem } from '../../types';
+import { Order, InventoryItem, OrderItem } from '../../types';
 
 interface OrderAdminCardProps {
   order: Order;
@@ -52,7 +52,7 @@ export const OrderAdminCard = ({ order, updateStatus, onInvoice, inventory }: Or
             <div className="flex-1">
               <h5 className="font-bold text-xs uppercase tracking-wider text-muted mb-3">Order Items</h5>
               <div className="space-y-2 mb-6">
-                {order.items.map((item: any, idx: number) => {
+                {order.items.map((item: OrderItem, idx: number) => {
                   // Start of rudimentary item lookup - ideally pass inventory
                   const itemName = inventory.find(i => i.id === item.itemId)?.name || 'Unknown Item';
                   return (

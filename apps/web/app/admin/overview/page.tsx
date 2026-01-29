@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Icons, InventoryIcons } from '../../lib/icons';
+import { Icons } from '../../lib/icons';
 import { useAppStore } from '../../context/AppContext';
-import { calculateMetrics, formatCurrency, getStatusColor, formatDate, calculateOrderTotal, getDurationDays } from '../../utils/helpers';
+import { calculateMetrics, formatCurrency, calculateOrderTotal, getDurationDays } from '../../utils/helpers';
 import { FilterCard } from '../../components/dashboard/FilterCard';
 import { ClientSelector } from '../../components/modals/ClientSelector';
 import { InventoryTable } from '../../components/inventory/InventoryTable';
@@ -18,24 +18,25 @@ import { updateOrderStatusToSupabase, processOrderReturn } from '../../services/
 import { OrderTable } from '../../components/orders/OrderTable';
 
 export default function AdminOverviewPage() {
-  const { Truck, LayoutDashboard, ClipboardList, AlertOctagon, AlertCircle, Check, Search, Plus, X, ChevronRight, Loader2, Calendar, User, CreditCard } = Icons;
+  const { Truck, LayoutDashboard, ClipboardList, AlertOctagon, AlertCircle, Check, Search, Plus, X, ChevronRight, Loader2, User, CreditCard } = Icons;
   const { orders, setOrders, clients, showNotification, inventory, loading, submitOrder, latePenaltyPerDay } = useAppStore();
   
   const [mounted, setMounted] = useState(false);
   const [orderFilter, setOrderFilter] = useState('All');
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
   const [searchQuery, setSearchQuery] = useState('');
   const [createOrderStep, setCreateOrderStep] = useState<'none' | 'select-client' | 'shop' | 'review'>('none');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [posCart, setPosCart] = useState<(InventoryItem & { qty: number })[]>([]);
   const [posDates, setPosDates] = useState({ start: '', end: '' });
-  const [viewingInvoice, setViewingInvoice] = useState<(Order & { cart: any[], client: any }) | null>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<(Order & { cart: (InventoryItem & { qty: number, lostQty?: number, damagedQty?: number })[], client: Partial<Client> }) | null>(null);
   
   const [returnOrder, setReturnOrder] = useState<Order | null>(null);
-  const [returnDate, setReturnDate] = useState(new Date().toISOString().split('T')[0]);
+  const [returnDate, setReturnDate] = useState(new Date().toISOString().split('T')[0] ?? '');
   const [returnItemQuantities, setReturnItemQuantities] = useState<Record<number, { returned: number, lost: number, damaged: number }>>({});
   const [selectedReturnStatus, setSelectedReturnStatus] = useState<'On Time' | 'Early' | 'Late'>('On Time');
   const [selectedItemIntegrity, setSelectedItemIntegrity] = useState<string[]>(['Good']);
@@ -66,28 +67,32 @@ export default function AdminOverviewPage() {
     return () => window.removeEventListener('keydown', handleEsc);
   }, [returnOrder]);
 
-  // Initializing item quantities when returnOrder is set
   useEffect(() => {
     if (returnOrder) {
-        const initialQtys: any = {};
+        const initialQtys: Record<number, { returned: number, lost: number, damaged: number }> = {};
         returnOrder.items.forEach(item => {
             initialQtys[item.itemId] = { returned: item.qty, lost: 0, damaged: 0 };
         });
-        setReturnItemQuantities(initialQtys);
-        setReturnDate(new Date().toISOString().split('T')[0]);
         
-        // Auto-determine default return status
-        const today = new Date().toISOString().split('T')[0];
-        if (today < returnOrder.endDate) setSelectedReturnStatus('Early');
-        else if (today === returnOrder.endDate) setSelectedReturnStatus('On Time');
-        else setSelectedReturnStatus('Late');
+        const timer = setTimeout(() => {
+            setReturnItemQuantities(initialQtys);
+            setReturnDate(new Date().toISOString().split('T')[0] ?? '');
+            
+            // Auto-determine default return status
+            const today = new Date().toISOString().split('T')[0] ?? '';
+            if (today < returnOrder.endDate) setSelectedReturnStatus('Early');
+            else if (today === returnOrder.endDate) setSelectedReturnStatus('On Time');
+            else setSelectedReturnStatus('Late');
 
-        setSelectedItemIntegrity(['Good']);
-        
-        // Always default to 0 as requested, forcing admin to input actual payment
-        setPaymentAmount(0);
-        setSubmitAttempted(false);
+            setSelectedItemIntegrity(['Good']);
+            
+            // Always default to 0 as requested, forcing admin to input actual payment
+            setPaymentAmount(0);
+            setSubmitAttempted(false);
+        }, 0);
+        return () => clearTimeout(timer);
     }
+    return undefined;
   }, [returnOrder]);
 
   const toggleIntegrity = (status: string) => {
@@ -158,7 +163,7 @@ export default function AdminOverviewPage() {
   }, [orders, orderFilter, searchQuery]);
 
   const sortedOrders = useMemo(() => {
-    let sortableItems = [...filteredOrders];
+    const sortableItems = [...filteredOrders];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         let aVal = a[sortConfig.key as keyof typeof a];
@@ -193,12 +198,12 @@ export default function AdminOverviewPage() {
         lostQty: item.lostQty,
         damagedQty: item.damagedQty
       };
-    });
+    }) as (InventoryItem & { qty: number, lostQty?: number, damagedQty?: number })[];
 
     setViewingInvoice({
       ...order,
       cart: reconstructedCart,
-      client: { name: order.clientName, email: order.email, phone: order.phone }
+      client: { firstName: order.clientName, email: order.email, phone: order.phone }
     });
   };
 
@@ -209,7 +214,7 @@ export default function AdminOverviewPage() {
           if (order) { setReturnOrder(order); return; }
       }
       await updateOrderStatusToSupabase(orderId, newStatus, closedAt, returnStatus);
-      setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus, closedAt, returnStatus: returnStatus as any } : o));
+      setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus, closedAt, returnStatus: returnStatus as 'On Time' | 'Early' | 'Late' | undefined } : o));
       showNotification(`Order #${orderId} marked as ${newStatus}`);
     } catch (error) {
       console.error('Error updating status:', error);
@@ -281,8 +286,8 @@ export default function AdminOverviewPage() {
         phone: selectedClient.phone,
         email: selectedClient.email,
         address: selectedClient.address,
-        start: posDates.start || new Date().toISOString().split('T')[0],
-        end: posDates.end || new Date().toISOString().split('T')[0]
+        start: posDates.start || (new Date().toISOString().split('T')[0] ?? ''),
+        end: posDates.end || (new Date().toISOString().split('T')[0] ?? '')
     };
     await submitOrder(orderData);
     setPosCart([]); setSelectedClient(null); setPosDates({ start: '', end: '' }); setCreateOrderStep('none');
@@ -310,25 +315,25 @@ export default function AdminOverviewPage() {
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-warning/10 text-warning text-theme-caption font-bold mb-4 border border-warning/20 shadow-[0_0_15px_var(--color-warning)]/10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-warning/10 text-warning text-theme-caption font-semibold mb-4 border border-warning/20 shadow-[0_0_15px_var(--color-warning)]/10">
               <span className="w-2 h-2 rounded-full bg-warning animate-pulse shadow-[0_0_8px_var(--color-warning)]"></span> Live Operations
             </div>
-            <h2 className="text-theme-header mb-2 text-primary-text dark:text-primary">Today's Logistics</h2>
-            <p className="text-primary-text/60 dark:text-primary/60 text-theme-body">Overview of pickup and return schedules for today.</p>
+            <h2 className="text-theme-header mb-2 text-primary-text dark:text-primary font-bold">Today&apos;s Logistics</h2>
+            <p className="text-primary-text/60 dark:text-primary/60 text-theme-body font-medium">Overview of pickup and return schedules for today.</p>
           </div>
 
           <div className="grid grid-cols-3 gap-4 md:gap-8 bg-primary-text/5 dark:bg-primary/5 p-6 rounded-2xl border border-primary-text/10 dark:border-primary/10 backdrop-blur-sm w-full md:w-auto">
             <div className="text-center px-2">
-              <span className="block text-theme-header text-primary-text dark:text-primary">{metrics.pickupsToday}</span>
-              <span className="text-theme-caption text-primary-text/60 dark:text-primary/60 uppercase tracking-wider font-bold">Pickups</span>
+              <span className="block text-theme-header text-primary-text dark:text-primary font-bold">{metrics.pickupsToday}</span>
+              <span className="text-theme-caption text-primary-text/60 dark:text-primary/60 uppercase tracking-wider font-semibold">Pickups</span>
             </div>
             <div className="text-center px-2 border-x border-primary-text/10 dark:border-primary/10">
-              <span className="block text-theme-header text-primary-text dark:text-primary">{metrics.returnsToday}</span>
-              <span className="text-theme-caption text-primary-text/60 dark:text-primary/60 uppercase tracking-wider font-bold">Return</span>
+              <span className="block text-theme-header text-primary-text dark:text-primary font-bold">{metrics.returnsToday}</span>
+              <span className="text-theme-caption text-primary-text/60 dark:text-primary/60 uppercase tracking-wider font-semibold">Return</span>
             </div>
             <div className="text-center px-2">
-              <span className="block text-theme-header text-error">{metrics.lateRentals}</span>
-              <span className="text-theme-caption text-error/80 uppercase tracking-wider font-bold">Late</span>
+              <span className="block text-theme-header text-error font-bold">{metrics.lateRentals}</span>
+              <span className="text-theme-caption text-error/80 uppercase tracking-wider font-semibold">Late</span>
             </div>
           </div>
         </div>
@@ -340,7 +345,7 @@ export default function AdminOverviewPage() {
             <h3 className="text-theme-caption text-muted uppercase tracking-[0.25em]">Operational Filter Engine</h3>
             <div className="h-px flex-1 bg-border mx-6 hidden sm:block"></div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6 sm:gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-6 lg:gap-8">
           <FilterCard title="Total Orders" count={orders.length} status="All" active={orderFilter === 'All'} onClick={() => setOrderFilter('All')} color="bg-primary" icon={LayoutDashboard} />
           <FilterCard title="Pending" count={metrics.pendingRequests} status="Pending" active={orderFilter === 'Pending'} onClick={() => setOrderFilter('Pending')} color="bg-status-pending" icon={ClipboardList} />
           <FilterCard title="Active" count={metrics.activeRentals} status="Active" active={orderFilter === 'Active'} onClick={() => setOrderFilter('Active')} color="bg-status-active" icon={Truck} />
@@ -359,11 +364,11 @@ export default function AdminOverviewPage() {
           </div>
           <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto items-center">
             <div className="relative w-full md:w-72 group">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
               <input 
                 type="text" 
                 placeholder="Search orders, clients..." 
-                className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl text-theme-label outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all shadow-sm"
+                className="w-full pl-12 pr-4 py-2.5 bg-surface border border-border rounded-xl text-theme-label outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all shadow-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -387,7 +392,7 @@ export default function AdminOverviewPage() {
 
       {/* POS MODALS & OVERLAYS */}
       {createOrderStep === 'select-client' && (
-        <ClientSelector clients={clients} onClose={() => setCreateOrderStep('none')} onSelect={(c: any) => { setSelectedClient(c); setCreateOrderStep('shop'); }} />
+        <ClientSelector clients={clients} onClose={() => setCreateOrderStep('none')} onSelect={(c: Client) => { setSelectedClient(c); setCreateOrderStep('shop'); }} />
       )}
 
       {createOrderStep === 'shop' && (
@@ -441,11 +446,11 @@ export default function AdminOverviewPage() {
       )}
 
       {createOrderStep === 'review' && (
-        <InvoiceModal isOpen={true} onClose={() => setCreateOrderStep('shop')} cart={posCart} client={selectedClient} total={posTotal} startDate={posDates.start} endDate={posDates.end} onConfirm={submitAdminOrder} />
+        <InvoiceModal isOpen={true} onClose={() => setCreateOrderStep('shop')} cart={posCart} client={selectedClient} startDate={posDates.start} endDate={posDates.end} onConfirm={submitAdminOrder} />
       )}
 
       {viewingInvoice && (
-        <InvoiceModal isOpen={true} onClose={() => setViewingInvoice(null)} cart={viewingInvoice.cart} client={viewingInvoice.client} total={viewingInvoice.totalAmount} startDate={viewingInvoice.startDate} endDate={viewingInvoice.endDate} penaltyAmount={viewingInvoice.penaltyAmount} status={viewingInvoice.status} onConfirm={() => setViewingInvoice(null)} />
+        <InvoiceModal isOpen={true} onClose={() => setViewingInvoice(null)} cart={viewingInvoice.cart} client={viewingInvoice.client} startDate={viewingInvoice.startDate} endDate={viewingInvoice.endDate} penaltyAmount={viewingInvoice.penaltyAmount} status={viewingInvoice.status} onConfirm={() => setViewingInvoice(null)} />
       )}
 
       {/* ENHANCED RETURN TRACKING DIALOG */}
@@ -652,7 +657,7 @@ export default function AdminOverviewPage() {
                             {returnTotals.balance > 0 && (
                                 <div className="flex items-start gap-2 p-3 bg-warning/10 rounded-xl border border-amber-100 mt-2">
                                     <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
-                                    <p className="text-theme-caption text-amber-700 font-bold italic leading-tight">Order remains in 'Settlement' until balance is ¢0.</p>
+                                    <p className="text-theme-caption text-amber-700 font-bold italic leading-tight">Order remains in &apos;Settlement&apos; until balance is ¢0.</p>
                                 </div>
                             )}
                         </div>

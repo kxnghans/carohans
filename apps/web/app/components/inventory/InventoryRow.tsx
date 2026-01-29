@@ -1,5 +1,4 @@
-import React from 'react';
-import { Icons, InventoryIcons } from '../../lib/icons';
+import { Icons } from '../../lib/icons';
 import { formatCurrency } from '../../utils/helpers';
 import { InventoryItem, CartItem } from '../../types';
 import { IconColorPicker } from './IconColorPicker';

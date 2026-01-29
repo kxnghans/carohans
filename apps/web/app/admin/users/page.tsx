@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -19,15 +19,54 @@ interface UserProfile {
 }
 
 import { useAppStore } from '../../context/AppContext';
-import { InventoryIcons } from '../../lib/icons';
 import { DynamicIcon } from '../../components/common/DynamicIcon';
 
+interface ClientRow {
+    user_id: string;
+    name: string;
+    email: string;
+    username: string;
+    image: string;
+    color: string;
+}
+
+interface ProfileRow {
+    id: string;
+    role: string;
+    created_at: string;
+}
+
 export default function AdminUsersPage() {
-    const { Shield, Trash2, ChevronRight, Loader2, TrendingUp, TrendingDown, User } = Icons;
+    const { Shield, Trash2, ChevronRight, Loader2, TrendingUp, TrendingDown, User, Key } = Icons;
     const { showNotification } = useAppStore();
     const [users, setUsers] = useState<UserProfile[]>([]);
     const [loading, setLoading] = useState(true);
     
+    // Token State
+    const [showTokenDialog, setShowTokenDialog] = useState(false);
+    const [newToken, setNewToken] = useState('');
+    const [updatingToken, setUpdatingToken] = useState(false);
+
+    const handleUpdateToken = async () => {
+        if (!newToken) return;
+        setUpdatingToken(true);
+        try {
+            const { error } = await supabase
+                .from('settings')
+                .upsert({ key: 'signup_token', value: newToken });
+            
+            if (error) throw error;
+            showNotification("Security token updated successfully");
+            setShowTokenDialog(false);
+            setNewToken('');
+        } catch (err) {
+            console.error("Token update failed", err);
+            showNotification("Failed to update token", "error");
+        } finally {
+            setUpdatingToken(false);
+        }
+    };
+
     // Collapsible State
     const [sections, setSections] = useState({
         admins: true,
@@ -58,7 +97,7 @@ export default function AdminUsersPage() {
             return;
         }
 
-        const { data: clients, error: clientError } = await supabase
+        const { data: clientsData, error: clientError } = await supabase
             .from('clients')
             .select('user_id, name, email, username, image, color');
             
@@ -66,9 +105,12 @@ export default function AdminUsersPage() {
             console.error('Error fetching clients', clientError);
         }
 
-        const merged: UserProfile[] = profiles
-            .map((p: any) => {
-                const client = clients?.find((c: any) => c.user_id === p.id);
+        const typedProfiles = (profiles || []) as ProfileRow[];
+        const typedClients = (clientsData || []) as ClientRow[];
+
+        const merged: UserProfile[] = typedProfiles
+            .map((p) => {
+                const client = typedClients.find((c) => c.user_id === p.id);
                 return {
                     id: p.id,
                     email: client?.email || 'No Email',
@@ -82,7 +124,7 @@ export default function AdminUsersPage() {
             })
             // Only show users who have a linked client record or an email
             // This filters out stale/incomplete auth profiles
-            .filter((u: any) => u.clientName !== null || u.clientEmail !== null) as UserProfile[];
+            .filter((u: { clientName: string | null; clientEmail: string | null }) => u.clientName !== null || u.clientEmail !== null) as UserProfile[];
 
         setUsers(merged);
         setLoading(false);
@@ -153,7 +195,7 @@ export default function AdminUsersPage() {
             setUsers(prev => prev.filter(u => u.id !== userId));
             // Sync with server
             fetchUsers(true);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Delete failed", error);
             showNotification("Failed to delete access. This can happen if the user has active records.", "error");
         }
@@ -185,7 +227,7 @@ export default function AdminUsersPage() {
                 className="p-4 border-b border-border bg-background/50 flex justify-between items-center cursor-pointer select-none hover:bg-surface transition-colors"
                 onClick={onToggle}
             >
-                <h3 className="text-theme-subtitle font-bold text-foreground flex items-center gap-2">
+                <h3 className="text-theme-subtitle font-semibold text-foreground flex items-center gap-2">
                     {title} 
                     <span className="text-theme-caption bg-background dark:bg-primary text-muted px-2 py-0.5 rounded-full border border-border">{data.length}</span>
                 </h3>
@@ -213,8 +255,8 @@ export default function AdminUsersPage() {
                                 <tr key={user.id} className="hover:bg-background/50 transition-colors">
                                     <td className="p-4 pl-6">
                                         <div className="flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${user.color ? user.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + (user.color.split('-')[1] || 'slate') + '-200 dark:bg-primary/10 dark:border-primary/20' : 'bg-background border-border'}`}>
-                                                <DynamicIcon iconString={user.image} color={user.color} className="w-4 h-4" fallback={<User className={`w-4 h-4 ${user.color || 'text-muted'}`} />} />
+                                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center border transition-all ${user.color ? user.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + (user.color.split('-')[1] || 'slate') + '-200 dark:bg-primary/10 dark:border-primary/20' : 'bg-background border-border'}`}>
+                                                <DynamicIcon iconString={user.image} color={user.color} className="w-3.5 h-3.5" fallback={<User className={`w-3.5 h-3.5 ${user.color || 'text-muted'}`} />} />
                                             </div>
                                             <div>
                                                 <div className="text-theme-label font-bold text-foreground leading-tight">{user.clientName}</div>
@@ -231,7 +273,7 @@ export default function AdminUsersPage() {
                                             ? 'bg-status-settlement-bg text-status-settlement border-status-settlement/20' 
                                             : 'bg-status-completed-bg text-status-completed border-status-completed/20'
                                         }`}>
-                                            {user.role === 'admin' ? <Shield className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                                            {user.role === 'admin' ? <Shield className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
                                             {user.role}
                                         </span>
                                     </td>
@@ -240,7 +282,7 @@ export default function AdminUsersPage() {
                                             {user.role === 'client' ? (
                                                 <button 
                                                     onClick={() => handleActionClick(user)}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-status-active-bg text-status-active border border-status-active/20 rounded-xl text-theme-caption font-black uppercase tracking-tight hover:bg-status-active/20 transition-all shadow-sm group/btn"
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-status-active-bg text-status-active border border-status-active/20 rounded-xl text-theme-caption font-semibold uppercase tracking-tight hover:bg-status-active/20 transition-all shadow-sm group/btn"
                                                 >
                                                     <TrendingUp className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
                                                     Promote
@@ -248,7 +290,7 @@ export default function AdminUsersPage() {
                                             ) : (
                                                 <button 
                                                     onClick={() => handleActionClick(user)}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-status-rejected-bg text-status-rejected border border-status-rejected/20 rounded-xl text-theme-caption font-black uppercase tracking-tight hover:bg-status-rejected/20 transition-all shadow-sm group/btn"
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-status-rejected-bg text-status-rejected border border-status-rejected/20 rounded-xl text-theme-caption font-semibold uppercase tracking-tight hover:bg-status-rejected/20 transition-all shadow-sm group/btn"
                                                 >
                                                     <TrendingDown className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
                                                     Demote
@@ -286,17 +328,62 @@ export default function AdminUsersPage() {
 
     return (
         <div className="animate-in fade-in duration-500 space-y-6">
-             <div className="flex justify-between items-center">
+             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <div className="flex items-center gap-2 text-muted text-theme-caption font-black uppercase tracking-widest mb-1">
+                    <div className="flex items-center gap-2 text-muted text-theme-caption font-semibold uppercase tracking-widest mb-1">
                         <span>Management</span>
                         <ChevronRight className="w-3 h-3" />
                         <span className="text-primary">Access</span>
                     </div>
-                    <h2 className="text-theme-title text-foreground tracking-tight">System Access</h2>
+                    <h1 className="text-theme-header text-foreground tracking-tight">System Access</h1>
                 </div>
-                <Button onClick={() => fetchUsers()} variant="secondary" size="sm">Refresh List</Button>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={() => setShowTokenDialog(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface border border-border text-muted hover:text-primary hover:border-primary/30 transition-all font-semibold text-theme-caption uppercase tracking-wide shadow-sm"
+                    >
+                        <Key className="w-3 h-3" />
+                        Change Access Token
+                    </button>
+                    <Button onClick={() => fetchUsers()} variant="secondary" size="sm">Refresh List</Button>
+                </div>
             </div>
+
+            {/* TOKEN UPDATE DIALOG */}
+            {showTokenDialog && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <Card className="w-full max-w-md p-6 md:p-8 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                                <Shield className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-theme-title font-bold text-foreground">Update Security Token</h3>
+                                <p className="text-theme-caption text-muted">Required for new user signup</p>
+                            </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="text-theme-caption font-semibold text-muted uppercase tracking-widest ml-1">New Token</label>
+                                <input 
+                                    type="text"
+                                    className="w-full p-4 bg-background border-2 border-border rounded-2xl outline-none focus:border-primary text-foreground text-theme-label font-medium tracking-[0.3em] text-center placeholder:tracking-normal placeholder:font-normal"
+                                    placeholder="Enter security token"
+                                    value={newToken}
+                                    onChange={(e) => setNewToken(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex gap-3 pt-2">
+                                <Button variant="secondary" className="flex-1" onClick={() => setShowTokenDialog(false)}>Cancel</Button>
+                                <Button className="flex-1 bg-primary text-primary-text" onClick={handleUpdateToken} disabled={updatingToken}>
+                                    {updatingToken ? 'Updating...' : 'Save Token'}
+                                </Button>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            )}
 
             {loading ? (
                 <div className="p-12 text-center text-muted bg-surface rounded-2xl shadow-sm border border-border">

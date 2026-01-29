@@ -1,20 +1,16 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useAppStore } from '../../context/AppContext';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Icons } from '../../lib/icons';
 import { InvoiceModal } from '../../components/modals/InvoiceModal';
-import { getStatusColor, formatCurrency, formatDate, getReturnStatusColor, getItemIntegrityColor } from '../../utils/helpers';
-import { InventoryIcons } from '../../lib/icons';
 import { OrderTable } from '../../components/orders/OrderTable';
+
+import { Order, OrderItem, InventoryItem, Client } from '../../types';
 
 export default function PortalOrdersPage() {
   const { orders, user, userRole, portalFormData, loading, inventory } = useAppStore();
-  const { Printer } = Icons;
   
-  const [viewingInvoice, setViewingInvoice] = useState<any>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<(Order & { cart: (InventoryItem & { qty: number, lostQty?: number, damagedQty?: number })[], client: Partial<Client> }) | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({
     key: 'id',
     direction: 'desc'
@@ -29,7 +25,7 @@ export default function PortalOrdersPage() {
 
   // Sorting Logic
   const sortedOrders = useMemo(() => {
-    let sortableItems = [...myOrders];
+    const sortableItems = [...myOrders];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         let aVal = a[sortConfig.key as keyof typeof a];
@@ -59,8 +55,8 @@ export default function PortalOrdersPage() {
     setSortConfig({ key, direction });
   };
 
-  const handleViewInvoice = (order: any) => {
-    const reconstructedCart = order.items.map((item: any) => {
+  const handleViewInvoice = (order: Order) => {
+    const reconstructedCart = order.items.map((item: OrderItem) => {
       const inventoryItem = inventory.find(i => i.id === item.itemId);
       return { 
         ...inventoryItem, 
@@ -68,16 +64,12 @@ export default function PortalOrdersPage() {
         lostQty: item.lostQty,
         damagedQty: item.damagedQty
       };
-    });
+    }) as (InventoryItem & { qty: number, lostQty?: number, damagedQty?: number })[];
 
     setViewingInvoice({
       ...order,
       cart: reconstructedCart,
-      client: {
-        name: order.clientName,
-        email: order.email,
-        phone: order.phone
-      }
+      client: { firstName: order.clientName, email: order.email, phone: order.phone }
     });
   };
 
@@ -117,7 +109,6 @@ export default function PortalOrdersPage() {
           onClose={() => setViewingInvoice(null)}
           cart={viewingInvoice.cart}
           client={viewingInvoice.client}
-          total={viewingInvoice.totalAmount}
           startDate={viewingInvoice.startDate}
           endDate={viewingInvoice.endDate}
           penaltyAmount={viewingInvoice.penaltyAmount}

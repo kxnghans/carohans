@@ -1,6 +1,5 @@
 "use client";
 
-import React from 'react';
 import { InventoryIcons, Icons } from '../../lib/icons';
 
 const COLORS = [
@@ -73,6 +72,7 @@ export const IconColorPicker = ({ currentIcon, currentColor, onChange, onClose }
           <div className="grid grid-cols-5 gap-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
             {Object.keys(InventoryIcons).map((key) => {
               const IconComp = InventoryIcons[key];
+              if (!IconComp) return null;
               const isSelected = currentIcon === `icon:${key}`;
               return (
                 <button

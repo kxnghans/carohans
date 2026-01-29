@@ -76,7 +76,9 @@ export async function middleware(request: NextRequest) {
   // 1. Protect Admin Routes
   if (request.nextUrl.pathname.startsWith('/admin')) {
     if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
+      const redirectUrl = new URL('/login', request.url)
+      redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
+      return NextResponse.redirect(redirectUrl)
     }
 
     // Check role
@@ -88,7 +90,7 @@ export async function middleware(request: NextRequest) {
     
     if (profile?.role !== 'admin') {
       // Redirect unauthorized users to portal or home
-      return NextResponse.redirect(new URL('/portal/orders', request.url)) 
+      return NextResponse.redirect(new URL('/portal/inventory', request.url)) 
     }
   }
 
@@ -100,7 +102,9 @@ export async function middleware(request: NextRequest) {
     }
 
     if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
+      const redirectUrl = new URL('/login', request.url)
+      redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
+      return NextResponse.redirect(redirectUrl)
     }
   }
 
@@ -117,7 +121,7 @@ export async function middleware(request: NextRequest) {
            if (profile?.role === 'admin') {
                return NextResponse.redirect(new URL('/admin/overview', request.url))
            } else {
-               return NextResponse.redirect(new URL('/portal/orders', request.url))
+               return NextResponse.redirect(new URL('/portal/inventory', request.url))
            }
       }
   }

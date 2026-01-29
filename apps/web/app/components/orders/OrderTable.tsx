@@ -1,11 +1,26 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Icons, InventoryIcons } from '../../lib/icons';
-import { getStatusColor, getStatusDescription, formatCurrency, formatDate, getReturnStatusColor, getItemIntegrityColor, getDurationDays } from '../../utils/helpers';
+import { useState, Fragment } from 'react';
+import { Icons } from '../../lib/icons';
+import { getStatusColor, getStatusDescription, formatCurrency, formatDate, getDurationDays } from '../../utils/helpers';
 import { Card } from '../ui/Card';
 import { Order, InventoryItem } from '../../types';
 import { DynamicIcon } from '../common/DynamicIcon';
+import { ScrollableContainer } from '../common/ScrollableContainer';
+
+const SortIcon = ({ 
+    column, 
+    sortConfig 
+}: { 
+    column: string, 
+    sortConfig: { key: string; direction: 'asc' | 'desc' } | null 
+}) => {
+    const { ChevronDown, ChevronUp } = Icons;
+    if (sortConfig?.key !== column) return <ChevronUp className="w-3.5 h-3.5 text-muted opacity-30" />;
+    return sortConfig.direction === 'asc' 
+        ? <ChevronUp className="w-3.5 h-3.5 text-primary dark:text-warning" /> 
+        : <ChevronDown className="w-3.5 h-3.5 text-primary dark:text-warning" />;
+};
 
 interface OrderTableProps {
     orders: Order[];
@@ -26,39 +41,32 @@ export const OrderTable = ({
     sortConfig,
     requestSort
 }: OrderTableProps) => {
-    const { Check, X, ChevronRight, Printer, ChevronDown, ChevronUp, Undo, Truck, Package, ReturnIcon } = Icons;
+    const { Check, X, ChevronRight, Printer, Undo, Truck, ReturnIcon } = Icons;
     const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
 
     const toggleExpand = (orderId: number) => {
         setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
     };
 
-    const SortIcon = ({ column }: { column: string }) => {
-        if (sortConfig?.key !== column) return <ChevronUp className="w-3.5 h-3.5 text-muted opacity-30" />;
-        return sortConfig.direction === 'asc' 
-            ? <ChevronUp className="w-3.5 h-3.5 text-primary dark:text-warning" /> 
-            : <ChevronDown className="w-3.5 h-3.5 text-primary dark:text-warning" />;
-    };
-
         return (
             <Card noPadding className="overflow-hidden border-border shadow-sm">
-                <div className="overflow-x-auto custom-scrollbar">
+                <ScrollableContainer>
                     <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead>
                             <tr className="border-b border-border bg-background/50 text-theme-caption">
                                 <th className="p-4 pl-6 text-theme-body text-muted uppercase tracking-widest cursor-pointer hover:bg-surface transition-colors" onClick={() => requestSort('id')}>
-                                    <div className="flex items-center gap-2">Order ID <SortIcon column="id" /></div>
+                                    <div className="flex items-center gap-2">Order ID <SortIcon column="id" sortConfig={sortConfig} /></div>
                                 </th>
                                 <th className="p-4 text-theme-body text-muted uppercase tracking-widest text-center" onClick={() => requestSort('status')}>
-                                    <div className="flex items-center justify-center gap-2">Status <SortIcon column="status" /></div>
+                                    <div className="flex items-center justify-center gap-2">Status <SortIcon column="status" sortConfig={sortConfig} /></div>
                                 </th>
                                 <th className="p-4 text-theme-body text-muted uppercase tracking-widest cursor-pointer hover:bg-surface transition-colors" onClick={() => requestSort('startDate')}>
-                                    <div className="flex items-center gap-2">Dates <SortIcon column="startDate" /></div>
+                                    <div className="flex items-center gap-2">Dates <SortIcon column="startDate" sortConfig={sortConfig} /></div>
                                 </th>
                                 {isAdmin && <th className="p-4 text-theme-body text-muted uppercase tracking-widest text-center">Action</th>}
                                 <th className="p-4 text-theme-body text-muted uppercase tracking-widest text-center">Invoice</th>
                                 <th className="p-4 pr-6 text-theme-body text-muted uppercase tracking-widest text-right cursor-pointer hover:bg-surface transition-colors" onClick={() => requestSort('totalAmount')}>
-                                    <div className="flex items-center justify-end gap-2">Total <SortIcon column="totalAmount" /></div>
+                                    <div className="flex items-center justify-end gap-2">Total <SortIcon column="totalAmount" sortConfig={sortConfig} /></div>
                                 </th>
                                 <th className="p-4 pr-6 w-10"></th>
                             </tr>
@@ -66,14 +74,9 @@ export const OrderTable = ({
                         <tbody className="divide-y divide-border">
                             {orders.map((order) => {
                                 const duration = getDurationDays(order.startDate, order.endDate);
-                                const calculatedTotal = order.items.reduce((sum, item) => {
-                                    const invItem = inventory.find(i => i.id === item.itemId);
-                                    const price = (item.price ?? invItem?.price) || 0;
-                                    return sum + (price * item.qty * duration);
-                                }, 0);
-    
+                                
                                 return (
-                                <React.Fragment key={order.id}>
+                                <Fragment key={order.id}>
                                     <tr className="hover:bg-background/40 transition-colors group cursor-pointer" onClick={() => toggleExpand(order.id)}>
                                         <td className="p-4 pl-6">
                                             <span className="text-theme-body-bold text-foreground">#{order.id}</span>
@@ -89,7 +92,16 @@ export const OrderTable = ({
                                             </div>
                                         </td>
                                         <td className="p-4 text-theme-body text-muted">
-                                            {formatDate(order.startDate)} - {formatDate(order.endDate)}
+                                            {/* DESKTOP VIEW */}
+                                            <div className="hidden sm:block">
+                                                {formatDate(order.startDate)} - {formatDate(order.endDate)}
+                                            </div>
+                                            {/* MOBILE VIEW */}
+                                            <div className="sm:hidden flex flex-col items-start w-max">
+                                                <span>{formatDate(order.startDate)}</span>
+                                                <span className="w-full text-center leading-none my-0.5">-</span>
+                                                <span>{formatDate(order.endDate)}</span>
+                                            </div>
                                         </td>
                                         {isAdmin && (
                                             <td className="p-4 text-center">
@@ -158,11 +170,10 @@ export const OrderTable = ({
                                         <tr className="bg-background/30">
                                             <td colSpan={isAdmin ? 8 : 7} className="p-0">
                                                 <div className="p-6 animate-in slide-in-from-top-2 duration-200">
-                                                    <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-sm">
-                                                        <div className="overflow-x-auto custom-scrollbar">
-                                                            <table className="w-full text-left border-collapse min-w-[600px]">
-                                                                <thead>
-                                                                    <tr className="bg-background border-b border-border text-theme-body text-muted uppercase tracking-widest">
+                                                                                                    <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-sm">
+                                                                                                        <ScrollableContainer>
+                                                                                                            <table className="w-full text-left border-collapse min-w-[600px]">
+                                                                                                                <thead>                                                                    <tr className="bg-background border-b border-border text-theme-body text-muted uppercase tracking-widest">
                                                                         <th className="p-3 pl-6">Item Details</th>
                                                                         <th className="p-3">Category</th>
                                                                         <th className="p-3 text-right">Repl. Cost</th>
@@ -237,19 +248,18 @@ export const OrderTable = ({
                                                             </td>
                                                         </tr>
                                                     </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
+                                                                                                        </table>
+                                                                                                    </ScrollableContainer>
+                                                                                                </div>
+                                                                                            </div>                                </td>
                             </tr>
                         )}
-                    </React.Fragment>
+                    </Fragment>
                 );
             })}
-        </tbody>
-    </table>
-</div>
-</Card>
-);
-};
+                            </tbody>
+                        </table>
+                    </ScrollableContainer>
+                </Card>
+            );
+        };

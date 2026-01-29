@@ -1,14 +1,15 @@
 "use client";
 
-import React from 'react';
 import { useAppStore } from '../../context/AppContext';
 import { InventoryTable } from '../../components/inventory/InventoryTable';
 import { Card } from '../../components/ui/Card';
 
+import { InventoryItem } from '../../types';
+
 export default function PortalInventoryPage() {
   const { inventory, cart, setCart, portalFormData, setPortalFormData, loading } = useAppStore();
 
-  const addToCart = (item: any, qty: number) => {
+  const addToCart = (item: InventoryItem, qty: number) => {
     setCart(prev => {
       const existing = prev.find(i => i.id === item.id);
       if (existing) {
