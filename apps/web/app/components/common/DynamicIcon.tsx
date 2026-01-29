@@ -1,11 +1,11 @@
 "use client";
 
-import React from 'react';
-import { Icons, InventoryIcons } from '../../lib/icons';
+import { ReactNode } from 'react';
+import { InventoryIcons } from '../../lib/icons';
 
 interface DynamicIconProps {
   iconString: string | null | undefined;
-  fallback?: React.ReactNode;
+  fallback?: ReactNode;
   className?: string;
   color?: string;
 }

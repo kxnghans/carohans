@@ -71,7 +71,9 @@ import {
   Visibility,
   VisibilityOff,
   Laptop,
-  Launch
+  Launch,
+  Menu,
+  VpnKey
 } from '@mui/icons-material';
 
 // --- SYSTEM ICONS (Replacements for Lucide) ---
@@ -132,12 +134,16 @@ export const Icons = {
   Eye: Visibility,
   EyeOff: VisibilityOff,
   Globe: Language,
-  ExternalLink: Launch
+  ExternalLink: Launch,
+  Menu: Menu,
+  Key: VpnKey
 };
+
+import React from 'react';
 
 // --- INVENTORY PICKER ICONS ---
 // These keys will be stored in the database as "icon:Chair", "icon:Table", etc.
-export const InventoryIcons: Record<string, any> = {
+export const InventoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   Chair: Chair,
   Table: TableBar,
   Cutlery: Restaurant,

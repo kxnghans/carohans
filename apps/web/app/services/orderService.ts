@@ -94,7 +94,7 @@ export const updateOrderStatusToSupabase = async (
     closed_at?: string | null, 
     return_status?: string | null
 ) => {
-    const updateData: any = { status };
+    const updateData: { status: string; closed_at?: string | null; return_status?: string | null } = { status };
     if (closed_at !== undefined) updateData.closed_at = closed_at;
     if (return_status !== undefined) updateData.return_status = return_status;
 

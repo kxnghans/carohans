@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { InventoryItem, Order, Client, CartItem, PortalFormData, Metrics } from '../types';
 import { BusinessSettings } from '../types/context';
 import { calculateMetrics } from '../utils/helpers';
@@ -80,7 +80,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('carohans_cart', JSON.stringify(cart));
   }, [cart]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
       .from('orders')
       .select(`
@@ -97,7 +97,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       .order('created_at', { ascending: false });
 
     if (!error) {
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split('T')[0] ?? '';
       const mapped: Order[] = (data || []).map(o => {
         let status = o.status;
         
@@ -121,7 +121,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           closedAt: o.closed_at,
           returnStatus: o.return_status,
           itemIntegrity: o.item_integrity,
-          items: o.order_items.map((oi: any) => ({
+          items: o.order_items.map((oi: { inventory_id: number; quantity: number; unit_price: number; returned_qty?: number; lost_qty?: number; damaged_qty?: number }) => ({
             itemId: oi.inventory_id,
             qty: oi.quantity,
             price: Number(oi.unit_price),
@@ -133,9 +133,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       });
       setOrders(mapped);
     }
-  };
+  }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -199,7 +199,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, setUserRole, showNotification, fetchOrders]);
 
   // Re-fetch when user changes (login/logout)
   useEffect(() => {
@@ -208,7 +208,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           setOrders([]);
           setClients([]);
       }
-  }, [user]);
+  }, [user, fetchData]);
 
   const metrics = useMemo(() => calculateMetrics(orders) as Metrics, [orders]);
 

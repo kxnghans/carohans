@@ -1,19 +1,18 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Icons } from '../../lib/icons';
 import { useAppStore } from '../../context/AppContext';
-import { PortalFormData } from '../../types';
+import { PortalFormData, InventoryItem } from '../../types';
 import { InventoryTable } from '../../components/inventory/InventoryTable';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { InvoiceModal } from '../../components/modals/InvoiceModal';
-import { calculateOrderTotal } from '../../utils/helpers';
 
 export default function AdminInventoryPage() {
 
-  const { Plus, ShoppingCart, Check, X, Pencil, Ban, Loader2, Calendar } = Icons;
+  const { Plus, Check, X, Pencil, Loader2 } = Icons;
 
     const { inventory, setInventory, cart, setCart, clients, submitOrder, showNotification, loading, latePenaltyPerDay, setLatePenaltyPerDay } = useAppStore();
 
@@ -37,7 +36,7 @@ export default function AdminInventoryPage() {
 
   
 
-    const addToCart = (item: any, qty: number) => {
+    const addToCart = (item: InventoryItem, qty: number) => {
 
       setCart(prev => {
 
@@ -160,12 +159,12 @@ export default function AdminInventoryPage() {
       <div className="animate-in fade-in duration-500 space-y-8">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex flex-col md:flex-row md:items-center gap-6">
-                  <h1 className="text-theme-hero text-foreground tracking-tight">Inventory Management</h1>
+                  <h1 className="text-theme-header text-foreground tracking-tight">Inventory Management</h1>
                   
                   {/* LATE PENALTY SETTING */}
                   {!isOrderMode && (
                     <div className="flex items-center gap-3 bg-surface px-4 py-2 rounded-xl border border-border shadow-sm">
-                      <label className="text-theme-caption text-muted uppercase tracking-[0.2em] font-bold">Late Penalty</label>
+                      <label className="text-theme-caption text-muted uppercase tracking-[0.2em] font-semibold">Late Penalty</label>
                       <div className="flex items-center gap-1.5">
                         <span className="text-muted text-theme-body">¢</span>
                         <input 
@@ -215,9 +214,9 @@ export default function AdminInventoryPage() {
         <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm animate-in slide-in-from-top-2 duration-300">
            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
               <div className="md:col-span-4 flex flex-col gap-1.5">
-                 <label className="text-theme-caption font-black text-muted uppercase tracking-wider ml-1">Client Selection</label>
+                 <label className="text-theme-caption font-semibold text-muted uppercase tracking-widest ml-1">Client Selection</label>
                  <select 
-                   className="p-3 border border-border rounded-xl bg-background text-foreground text-theme-label font-medium outline-none focus:border-primary transition-all"
+                   className="p-3 pl-4 border border-border rounded-xl bg-background text-foreground text-theme-label font-medium outline-none focus:border-primary transition-all"
                    value={selectedClientId}
                    onChange={(e) => setSelectedClientId(e.target.value)}
                  >
@@ -269,55 +268,51 @@ export default function AdminInventoryPage() {
 
 
 
-              <InvoiceModal
+                                                        <InvoiceModal
 
 
 
-                isOpen={showReview}
+                                                          isOpen={showReview}
 
 
 
-                onClose={() => setShowReview(false)}
+                                                          onClose={() => setShowReview(false)}
 
 
 
-                cart={cart}
+                                                          cart={cart as (InventoryItem & { qty: number, lostQty?: number, damagedQty?: number })[]}
 
 
 
-                client={selectedClient}
+                                                          client={selectedClient}
 
 
 
-                total={calculateOrderTotal(cart, orderDates.start, orderDates.end)}
+                                            startDate={orderDates.start}
 
 
 
-                startDate={orderDates.start}
+                                            endDate={orderDates.end}
 
 
 
-                endDate={orderDates.end}
+                                            onConfirm={() => {
 
 
 
-                onConfirm={() => {
+                                              handleCreateOrder();
 
 
 
-                  handleCreateOrder();
+                                              setShowReview(false);
 
 
 
-                  setShowReview(false);
+                                            }}
 
 
 
-                }}
-
-
-
-              />
+                                          />
 
 
 

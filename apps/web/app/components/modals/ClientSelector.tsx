@@ -1,18 +1,25 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
 import { DynamicIcon } from '../common/DynamicIcon';
+import { Client } from '../../types';
 
-export const ClientSelector = ({ clients, onSelect, onClose, isOpen = true }: any) => {
+export const ClientSelector = ({ clients, onSelect, onClose, isOpen = true }: {
+  clients: Client[],
+  onSelect: (client: Client) => void,
+  onClose: () => void,
+  isOpen?: boolean
+}) => {
   const { X, Search, ChevronRight, User, Users } = Icons;
   const [search, setSearch] = useState('');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -29,7 +36,7 @@ export const ClientSelector = ({ clients, onSelect, onClose, isOpen = true }: an
     };
   }, [isOpen]);
 
-  const filtered = clients.filter((c: any) => {
+  const filtered = clients.filter((c: Client) => {
     const fullName = `${c.firstName || ''} ${c.lastName || ''}`.toLowerCase();
     const searchTerm = search.toLowerCase();
     return fullName.includes(searchTerm) || (c.phone && c.phone.includes(search));
@@ -75,7 +82,7 @@ export const ClientSelector = ({ clients, onSelect, onClose, isOpen = true }: an
           <div className="relative group">
             <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-secondary transition-colors" />
             <input
-              className="w-full bg-surface border border-border rounded-2xl pl-11 pr-4 py-3.5 outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all font-medium text-foreground placeholder:text-muted/40"
+              className="w-full bg-surface border border-border rounded-2xl pl-12 pr-4 py-3.5 outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all font-medium text-foreground placeholder:text-muted/40"
               placeholder="Search by name or phone..."
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -84,7 +91,7 @@ export const ClientSelector = ({ clients, onSelect, onClose, isOpen = true }: an
         </div>
 
         <div className="overflow-y-auto p-3 space-y-1 flex-1 custom-scrollbar">
-          {filtered.map((c: any) => (
+          {filtered.map((c: Client) => (
             <button
               key={c.id}
               onClick={() => onSelect(c)}
@@ -102,7 +109,7 @@ export const ClientSelector = ({ clients, onSelect, onClose, isOpen = true }: an
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <p className="font-black text-theme-body-bold text-foreground group-hover:text-primary transition-colors truncate">
+                  <p className="font-bold text-theme-body-bold text-foreground group-hover:text-primary transition-colors truncate">
                     {c.firstName} {c.lastName}
                   </p>
                   <p className="text-theme-caption text-muted truncate font-medium">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
 
@@ -24,11 +24,13 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
     const groups: string[][] = [];
     let currentGroup: string[] = [];
 
-    sorted.forEach((dateStr, index) => {
+    sorted.forEach((dateStr) => {
       if (currentGroup.length === 0) {
         currentGroup.push(dateStr);
       } else {
-        const prevDate = new Date(currentGroup[currentGroup.length - 1]);
+        const prevDateStr = currentGroup[currentGroup.length - 1];
+        if (!prevDateStr) return;
+        const prevDate = new Date(prevDateStr);
         const currDate = new Date(dateStr);
         const diffTime = Math.abs(currDate.getTime() - prevDate.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -71,7 +73,7 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
 
   const formatDate = (day: number) => {
     const d = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
-    return d.toISOString().split('T')[0];
+    return d.toISOString().split('T')[0] ?? '';
   };
 
   const changeMonth = (offset: number) => {
@@ -100,9 +102,9 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
         const start = new Date(rangeAnchor < dateStr ? rangeAnchor : dateStr);
         const end = new Date(rangeAnchor < dateStr ? dateStr : rangeAnchor);
         const newRange: string[] = [];
-        let current = new Date(start);
+        const current = new Date(start);
         while (current <= end) {
-          const s = current.toISOString().split('T')[0];
+          const s = current.toISOString().split('T')[0] ?? '';
           if (!blockedDates.includes(s)) newRange.push(s);
           current.setDate(current.getDate() + 1);
         }
@@ -127,7 +129,7 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
 
   return (
     <div 
-      className="fixed inset-0 bg-primary/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
       {/* Increased max-width for side-by-side layout */}
@@ -238,9 +240,11 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
                 ) : (
                     groupedBlockedDates.map((group, idx) => {
                         const isRange = group.length > 1;
+                        const date1 = group[0] ?? '';
+                        const date2 = group[group.length - 1] ?? '';
                         const label = isRange 
-                            ? `${formatDateDisplay(group[0])} - ${formatDateDisplay(group[group.length - 1])}`
-                            : formatDateDisplay(group[0]);
+                            ? `${formatDateDisplay(date1)} - ${formatDateDisplay(date2)}`
+                            : formatDateDisplay(date1);
                         
                         return (
                             <div key={idx} className="group flex items-center justify-between bg-white p-3 rounded-xl border border-border hover:border-indigo-300 hover:shadow-sm transition-all">

@@ -1,6 +1,5 @@
 "use client";
 
-import React from 'react';
 import { useAppStore } from '../../context/AppContext';
 import { Card } from '../../components/ui/Card';
 import { ClientProfileForm } from '../../components/clients/ClientProfileForm';

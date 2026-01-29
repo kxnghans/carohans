@@ -1,19 +1,44 @@
 "use client";
 
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
 import { formatCurrency, formatDate, getDurationDays } from '../../utils/helpers';
-import { useAppStore } from '../../context/AppContext';
+import { useData } from '../../context/DataContext';
+import { InventoryItem, Client } from '../../types';
 
-export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, startDate, endDate, penaltyAmount = 0, latePenaltyPerDay = 50, status }: any) => {
-  const { Printer, X, Check, FileText, AlertCircle } = Icons;
-  const { businessSettings } = useAppStore();
-  const [invoiceId, setInvoiceId] = React.useState<number | null>(null);
-  const [mounted, setMounted] = React.useState(false);
+interface InvoiceModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  cart: (InventoryItem & { qty: number, lostQty?: number, damagedQty?: number })[];
+  client: Partial<Client> | null;
+  onConfirm?: () => void;
+  startDate: string;
+  endDate: string;
+  penaltyAmount?: number;
+  latePenaltyPerDay?: number;
+  status?: string;
+}
 
-  React.useEffect(() => {
+export const InvoiceModal = ({
+  isOpen,
+  onClose,
+  cart,
+  client,
+  onConfirm,
+  startDate,
+  endDate,
+  penaltyAmount = 0,
+  latePenaltyPerDay = 50,
+  status
+}: InvoiceModalProps) => {
+  const { Printer, X, Check, AlertCircle } = Icons;
+  const { businessSettings } = useData();
+  const [invoiceId, setInvoiceId] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -21,23 +46,30 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
     return () => window.removeEventListener('keydown', handleEsc);
   }, [isOpen, onClose]);
 
-  React.useEffect(() => {
-    setMounted(true);
-    if (isOpen) {
-      setInvoiceId(Math.floor(Math.random() * 10000));
-      document.body.style.overflow = 'hidden';
-    } else {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+        setMounted(true);
+        if (isOpen) {
+            setInvoiceId(Math.floor(Math.random() * 10000));
+            document.body.style.overflow = 'hidden';
+        }
+    }, 0);
+    
+    if (!isOpen) {
       document.body.style.overflow = 'unset';
     }
-    return () => { document.body.style.overflow = 'unset'; };
+    return () => {
+        document.body.style.overflow = 'unset';
+        clearTimeout(timer);
+    };
   }, [isOpen]);
 
   const duration = getDurationDays(startDate, endDate);
   /* ... rest of logic ... */
-  const calculatedSubtotal = cart.reduce((sum: number, item: any) => sum + (item.price * item.qty * duration), 0);
+  const calculatedSubtotal = cart.reduce((sum: number, item: InventoryItem & { qty: number }) => sum + (item.price * item.qty * duration), 0);
   
   // Calculate specific Loss & Damage total from items
-  const lossDamageTotal = cart.reduce((sum: number, item: any) => {
+  const lossDamageTotal = cart.reduce((sum: number, item: InventoryItem & { lostQty?: number, damagedQty?: number }) => {
     return sum + (((item.lostQty ?? 0) + (item.damagedQty ?? 0)) * (item.replacementCost ?? 0));
   }, 0);
 
@@ -67,7 +99,7 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
             <div className="bg-white/10 p-2 rounded-lg"><Printer className="w-5 h-5" /></div>
             <div>
               <h2 className="text-theme-title font-bold">Review Invoice</h2>
-              <p className="text-muted text-theme-caption">Draft Order for {client?.name || `${client?.firstName || ''} ${client?.lastName || ''}`.trim()}</p>
+              <p className="text-muted text-theme-caption">Draft Order for {client?.firstName && client?.lastName ? `${client.firstName} ${client.lastName}` : (client as unknown as { name?: string })?.name || ''}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
@@ -78,8 +110,8 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
             <div className="print:m-0 print:p-0">
               <div className="hidden print:flex justify-between items-start border-b-2 border-foreground pb-6 mb-8">
                 <div>
-                  <h1 className="text-theme-header font-black tracking-tighter text-foreground uppercase">{businessSettings.business_name}</h1>
-                  <p className="text-theme-caption font-bold text-muted uppercase tracking-widest mt-1">Event Rental Management System</p>
+                  <h1 className="text-theme-header font-bold tracking-tight text-foreground uppercase">{businessSettings.business_name}</h1>
+                  <p className="text-theme-caption font-semibold text-muted uppercase tracking-widest mt-1">Event Rental Management System</p>
                 </div>
                 <div className="text-right text-theme-caption text-muted font-medium max-w-[200px]">
                   <p>{businessSettings.business_location}</p>
@@ -90,13 +122,12 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
 
               <div className="flex justify-between mb-8 border-b border-border pb-8">
                 <div>
-                  <h3 className="font-bold text-muted text-theme-caption uppercase tracking-wider mb-2">Bill To</h3>
-                  <p className="text-theme-title text-foreground">{client?.name || `${client?.firstName || ''} ${client?.lastName || ''}`.trim()}</p>
+                  <h3 className="font-semibold text-muted text-theme-caption uppercase tracking-wider mb-2">Bill To</h3>
+                  <p className="text-theme-title text-foreground">{client?.firstName && client?.lastName ? `${client.firstName} ${client.lastName}` : (client as unknown as { name?: string })?.name || ''}</p>
                   <p className="text-muted text-theme-body">{client?.email}</p>
                   <p className="text-muted text-theme-body">{client?.phone}</p>
-                </div>
-                <div className="text-right">
-                  <h3 className="font-bold text-muted text-theme-caption uppercase tracking-wider mb-2">Invoice Details</h3>
+                </div>                <div className="text-right">
+                  <h3 className="font-semibold text-muted text-theme-caption uppercase tracking-wider mb-2">Invoice Details</h3>
                   <p className="text-theme-body-bold text-foreground">INV-#{invoiceId}</p>
                   <p className="text-muted text-theme-caption font-bold mt-1 uppercase tracking-tighter">Date: {formatDate(new Date().toISOString())}</p>
                   <p className="text-success font-bold text-theme-caption bg-success/10 dark:bg-emerald-900/30 px-2 py-0.5 rounded inline-block mt-2 print:border print:border-emerald-200">Draft Invoice</p>
@@ -106,14 +137,14 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
               <table className="w-full text-left mb-8">
                 <thead>
                   <tr className="border-b-2 border-border">
-                    <th className="py-3 text-theme-caption font-black text-foreground uppercase tracking-widest">Description</th>
-                    <th className="py-3 text-theme-caption font-black text-foreground uppercase tracking-widest text-center">Quantity</th>
-                    <th className="py-3 text-theme-caption font-black text-foreground uppercase tracking-widest text-right">Unit Price</th>
-                    <th className="py-3 text-theme-caption font-black text-foreground uppercase tracking-widest text-right">Line Total</th>
+                    <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest">Description</th>
+                    <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest text-center">Quantity</th>
+                    <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest text-right">Unit Price</th>
+                    <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest text-right">Line Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {cart.map((item: any) => (
+                  {cart.map((item: InventoryItem & { qty: number, lostQty?: number, damagedQty?: number }) => (
                     <tr key={item.id} className="break-inside-avoid">
                       <td className="py-4">
                         <p className="text-theme-body-bold text-foreground">{item.name}</p>
@@ -144,24 +175,24 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
                 <div className="break-inside-avoid mb-8">
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-1.5 h-1.5 rounded-full bg-error"></div>
-                    <h3 className="font-black text-error text-theme-caption uppercase tracking-[0.2em]">
+                    <h3 className="font-bold text-error text-theme-caption uppercase tracking-[0.2em]">
                       Loss & Damage Audit
                     </h3>
                   </div>
                   <table className="w-full text-left">
                     <thead>
                       <tr className="border-b-2 border-rose-100">
-                        <th className="py-3 text-theme-caption font-black text-foreground uppercase tracking-widest">Description</th>
-                        <th className="py-3 text-theme-caption font-black text-foreground uppercase tracking-widest text-center">Quantity</th>
-                        <th className="py-3 text-theme-caption font-black text-foreground uppercase tracking-widest text-right">Replacement Costs</th>
-                        <th className="py-3 text-theme-caption font-black text-foreground uppercase tracking-widest text-right">Line Total</th>
+                        <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest">Description</th>
+                        <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest text-center">Quantity</th>
+                        <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest text-right">Replacement Costs</th>
+                        <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest text-right">Line Total</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-rose-50 dark:divide-rose-900/30">
-                      {cart.map((item: any) => {
-                        const items: any[] = [];
-                        if ((item.lostQty ?? 0) > 0) items.push({ type: 'Lost', qty: item.lostQty });
-                        if ((item.damagedQty ?? 0) > 0) items.push({ type: 'Damaged', qty: item.damagedQty });
+                      {cart.map((item: InventoryItem & { qty: number, lostQty?: number, damagedQty?: number }) => {
+                        const items: { type: string, qty: number }[] = [];
+                        if ((item.lostQty ?? 0) > 0) items.push({ type: 'Lost', qty: item.lostQty ?? 0 });
+                        if ((item.damagedQty ?? 0) > 0) items.push({ type: 'Damaged', qty: item.damagedQty ?? 0 });
                         
                         return items.map((audit, idx) => (
                           <tr key={`audit-${item.id}-${idx}`}>
@@ -188,19 +219,19 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
                 <div className="flex-1 bg-background rounded-2xl p-4 border border-border space-y-3 print:bg-white print:border-border">
                   <div className="flex items-center gap-2 text-foreground">
                     <AlertCircle className="w-4 h-4 text-primary" />
-                    <h4 className="text-theme-caption font-black uppercase tracking-tight">Rental Terms & Conditions</h4>
+                    <h4 className="text-theme-caption font-bold uppercase tracking-tight">Rental Terms & Conditions</h4>
                   </div>
                   <ul className="space-y-2">
                     <li className="flex items-start gap-2">
                       <div className="w-1 h-1 rounded-full bg-muted mt-1.5"></div>
                       <p className="text-theme-caption font-medium text-muted leading-relaxed">
-                        <span className="font-black text-foreground">Late Penalty:</span> A daily fee of <span className="text-error font-black">{formatCurrency(latePenaltyPerDay)}</span> applies for every day items are returned after the scheduled date.
+                        <span className="font-bold text-foreground">Late Penalty:</span> A daily fee of <span className="text-error font-bold">{formatCurrency(latePenaltyPerDay)}</span> applies for every day items are returned after the scheduled date.
                       </p>
                     </li>
                     <li className="flex items-start gap-2">
                       <div className="w-1 h-1 rounded-full bg-muted mt-1.5"></div>
                       <p className="text-theme-caption font-medium text-muted leading-relaxed">
-                        <span className="font-black text-foreground">Damage & Loss:</span> Any damaged or lost items will be charged at <span className="font-black text-foreground">100% of the replacement cost</span> specified in the catalog.
+                        <span className="font-bold text-foreground">Damage & Loss:</span> Any damaged or lost items will be charged at <span className="font-bold text-foreground">100% of the replacement cost</span> specified in the catalog.
                       </p>
                     </li>
                   </ul>
@@ -227,7 +258,7 @@ export const InvoiceModal = ({ isOpen, onClose, cart, client, onConfirm, total, 
                       <span>+{formatCurrency(lossDamageTotal)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-theme-title font-black text-foreground pt-4 border-t-2 border-foreground">
+                  <div className="flex justify-between text-theme-title font-bold text-foreground pt-4 border-t-2 border-foreground">
                     <span>Grand Total</span>
                     <span>{formatCurrency(calculatedTotal)}</span>
                   </div>

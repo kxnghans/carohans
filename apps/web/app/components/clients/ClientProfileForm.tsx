@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Icons, InventoryIcons } from '../../lib/icons';
+import { useState, useEffect } from 'react';
+import { Icons } from '../../lib/icons';
 import { Button } from '../../components/ui/Button';
 import { IconColorPicker } from '../../components/inventory/IconColorPicker';
 import { PortalFormData } from '../../types';
@@ -24,8 +24,10 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
     // Sync state when initialData changes (e.g. after fetch)
     useEffect(() => {
         if (initialData.email || initialData.firstName) { 
-            setFormData(initialData);
+            const timer = setTimeout(() => setFormData(initialData), 0);
+            return () => clearTimeout(timer);
         }
+        return undefined;
     }, [initialData]);
 
     const validate = () => {
@@ -89,11 +91,11 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
 
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                    <label className="text-theme-caption font-black text-muted uppercase tracking-wider">First Name <span className="text-error">*</span></label>
+                    <label className="text-theme-caption font-semibold text-muted uppercase tracking-wider">First Name <span className="text-error">*</span></label>
                     <div className="relative">
-                        <User className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-3 text-muted`} />
+                        <User className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-4 text-muted`} />
                         <input 
-                            className={`w-full pl-10 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.firstName ? 'border-error' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all`} 
+                            className={`w-full pl-12 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.firstName ? 'border-error' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all font-medium placeholder:font-normal`} 
                             value={formData.firstName}
                             placeholder="John"
                             onChange={e => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
@@ -101,11 +103,11 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
                     </div>
                 </div>
                 <div className="space-y-1.5">
-                    <label className="text-theme-caption font-black text-muted uppercase tracking-wider">Last Name <span className="text-error">*</span></label>
+                    <label className="text-theme-caption font-semibold text-muted uppercase tracking-wider">Last Name <span className="text-error">*</span></label>
                     <div className="relative">
-                        <User className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-3 text-muted`} />
+                        <User className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-4 text-muted`} />
                         <input 
-                            className={`w-full pl-10 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.lastName ? 'border-error' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all`} 
+                            className={`w-full pl-12 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.lastName ? 'border-error' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all font-medium placeholder:font-normal`} 
                             value={formData.lastName}
                             placeholder="Doe"
                             onChange={e => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
@@ -115,11 +117,11 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
             </div>
 
             <div className="space-y-1.5">
-                <label className="text-theme-caption font-black text-muted uppercase tracking-wider">Username</label>
+                <label className="text-theme-caption font-semibold text-muted uppercase tracking-wider">Username</label>
                 <div className="relative">
-                    <User className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-3 text-muted`} />
+                    <User className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-4 text-muted`} />
                     <input 
-                        className={`w-full pl-10 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 border-border bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all`} 
+                        className={`w-full pl-12 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 border-border bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all font-medium placeholder:font-normal`} 
                         value={formData.username}
                         placeholder="johndoe123"
                         onChange={e => setFormData(prev => ({ ...prev, username: e.target.value }))}
@@ -128,11 +130,11 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
             </div>
             
             <div className="space-y-1.5">
-                <label className="text-theme-caption font-black text-muted uppercase tracking-wider">Contact Number <span className="text-error">*</span></label>
+                <label className="text-theme-caption font-semibold text-muted uppercase tracking-wider">Contact Number <span className="text-error">*</span></label>
                 <div className="relative">
-                    <Phone className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-3 text-muted`} />
+                    <Phone className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-4 text-muted`} />
                                             <input 
-                                                className={`w-full pl-10 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.phone ? 'border-error' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all`} 
+                                                className={`w-full pl-12 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.phone ? 'border-error' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all font-medium placeholder:font-normal`} 
                                                 value={formData.phone}
                                                 placeholder="024 123 4567"
                                                 onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
@@ -140,11 +142,11 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
             </div>
             
             <div className="space-y-1.5">
-                <label className="text-theme-caption font-black text-muted uppercase tracking-wider">Email Address <span className="text-error">*</span></label>
+                <label className="text-theme-caption font-semibold text-muted uppercase tracking-wider">Email Address <span className="text-error">*</span></label>
                 <div className="relative">
-                    <Mail className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-3 text-muted`} />
+                    <Mail className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-4 text-muted`} />
                                             <input 
-                                                className={`w-full pl-10 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.email ? 'border-error' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all`} 
+                                                className={`w-full pl-12 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 ${errors.email ? 'border-error' : 'border-border'} bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all font-medium placeholder:font-normal`} 
                                                 value={formData.email}
                                                 placeholder="john@example.com"
                                                 onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
@@ -152,16 +154,16 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
             </div>
             
             <div className="space-y-1.5">
-                <label className="text-theme-caption font-black text-muted uppercase tracking-wider">Default Delivery Address</label>
+                <label className="text-theme-caption font-semibold text-muted uppercase tracking-wider">Default Delivery Address</label>
                 <div className="relative">
-                    <MapPin className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-3 text-muted`} />
+                    <MapPin className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-4 text-muted`} />
                                             <textarea 
-                                                className={`w-full pl-10 ${compact ? "p-2 text-theme-label h-16" : "p-3 h-24"} border-2 border-border bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all resize-none`} 
+                                                className={`w-full pl-12 ${compact ? "p-2 text-theme-label h-16" : "p-3 h-24"} border-2 border-border bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all resize-none font-medium placeholder:font-normal`} 
                                                 value={formData.address || ''}
                                                 placeholder="Enter your street address..."
                                                 onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))}
                                             />                </div>
-                {!compact && <p className="text-theme-caption text-muted font-bold uppercase tracking-tight ml-1">Optional - used for automatic delivery calculations</p>}
+                {!compact && <p className="text-theme-caption text-muted font-semibold uppercase tracking-tight ml-1">Optional - used for automatic delivery calculations</p>}
             </div>
             
             <div className={`flex gap-3 ${compact ? "pt-2" : "pt-4"}`}>

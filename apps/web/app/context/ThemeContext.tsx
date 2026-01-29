@@ -15,8 +15,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const savedTheme = localStorage.getItem('carohans_theme') as 'light' | 'dark' | 'system';
     if (savedTheme) {
-      setThemeState(savedTheme);
+      const timer = setTimeout(() => setThemeState(savedTheme), 0);
+      return () => clearTimeout(timer);
     }
+    return undefined;
   }, []);
 
   const setTheme = (newTheme: 'light' | 'dark' | 'system') => {
@@ -43,15 +45,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       // Robust theme-color update
       const themeColor = effectiveTheme === 'dark' ? '#0f172a' : '#f8fafc';
       
-      // Remove all existing theme-color tags to avoid media query conflicts
-      const existingTags = document.querySelectorAll('meta[name="theme-color"]');
-      existingTags.forEach(tag => tag.remove());
-
-      // Create new tag
-      const metaTag = document.createElement('meta');
-      metaTag.setAttribute('name', 'theme-color');
+      // Update or create theme-color tag
+      let metaTag = document.querySelector('meta[name="theme-color"]');
+      if (!metaTag) {
+        metaTag = document.createElement('meta');
+        metaTag.setAttribute('name', 'theme-color');
+        document.head.appendChild(metaTag);
+      }
       metaTag.setAttribute('content', themeColor);
-      document.head.appendChild(metaTag);
 
       // Handle iOS Status Bar Style
       let appleTag = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
@@ -60,8 +61,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         appleTag.setAttribute('name', 'apple-mobile-web-app-status-bar-style');
         document.head.appendChild(appleTag);
       }
-      // "default" is white bg/black text, "black-translucent" is transparent bg/white text
-      // This combined with viewport-fit=cover lets the html bg bleed into safe areas
+      // "default" results in dark text on light bg (standard)
+      // "black-translucent" results in white text on transparent bg (allows body bg to show through)
       appleTag.setAttribute('content', effectiveTheme === 'dark' ? 'black-translucent' : 'default');
 
       // Web app capability for standalone behavior

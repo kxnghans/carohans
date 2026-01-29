@@ -8,9 +8,11 @@ export const fetchSettingsFromSupabase = async (): Promise<Partial<BusinessSetti
   const { data, error } = await supabase.from('settings').select('*');
   if (error) throw error;
 
-  const settings: any = {};
-  data?.forEach((s: any) => settings[s.key] = s.value);
-  return settings;
+  const settings: Record<string, string> = {};
+  (data || []).forEach((s: { key: string; value: string }) => {
+    settings[s.key] = s.value;
+  });
+  return settings as Partial<BusinessSettings>;
 };
 
 /**

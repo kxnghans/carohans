@@ -1,14 +1,29 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import { Card } from '../ui/Card';
 import { formatCurrency } from '../../utils/helpers';
 import { Client, PortalFormData } from '../../types';
 import { Icons, InventoryIcons } from '../../lib/icons';
 import { ClientProfileForm } from './ClientProfileForm';
+import { ScrollableContainer } from '../common/ScrollableContainer';
+
+const SortIcon = ({ 
+    column, 
+    sortConfig 
+}: { 
+    column: keyof Client, 
+    sortConfig: { key: keyof Client; direction: 'asc' | 'desc' } | null 
+}) => {
+    const { SortUp, SortDown } = Icons;
+    if (sortConfig?.key !== column) return <SortUp className="w-3.5 h-3.5 text-muted opacity-30" />;
+    return sortConfig.direction === 'asc' 
+        ? <SortUp className="w-3.5 h-3.5 text-primary dark:text-warning" /> 
+        : <SortDown className="w-3.5 h-3.5 text-primary dark:text-warning" />;
+};
 
 export const ClientsTable = ({ data }: { data: Client[] }) => {
-    const { SortUp, SortDown, ChevronRight, User } = Icons;
+    const { ChevronRight } = Icons;
     const [expandedClientId, setExpandedClientId] = useState<number | null>(null);
     const [sortConfig, setSortConfig] = useState<{ key: keyof Client; direction: 'asc' | 'desc' } | null>({
         key: 'firstName',
@@ -16,7 +31,7 @@ export const ClientsTable = ({ data }: { data: Client[] }) => {
     });
 
     const sortedData = useMemo(() => {
-        let sortableItems = [...data];
+        const sortableItems = [...data];
         if (sortConfig !== null) {
             sortableItems.sort((a, b) => {
                 const aVal = a[sortConfig.key];
@@ -39,13 +54,6 @@ export const ClientsTable = ({ data }: { data: Client[] }) => {
             direction = 'desc';
         }
         setSortConfig({ key, direction });
-    };
-
-    const SortIcon = ({ column }: { column: keyof Client }) => {
-        if (sortConfig?.key !== column) return <SortUp className="w-3.5 h-3.5 text-muted opacity-30" />;
-        return sortConfig.direction === 'asc' 
-            ? <SortUp className="w-3.5 h-3.5 text-primary dark:text-warning" /> 
-            : <SortDown className="w-3.5 h-3.5 text-primary dark:text-warning" />;
     };
 
     const toggleExpand = (clientId: number) => {
@@ -73,7 +81,7 @@ export const ClientsTable = ({ data }: { data: Client[] }) => {
 
     return (
         <Card noPadding className="overflow-hidden border-border shadow-sm">
-            <div className="overflow-x-auto custom-scrollbar">
+            <ScrollableContainer>
                 <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead>
                         <tr className="border-b border-border bg-background/50 text-theme-caption">
@@ -81,20 +89,20 @@ export const ClientsTable = ({ data }: { data: Client[] }) => {
                             className="p-4 pl-6 font-bold text-muted uppercase tracking-wider cursor-pointer group hover:bg-surface transition-colors"
                             onClick={() => requestSort('firstName')}
                         >
-                            <div className="flex items-center gap-2">Client <SortIcon column="firstName" /></div>
+                            <div className="flex items-center gap-2">Client <SortIcon column="firstName" sortConfig={sortConfig} /></div>
                         </th>
                         <th className="p-4 font-bold text-muted uppercase tracking-wider">Email & Phone</th>
                         <th 
                             className="p-4 font-bold text-muted uppercase tracking-wider text-center cursor-pointer group hover:bg-surface transition-colors"
                             onClick={() => requestSort('totalOrders')}
                         >
-                            <div className="flex items-center justify-center gap-2">Orders <SortIcon column="totalOrders" /></div>
+                            <div className="flex items-center justify-center gap-2">Orders <SortIcon column="totalOrders" sortConfig={sortConfig} /></div>
                         </th>
                         <th 
                             className="p-4 font-bold text-muted uppercase tracking-wider text-center cursor-pointer group hover:bg-surface transition-colors"
                             onClick={() => requestSort('totalSpent')}
                         >
-                            <div className="flex items-center justify-center gap-2">Spent <SortIcon column="totalSpent" /></div>
+                            <div className="flex items-center justify-center gap-2">Spent <SortIcon column="totalSpent" sortConfig={sortConfig} /></div>
                         </th>
                         <th className="p-4 font-bold text-muted uppercase tracking-wider text-right pr-6">Last Order</th>
                         <th className="p-4 w-10"></th>
@@ -102,7 +110,7 @@ export const ClientsTable = ({ data }: { data: Client[] }) => {
                 </thead>
                 <tbody className="divide-y divide-border">
                     {sortedData.map(client => (
-                        <React.Fragment key={client.id}>
+                        <Fragment key={client.id}>
                             <tr className="hover:bg-background/50 transition-colors group cursor-pointer" onClick={() => toggleExpand(client.id)}>
                                 <td className="p-4 pl-6">
                                     <div className="flex items-center gap-3">
@@ -141,10 +149,10 @@ export const ClientsTable = ({ data }: { data: Client[] }) => {
                                 </td>
                             </tr>
                             {expandedClientId === client.id && (
-                                <tr className="bg-background/30">
+                                <tr className="bg-background/30 text-left">
                                     <td colSpan={6} className="p-0">
-                                        <div className="p-6 animate-in slide-in-from-top-2 duration-200">
-                                            <Card className="bg-surface border-border shadow-sm p-6 w-full max-w-[60%] mx-auto">
+                                        <div className="p-4 md:p-6 animate-in slide-in-from-top-2 duration-200">
+                                            <Card className="bg-surface border-border shadow-sm p-5 md:p-8 w-full lg:max-w-[70%] mx-auto">
                                                 <h3 className="text-theme-title text-foreground mb-4">Edit Client Profile</h3>
                                                 <ClientProfileForm 
                                                     compact={true}
@@ -169,11 +177,11 @@ export const ClientsTable = ({ data }: { data: Client[] }) => {
                                     </td>
                                 </tr>
                             )}
-                        </React.Fragment>
+                        </Fragment>
                     ))}
                 </tbody>
             </table>
-            </div>
+            </ScrollableContainer>
         </Card>
     );
 };

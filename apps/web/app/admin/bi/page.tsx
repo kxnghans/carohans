@@ -1,22 +1,185 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Icons } from '../../lib/icons';
 import {
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   Legend, ResponsiveContainer, AreaChart, Area, PieChart, Pie as RechartsPie, Cell, BarChart, Bar, LabelList, Sector, Rectangle
 } from 'recharts';
 
-const Pie = RechartsPie as any;
+import type { ComponentType } from 'react';
 import { useAppStore } from '../../context/AppContext';
 import { StatCard } from '../../components/dashboard/StatCard';
 import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
+import { ScrollableContainer } from '../../components/common/ScrollableContainer';
 import { formatCurrency, calculateMetrics } from '../../utils/helpers';
 
+const Pie = RechartsPie as unknown as ComponentType<{
+  activeIndex?: number;
+  activeShape?: unknown;
+  data: unknown[];
+  cx: string | number;
+  cy: string | number;
+  innerRadius: number | string;
+  outerRadius: number | string;
+  paddingAngle: number;
+  dataKey: string;
+  stroke: string;
+  strokeWidth: number;
+  label: unknown;
+  onMouseEnter: (data: unknown, index: number) => void;
+  onMouseLeave: () => void;
+  children: React.ReactNode;
+}>;
+
+interface ChartActiveShapeProps {
+  cx: number;
+  cy: number;
+  innerRadius: number;
+  outerRadius: number;
+  startAngle: number;
+  endAngle: number;
+  fill: string;
+}
+
+const renderActiveShape = (props: ChartActiveShapeProps) => {
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+  return (
+    <g>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 6}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+      />
+      <Sector
+        cx={cx}
+        cy={cy}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        innerRadius={outerRadius + 8}
+        outerRadius={outerRadius + 10}
+        fill={fill}
+        fillOpacity={0.3}
+      />
+    </g>
+  );
+};
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: { color?: string; payload?: { color?: string }; name?: string; value?: number | string }[];
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    const firstPayload = payload[0];
+    if (!firstPayload) return null;
+    const color = firstPayload.color || firstPayload.payload?.color || 'var(--color-primary)';
+    return (
+      <div 
+        className="bg-surface p-4 border-2 shadow-2xl rounded-2xl transition-all duration-300"
+        style={{ borderColor: color }}
+      >
+        <p className="text-muted font-black uppercase mb-2 tracking-widest text-[10px] opacity-60">{label || firstPayload.name}</p>
+        <div className="flex items-center gap-3">
+          <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: color }} />
+          <p className="text-foreground font-black text-theme-header tracking-tighter">
+              {typeof firstPayload.value === 'number' && (firstPayload.value ?? 0) >= 100 ? formatCurrency(firstPayload.value as number) : firstPayload.value}
+          </p>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const RenderCustomLabel = (props: unknown) => {
+  const p = props as { x?: number | string; y?: number | string; value?: number };
+  const { x, y, value } = p;
+  if (x === undefined || y === undefined || value === undefined || typeof value !== 'number') return null;
+  const numX = typeof x === 'string' ? parseFloat(x) : x;
+  const numY = typeof y === 'string' ? parseFloat(y) : y;
+  const formattedValue = value >= 1000 ? `¢${(value / 1000).toFixed(0)}k` : `¢${value}`;
+  return (
+    <g>
+      <rect x={numX - 20} y={numY - 25} width={40} height={18} rx={4} fill="var(--color-surface)" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))" className="stroke-border stroke-[0.5px]" />
+      <text x={numX} y={numY - 12} fill="var(--color-chart-label)" textAnchor="middle" style={{ fontSize: '10px', fontWeight: 600 }}>
+        {formattedValue}
+      </text>
+    </g>
+  );
+};
+
+interface RenderPieLabelProps {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  outerRadius: number;
+  percent: number;
+  payload: { color?: string };
+}
+
+const RenderPieLabel = ({ cx, cy, midAngle, outerRadius, percent, payload }: RenderPieLabelProps) => {
+  const RADIAN = Math.PI / 180;
+  const sin = Math.sin(-RADIAN * midAngle);
+  const cos = Math.cos(-RADIAN * midAngle);
+  
+  // Position start of line slightly outside the outer radius
+  const sx = cx + (outerRadius + 2) * cos;
+  const sy = cy + (outerRadius + 2) * sin;
+  
+  // Middle point for the "elbow"
+  const mx = cx + (outerRadius + 15) * cos;
+  const my = cy + (outerRadius + 15) * sin;
+  
+  // End point extending horizontally
+  const ex = mx + (cos >= 0 ? 1 : -1) * 15;
+  const ey = my;
+  
+  const textAnchor = cos >= 0 ? 'start' : 'end';
+  const sliceColor = payload?.color || "var(--color-chart-label)";
+  const textValue = `${((percent || 0) * 100).toFixed(0)}%`;
+
+  return (
+    <g>
+      {/* Connector Line with higher contrast */}
+      <path 
+        d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} 
+        stroke={sliceColor} 
+        fill="none" 
+        strokeOpacity={0.8}
+        strokeWidth={1.5}
+      />
+      {/* Small dot anchor at the start of the line (on the slice edge) */}
+      <circle cx={sx} cy={sy} r={2} fill={sliceColor} />
+      
+      {/* The Data Label positioned relative to the horizontal line end */}
+      <text 
+        x={ex + (cos >= 0 ? 1 : -1) * 6} 
+        y={ey} 
+        dy={4}
+        textAnchor={textAnchor} 
+        fill={sliceColor} 
+        style={{ 
+          fontSize: '11px', 
+          fontWeight: 700,
+          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))'
+        }}
+      >
+        {textValue}
+      </text>
+    </g>
+  );
+};
+
 // --- REUSABLE DROPDOWN SLICER COMPONENT ---
-const FilterDropdown = ({ label, options, selected, onToggle, allLabel = "All Statuses" }: { 
-  label: string, options: string[], selected: string[], onToggle: (val: string) => void, allLabel?: string 
+const FilterDropdown = ({ label, options, selected, onToggle }: { 
+  label: string, options: string[], selected: string[], onToggle: (val: string) => void 
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -36,10 +199,10 @@ const FilterDropdown = ({ label, options, selected, onToggle, allLabel = "All St
 
   return (
     <div className="flex flex-col gap-2 flex-1 min-w-[180px] relative" ref={dropdownRef}>
-      <span className="text-theme-caption font-bold text-muted uppercase tracking-widest ml-1">{label}</span>
+      <span className="text-theme-caption font-semibold text-muted uppercase tracking-widest ml-1">{label}</span>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full h-[38px] px-4 bg-surface border rounded-xl flex items-center justify-between transition-all text-theme-caption font-black uppercase tracking-tight shadow-sm active:scale-[0.98] ${isOpen ? 'border-primary ring-4 ring-primary/5' : 'border-border hover:border-muted'}`}
+        className={`w-full h-[38px] px-4 bg-surface border rounded-xl flex items-center justify-between transition-all text-theme-caption font-semibold uppercase tracking-tight shadow-sm active:scale-[0.98] ${isOpen ? 'border-primary ring-4 ring-primary/5' : 'border-border hover:border-muted'}`}
       >
         <span className={selected.includes('All') ? 'text-muted' : 'text-primary'}>{displayText}</span>
         <ChevronDown className={`w-3.5 h-3.5 text-muted transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
@@ -48,13 +211,13 @@ const FilterDropdown = ({ label, options, selected, onToggle, allLabel = "All St
       {isOpen && (
         <div className="absolute top-[65px] left-0 right-0 bg-surface border border-border rounded-2xl shadow-2xl z-50 p-2 space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-200 min-w-[200px]">
           <div className="flex justify-between items-center px-2 py-1.5 border-b border-border/50 mb-1">
-            <span className="text-[9px] font-bold text-muted uppercase tracking-widest">Select {label}</span>
+            <span className="text-[9px] font-semibold text-muted uppercase tracking-widest">Select {label}</span>
             <button 
               onClick={(e) => {
                 e.stopPropagation();
                 setIsOpen(false);
               }}
-              className="text-[10px] font-black text-primary hover:bg-primary/10 px-2.5 py-1 rounded-lg transition-all active:scale-95 border border-primary/20"
+              className="text-[10px] font-bold text-primary hover:bg-primary/10 px-2.5 py-1 rounded-lg transition-all active:scale-95 border border-primary/20"
             >
               Done
             </button>
@@ -67,7 +230,7 @@ const FilterDropdown = ({ label, options, selected, onToggle, allLabel = "All St
               <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes('All') ? 'bg-primary border-primary shadow-sm' : 'bg-background border-border group-hover:border-primary/50'}`}>
                 {selected.includes('All') && <Check className="w-3 h-3 text-primary-text" />}
               </div>
-              <span className={`text-theme-caption font-bold uppercase tracking-tight ${selected.includes('All') ? 'text-primary' : 'text-muted'}`}>All</span>
+              <span className={`text-theme-caption font-semibold uppercase tracking-tight ${selected.includes('All') ? 'text-primary' : 'text-muted'}`}>All</span>
             </div>
           </button>
           <div className="h-px bg-border mx-2 my-1"></div>
@@ -82,7 +245,7 @@ const FilterDropdown = ({ label, options, selected, onToggle, allLabel = "All St
                   <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes(opt) ? 'bg-primary border-primary shadow-sm' : 'bg-background border-border group-hover:border-primary/50'}`}>
                     {selected.includes(opt) && <Check className="w-3 h-3 text-primary-text" />}
                   </div>
-                  <span className={`text-theme-caption font-bold uppercase tracking-tight ${selected.includes(opt) ? 'text-primary' : 'text-muted'}`}>{opt}</span>
+                  <span className={`text-theme-caption font-semibold uppercase tracking-tight ${selected.includes(opt) ? 'text-primary' : 'text-muted'}`}>{opt}</span>
                 </div>
               </button>
             ))}
@@ -95,7 +258,7 @@ const FilterDropdown = ({ label, options, selected, onToggle, allLabel = "All St
 
 export default function AdminBIPage() {
   const { clients, orders, inventory } = useAppStore();
-  const { Users, TrendingUp, Activity, Filter, ChevronRight, Sparkles, Cash, Zap, BarChart: BarIcon, Package, ChevronDown, Calendar } = Icons;
+  const { Users, Cash, BarChart: BarIcon, Package, Calendar, ChevronRight } = Icons;
 
   // Filters State
   const [timeRange, setTimeRange] = useState('All Time');
@@ -110,7 +273,8 @@ export default function AdminBIPage() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    const timer = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const resetFilters = () => {
@@ -216,7 +380,7 @@ export default function AdminBIPage() {
       };
 
       return Object.entries(statusMap)
-        .filter(([_, value]) => value > 0) // Only show statuses that have data
+        .filter(([, value]) => value > 0) // Only show statuses that have data
         .map(([name, value]) => ({
           name,
           value,
@@ -257,13 +421,10 @@ export default function AdminBIPage() {
       }
   }, [categoryFilteredData, inventory, usageType]);
 
-  // Simplified for insights
-  const categoryFilteredOrders = categoryFilteredData;
-
   // 7. Inventory Performance (Kept for Insights)
   const inventoryPerformanceData = useMemo(() => {
       const itemMap: Record<string, number> = {};
-      categoryFilteredOrders.forEach(order => {
+      categoryFilteredData.forEach(order => {
           order.items.forEach(item => {
               const invItem = inventory.find(i => i.id === item.itemId);
               if (invItem) {
@@ -276,49 +437,6 @@ export default function AdminBIPage() {
         .sort((a, b) => b.value - a.value)
         .slice(0, 10);
   }, [categoryFilteredData, inventory]);
-
-  // 7. Insight Engine
-  const deepInsights = useMemo(() => {
-      const insights: any[] = [];
-      const peakMonth = [...financialTrends].sort((a, b) => b.revenue - a.revenue)[0];
-      if (peakMonth) {
-          insights.push({
-              title: "Volume Peak",
-              desc: `${peakMonth.month} recorded the highest ${categoryFilter.includes('All') ? 'overall' : categoryFilter.join(', ')} volume with ${peakMonth.orders} bookings.`,
-              icon: TrendingUp, 
-              color: "text-success", 
-              bg: "bg-success/10"
-          });
-      }
-      
-      // Calculate top client on the fly for insights
-      const clientMap: Record<string, number> = {};
-      categoryFilteredData.forEach(o => {
-          clientMap[o.clientName] = (clientMap[o.clientName] || 0) + Number(o.totalAmount);
-      });
-      const topClientEntry = Object.entries(clientMap).sort((a, b) => b[1] - a[1])[0];
-
-      if (topClientEntry) {
-          insights.push({
-              title: "Core Advocate",
-              desc: `${topClientEntry[0]} is your lead client for this segment, contributing ${((topClientEntry[1] / (localMetrics.totalRevenue || 1)) * 100).toFixed(0)}% of segment revenue.`,
-              icon: Users, 
-              color: "text-secondary", 
-              bg: "bg-secondary/10"
-          });
-      }
-      const topItem = inventoryPerformanceData[0];
-      if (topItem) {
-          insights.push({
-              title: "High Demand",
-              desc: `"${topItem.name}" has the highest turnover rate in this selection. Consider scaling this specific asset.`,
-              icon: Zap, 
-              color: "text-warning", 
-              bg: "bg-warning/10"
-          });
-      }
-      return insights;
-  }, [financialTrends, inventoryPerformanceData, categoryFilter, localMetrics, categoryFilteredData]);
 
   const filteredTrends = useMemo(() => {
     const data = financialTrends.length > 0 ? financialTrends : [];
@@ -355,125 +473,19 @@ export default function AdminBIPage() {
 
   const [activeIndex, setActiveIndex] = useState(-1);
 
-  const renderActiveShape = (props: any) => {
-    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
-    return (
-      <g>
-        <Sector
-          cx={cx}
-          cy={cy}
-          innerRadius={innerRadius}
-          outerRadius={outerRadius + 6}
-          startAngle={startAngle}
-          endAngle={endAngle}
-          fill={fill}
-        />
-        <Sector
-          cx={cx}
-          cy={cy}
-          startAngle={startAngle}
-          endAngle={endAngle}
-          innerRadius={outerRadius + 8}
-          outerRadius={outerRadius + 10}
-          fill={fill}
-          fillOpacity={0.3}
-        />
-      </g>
-    );
-  };
+  interface Insight {
+    title: string;
+    desc: string;
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+    bg: string;
+  }
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const color = payload[0].color || payload[0].payload?.color || 'var(--color-primary)';
-      return (
-        <div 
-          className="bg-surface p-4 border-2 shadow-2xl rounded-2xl transition-all duration-300"
-          style={{ borderColor: color }}
-        >
-          <p className="text-muted font-black uppercase mb-2 tracking-widest text-[10px] opacity-60">{label || payload[0].name}</p>
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: color }} />
-            <p className="text-foreground font-black text-theme-header tracking-tighter">
-                {typeof payload[0].value === 'number' && payload[0].value >= 100 ? formatCurrency(payload[0].value) : payload[0].value}
-            </p>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  const RenderCustomLabel = (props: any) => {
-    const { x, y, value } = props;
-    const formattedValue = value >= 1000 ? `¢${(value / 1000).toFixed(0)}k` : `¢${value}`;
-    return (
-      <g>
-        <rect x={x - 20} y={y - 25} width={40} height={18} rx={4} fill="var(--color-surface)" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))" className="stroke-border stroke-[0.5px]" />
-        <text x={x} y={y - 12} fill="var(--color-chart-label)" textAnchor="middle" style={{ fontSize: '10px', fontWeight: 600 }}>
-          {formattedValue}
-        </text>
-      </g>
-    );
-  };
-
-  const RenderPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, payload }: any) => {
-    const RADIAN = Math.PI / 180;
-    const sin = Math.sin(-RADIAN * midAngle);
-    const cos = Math.cos(-RADIAN * midAngle);
-    
-    // Position start of line slightly outside the outer radius
-    const sx = cx + (outerRadius + 2) * cos;
-    const sy = cy + (outerRadius + 2) * sin;
-    
-    // Middle point for the "elbow"
-    const mx = cx + (outerRadius + 15) * cos;
-    const my = cy + (outerRadius + 15) * sin;
-    
-    // End point extending horizontally
-    const ex = mx + (cos >= 0 ? 1 : -1) * 15;
-    const ey = my;
-    
-    const textAnchor = cos >= 0 ? 'start' : 'end';
-    const sliceColor = payload?.color || "var(--color-chart-label)";
-    const textValue = `${((percent || 0) * 100).toFixed(0)}%`;
-
-    return (
-      <g>
-        {/* Connector Line with higher contrast */}
-        <path 
-          d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} 
-          stroke={sliceColor} 
-          fill="none" 
-          strokeOpacity={0.8}
-          strokeWidth={1.5}
-        />
-        {/* Small dot anchor at the start of the line (on the slice edge) */}
-        <circle cx={sx} cy={sy} r={2} fill={sliceColor} />
-        
-        {/* The Data Label positioned relative to the horizontal line end */}
-        <text 
-          x={ex + (cos >= 0 ? 1 : -1) * 6} 
-          y={ey} 
-          dy={4}
-          textAnchor={textAnchor} 
-          fill={sliceColor} 
-          style={{ 
-            fontSize: '11px', 
-            fontWeight: 700,
-            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))'
-          }}
-        >
-          {textValue}
-        </text>
-      </g>
-    );
-  };
-
-  const [rotatedInsights, setRotatedInsights] = useState<any[]>([]);
+  const [rotatedInsights, setRotatedInsights] = useState<Insight[]>([]);
 
   // 7. Insight Engine
   const allPotentialInsights = useMemo(() => {
-      const insights: any[] = [];
+      const insights: Insight[] = [];
       const peakMonth = [...financialTrends].sort((a, b) => b.revenue - a.revenue)[0];
       if (peakMonth) {
           insights.push({
@@ -575,10 +587,11 @@ export default function AdminBIPage() {
       {/* STRATEGIC SLICERS */}
       <Card className="bg-surface border-border p-5 shadow-sm overflow-visible relative">
         <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>
-        <div className="flex flex-wrap lg:flex-nowrap items-end gap-6 w-full">
-          
-          {/* Time Range */}
-          <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
+        <ScrollableContainer innerClassName="lg:overflow-visible" className="lg:overflow-visible">
+          <div className="flex items-end gap-3 sm:gap-6 min-w-max lg:min-w-0 lg:flex-nowrap w-full">
+            
+            {/* Time Range */}
+            <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
              <span className="text-theme-caption text-muted uppercase tracking-widest ml-1">Time Range</span>
              <div className="flex p-1 bg-background rounded-xl h-[38px] items-center w-full">
                {['7D', '30D', '90D', '1Y', 'All'].map(range => (
@@ -618,30 +631,23 @@ export default function AdminBIPage() {
             </button>
           </div>
         </div>
-      </Card>
+      </ScrollableContainer>
+    </Card>
 
       {/* KPI CARDS */}
-      <div className="flex flex-wrap gap-6">
-        <div className="flex-1 min-w-[160px] max-w-[calc(50%-12px)] lg:max-w-none">
-          <StatCard 
-            title="Business Revenue" 
-            value={formatCurrency(localMetrics.totalRevenue)} 
-            subtext={`${categoryFilter} Contribution`} 
-            trend={localMetrics.revenueGrowth} 
-            trendLabel="30 Days"
-            color="primary" 
-            icon={Cash} 
-          />
-        </div>
-        <div className="flex-1 min-w-[160px] max-w-[calc(50%-12px)] lg:max-w-none">
-          <StatCard title="Avg. Ticket" value={formatCurrency(Math.floor(localMetrics.avgOrderValue))} subtext="Value per booking" color="secondary" icon={Icons.CreditCard} />
-        </div>
-        <div className="flex-1 min-w-[160px] max-w-[calc(50%-12px)] lg:max-w-none">
-          <StatCard title="Total Clients" value={clients.length.toString()} subtext="Registered accounts" color="primary" icon={Users} />
-        </div>
-        <div className="flex-1 min-w-[160px] max-w-[calc(50%-12px)] lg:max-w-none">
-          <StatCard title="Avg. Duration" value={`${Math.round(localMetrics.avgDuration || 0)} Days`} subtext="Per rental contract" color="success" icon={Calendar} />
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+        <StatCard 
+          title="Business Revenue" 
+          value={formatCurrency(localMetrics.totalRevenue)} 
+          subtext={`${categoryFilter} Contribution`} 
+          trend={localMetrics.revenueGrowth} 
+          trendLabel="30 Days"
+          color="primary" 
+          icon={Cash} 
+        />
+        <StatCard title="Avg. Ticket" value={formatCurrency(Math.floor(localMetrics.avgOrderValue))} subtext="Value per booking" color="secondary" icon={Icons.CreditCard} />
+        <StatCard title="Total Clients" value={clients.length.toString()} subtext="Registered accounts" color="primary" icon={Users} />
+        <StatCard title="Avg. Duration" value={`${Math.round(localMetrics.avgDuration || 0)} Days`} subtext="Per rental contract" color="success" icon={Calendar} />
       </div>
       
       {/* MAIN CHARTS */}
@@ -664,7 +670,7 @@ export default function AdminBIPage() {
                         />
                         <RechartsTooltip content={<CustomTooltip />} />
                         <Area type="monotone" dataKey="revenue" stroke="var(--color-secondary)" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)">
-                            <LabelList dataKey="revenue" content={<RenderCustomLabel />} />
+                            <LabelList dataKey="revenue" content={(props) => <RenderCustomLabel {...props} />} />
                         </Area>
               </AreaChart>
             </ResponsiveContainer>
@@ -739,7 +745,7 @@ export default function AdminBIPage() {
                         stroke="var(--color-surface)"
                         strokeWidth={2}
                         label={RenderPieLabel}
-                        onMouseEnter={(_, index) => setActiveIndex(index)}
+                        onMouseEnter={(_unused: unknown, index: number) => setActiveIndex(index)}
                         onMouseLeave={() => setActiveIndex(-1)}
                     >
                         {returnStatusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}

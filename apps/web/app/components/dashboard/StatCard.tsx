@@ -7,7 +7,7 @@ interface StatCardProps {
   subtext: string;
   trend?: number;
   trendLabel?: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   color: 'primary' | 'secondary' | 'success' | 'warning' | 'accent';
 }
 
@@ -39,47 +39,47 @@ export const StatCard = ({ title, value, subtext, trend, trendLabel, icon: Icon,
   };
 
   return (
-    <Card noPadding className={`relative overflow-hidden group hover:shadow-xl dark:hover:shadow-none transition-all duration-500 border-none shadow-sm ring-1 ring-border min-h-[185px] w-full ${gradientMap[color]}`}>
+    <Card noPadding className={`relative overflow-hidden group hover:shadow-xl dark:hover:shadow-none transition-all duration-500 border-none shadow-sm ring-1 ring-border min-h-[160px] sm:min-h-[185px] w-full ${gradientMap[color]}`}>
       {/* Decorative Ghost Icon */}
       <div className={`absolute -right-2 -top-2 p-4 opacity-[0.05] group-hover:opacity-[0.12] transition-all duration-700 group-hover:scale-110 transform rotate-12 text-foreground`}>
-        <Icon className="w-24 h-24" />
+        <Icon className="w-16 h-16 sm:w-24 sm:h-24" />
       </div>
 
-      <div className="relative z-10 p-6 pb-8">
-        <div className="flex items-center justify-between mb-5">
-          <div className={`p-3 rounded-2xl ${colorMap[color]} transition-all duration-500 group-hover:scale-110`}>
-            <Icon className="w-5 h-5" />
+      <div className="relative z-10 p-4 sm:p-6 pb-6 sm:pb-8">
+        <div className="flex items-center justify-between mb-4 sm:mb-5">
+          <div className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl ${colorMap[color]} transition-all duration-500 group-hover:scale-110`}>
+            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           {trend !== undefined && (
-            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-xl border transition-colors ${
+            <div className={`flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg sm:rounded-xl border transition-colors ${
               trend > 0 
               ? 'bg-success/10 text-success border-success/20' 
               : 'bg-error/10 text-error border-error/20'
             }`}>
               {trend > 0 ? (
-                <TrendingUp className="w-3.5 h-3.5" />
+                <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               ) : (
-                <TrendingDown className="w-3.5 h-3.5" />
+                <TrendingDown className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               )}
-              <span className="text-theme-caption font-black tracking-tight">{trend > 0 ? '+' : ''}{trend}%</span>
+              <span className="text-[10px] sm:text-theme-caption font-semibold tracking-tight">{trend > 0 ? '+' : ''}{trend}%</span>
               {trendLabel && (
-                <span className="text-[9px] font-bold opacity-60 uppercase ml-0.5">{trendLabel}</span>
+                <span className="hidden xs:inline text-[8px] sm:text-[9px] font-medium opacity-60 uppercase ml-0.5">{trendLabel}</span>
               )}
             </div>
           )}
         </div>
 
-        <div>
-          <h3 className="text-muted font-black text-theme-caption uppercase tracking-[0.15em] mb-2">{title}</h3>
+        <div className="min-w-0">
+          <h3 className="text-muted font-semibold text-[10px] sm:text-theme-caption uppercase tracking-[0.1em] sm:tracking-[0.15em] mb-1.5 sm:mb-2 truncate">{title}</h3>
           <div className="flex items-baseline gap-2">
-            <span className="text-theme-header text-foreground tracking-tight">{value}</span>
+            <span className="text-lg sm:text-theme-header text-foreground tracking-tight font-bold truncate">{value}</span>
           </div>
-          <p className="mt-2 text-muted text-theme-label font-medium leading-tight">{subtext}</p>
+          <p className="mt-1 sm:mt-2 text-muted text-[11px] sm:text-theme-label font-medium leading-tight line-clamp-2">{subtext}</p>
         </div>
       </div>
       
       {/* Bottom accent bar */}
-      <div className={`absolute bottom-0 left-0 h-1.5 w-0 group-hover:w-full transition-all duration-700 ease-out ${accentMap[color]}`}></div>
+      <div className={`absolute bottom-0 left-0 h-1 sm:h-1.5 w-0 group-hover:w-full transition-all duration-700 ease-out ${accentMap[color]}`}></div>
     </Card>
   );
 };

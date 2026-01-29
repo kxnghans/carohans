@@ -85,7 +85,7 @@ export const calculateOrderTotal = (items: { price: number, qty: number }[], sta
 };
 
 export const calculateMetrics = (orders: Order[]): Metrics => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0] ?? '';
   
   // Use the stored totalAmount which already includes duration logic and penalties
   const totalRevenue = orders.reduce((sum, o) => {

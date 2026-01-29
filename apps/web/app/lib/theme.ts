@@ -11,7 +11,7 @@ export const typography = {
 export const colors = {
   light: {
     primary: '#0f172a',
-    secondary: '#4f46e5',
+    secondary: '#2563eb',
     live: '#f59e0b',
     background: '#f8fafc',
     surface: '#ffffff',
@@ -26,7 +26,7 @@ export const colors = {
   },
   dark: {
     primary: '#f8fafc',
-    secondary: '#6366f1',
+    secondary: '#3b82f6',
     live: '#a78bfa',
     background: '#0f172a',
     surface: '#1e293b',
