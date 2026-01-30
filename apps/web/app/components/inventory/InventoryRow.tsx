@@ -99,7 +99,7 @@ export const InventoryRow = ({
             <td className="p-4">
                 {isFieldEditing('category') ? (
                     <select
-                        className="border border-primary ring-4 ring-indigo-500/10 rounded px-2 py-1 text-theme-label w-full outline-none bg-surface text-foreground cursor-pointer"
+                        className="border border-primary ring-4 ring-indigo-500/10 rounded px-2 py-1 text-theme-label w-full outline-none bg-surface text-foreground cursor-pointer font-normal"
                         value={editValue as string}
                         onChange={(e) => setEditValue(e.target.value)}
                         onBlur={handleSave}
@@ -113,7 +113,7 @@ export const InventoryRow = ({
                 ) : (
                     <span 
                         onClick={() => startEditing(item.id, 'category', item.category)}
-                        className={`text-theme-label text-muted ${isAdmin && isEditMode ? 'cursor-text' : ''}`}
+                        className={`text-theme-label text-muted font-normal ${isAdmin && isEditMode ? 'cursor-text' : ''}`}
                     >
                         {item.category}
                     </span>

@@ -21,8 +21,8 @@ const SortIcon = ({
     const { SortUp, SortDown } = Icons;
     if (sortConfig?.key !== column) return <SortUp className="w-3.5 h-3.5 text-muted opacity-30" />;
     return sortConfig.direction === 'asc' 
-        ? <SortUp className="w-3.5 h-3.5 text-primary dark:text-warning" /> 
-        : <SortDown className="w-3.5 h-3.5 text-primary dark:text-warning" />;
+        ? <SortUp className="w-3.5 h-3.5 text-secondary dark:text-warning" /> 
+        : <SortDown className="w-3.5 h-3.5 text-secondary dark:text-warning" />;
 };
 
 interface InventoryTableProps {

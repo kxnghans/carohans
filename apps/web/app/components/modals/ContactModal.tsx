@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
 import { useAppStore } from '../../context/AppContext';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -19,6 +20,8 @@ export const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
   const [formData, setFormData] = useState(businessSettings);
   const [mounted, setMounted] = useState(false);
 
+  useScrollLock(isOpen);
+
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0);
     return () => clearTimeout(timer);
@@ -30,17 +33,9 @@ export const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
         setFormData(businessSettings);
         setIsEditMode(false);
       }, 0);
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
       return () => clearTimeout(timer);
-    } else {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     }
-    return () => { 
-      document.body.style.overflow = 'unset'; 
-      document.documentElement.style.overflow = 'unset';
-    };
+    return undefined;
   }, [isOpen, businessSettings]);
 
   useEffect(() => {
@@ -140,28 +135,28 @@ export const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
               <div className="flex items-start gap-4">
                 <div className="p-2 bg-primary/10 dark:bg-indigo-900/20 text-primary dark:text-indigo-400 rounded-xl"><Globe className="w-5 h-5" /></div>
                 <div>
-                  <p className="text-theme-caption font-semibold text-muted uppercase tracking-widest mb-0.5">Business Name</p>
-                  <p className="text-theme-body-bold text-foreground font-bold">{businessSettings.business_name}</p>
+                  <p className="text-theme-subtitle text-muted mb-0.5">Business Name</p>
+                  <p className="text-theme-body text-foreground">{businessSettings.business_name}</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
                 <div className="p-2 bg-success/10 dark:bg-emerald-900/20 text-success dark:text-emerald-400 rounded-xl"><Phone className="w-5 h-5" /></div>
                 <div>
-                  <p className="text-theme-caption font-semibold text-muted uppercase tracking-widest mb-0.5">Phone Number</p>
+                  <p className="text-theme-subtitle text-muted mb-0.5">Phone Number</p>
                   <div className="flex flex-wrap gap-2.5">
-                    <a href={`tel:${businessSettings.business_phone}`} className="text-theme-body-bold text-foreground hover:text-primary transition-colors font-bold">
+                    <a href={`tel:${businessSettings.business_phone}`} className="text-theme-body text-foreground hover:text-primary transition-colors">
                       {formatPhoneNumber(businessSettings.business_phone)}
                     </a>
                     <div className="flex gap-1.5">
                       <a 
                         href={`tel:${businessSettings.business_phone}`} 
-                        className="text-[9px] font-black text-success dark:text-emerald-400 uppercase border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all active:scale-95 shadow-sm"
+                        className="text-theme-caption font-medium text-success dark:text-emerald-400 uppercase border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all active:scale-95 shadow-sm"
                       >
                         Call Now
                       </a>
                       <a 
                         href={`sms:${businessSettings.business_phone}`} 
-                        className="text-[9px] font-black text-primary dark:text-blue-400 uppercase border border-indigo-100 dark:border-blue-800/50 bg-primary/5 dark:bg-blue-900/40 px-2.5 py-1 rounded-lg hover:bg-indigo-100 dark:hover:bg-blue-900/60 transition-all active:scale-95 shadow-sm"
+                        className="text-theme-caption font-medium text-primary dark:text-blue-400 uppercase border border-indigo-100 dark:border-blue-800/50 bg-primary/5 dark:bg-blue-900/40 px-2.5 py-1 rounded-lg hover:bg-indigo-100 dark:hover:bg-blue-900/60 transition-all active:scale-95 shadow-sm"
                       >
                         Send Text
                       </a>
@@ -172,8 +167,8 @@ export const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
               <div className="flex items-start gap-4">
                 <div className="p-2 bg-blue-50 dark:bg-blue-900/20 text-accent-primary dark:text-blue-400 rounded-xl"><Mail className="w-5 h-5" /></div>
                 <div>
-                  <p className="text-theme-caption font-semibold text-muted uppercase tracking-widest mb-0.5">Email Address</p>
-                  <a href={`mailto:${businessSettings.business_email}`} className="text-theme-body-bold text-foreground hover:text-primary transition-colors font-bold">
+                  <p className="text-theme-subtitle text-muted mb-0.5">Email Address</p>
+                  <a href={`mailto:${businessSettings.business_email}`} className="text-theme-body text-foreground hover:text-primary transition-colors">
                     {businessSettings.business_email}
                   </a>
                 </div>
@@ -181,8 +176,8 @@ export const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
               <div className="flex items-start gap-4">
                 <div className="p-2 bg-warning/10 dark:bg-amber-900/20 text-warning dark:text-amber-400 rounded-xl"><MapPin className="w-5 h-5" /></div>
                 <div>
-                  <p className="text-theme-caption font-semibold text-muted uppercase tracking-widest mb-0.5">Location</p>
-                  <p className="text-theme-body text-foreground leading-relaxed font-medium">{businessSettings.business_location}</p>
+                  <p className="text-theme-subtitle text-muted mb-0.5">Location</p>
+                  <p className="text-theme-body text-foreground leading-relaxed">{businessSettings.business_location}</p>
                   <Button 
                     variant="primary" 
                     size="md"

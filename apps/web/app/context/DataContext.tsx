@@ -30,6 +30,11 @@ export interface DataContextType {
   setLatePenaltyPerDay: React.Dispatch<React.SetStateAction<number>>;
   businessSettings: BusinessSettings;
   updateBusinessSettings: (settings: BusinessSettings) => Promise<void>;
+  modifyingOrderId: number | null;
+  setModifyingOrderId: React.Dispatch<React.SetStateAction<number | null>>;
+  cancelModification: () => void;
+  createOrderStep: 'none' | 'select-client' | 'shop' | 'review';
+  setCreateOrderStep: React.Dispatch<React.SetStateAction<'none' | 'select-client' | 'shop' | 'review'>>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -44,6 +49,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [latePenaltyPerDay, setLatePenaltyPerDay] = useState(50);
+  const [modifyingOrderId, setModifyingOrderId] = useState<number | null>(null);
+  const [createOrderStep, setCreateOrderStep] = useState<'none' | 'select-client' | 'shop' | 'review'>('none');
   
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings>({
     business_name: 'CaroHans Ventures',
@@ -207,6 +214,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (!user) {
           setOrders([]);
           setClients([]);
+          setCart([]);
+          setModifyingOrderId(null);
+          setPortalFormData({
+              firstName: '', 
+              lastName: '',
+              username: '',
+              phone: '', 
+              email: '', 
+              start: '', 
+              end: '' 
+          });
+          localStorage.removeItem('carohans_cart');
       }
   }, [user, fetchData]);
 
@@ -214,9 +233,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const submitOrder = async (details: PortalFormData) => {
     try {
-      await submitOrderToSupabase(details, cart, inventory);
+      await submitOrderToSupabase(details, cart, inventory, modifyingOrderId);
+      const wasModifying = !!modifyingOrderId;
       setCart([]);
-      showNotification("Order Request Sent!");
+      setModifyingOrderId(null);
+      showNotification(wasModifying ? "Order Updated Successfully!" : "Order Request Sent!", "success");
       await fetchData();
     } catch (error) {
       console.error('Error submitting order:', error);
@@ -247,6 +268,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
   };
 
+  const cancelModification = () => {
+      setModifyingOrderId(null);
+      setCart([]);
+      setPortalFormData(prev => ({ ...prev, start: '', end: '' }));
+      showNotification("Changes discarded", "info");
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -267,7 +295,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         latePenaltyPerDay,
         setLatePenaltyPerDay,
         businessSettings,
-        updateBusinessSettings
+        updateBusinessSettings,
+        modifyingOrderId,
+        setModifyingOrderId,
+        cancelModification,
+        createOrderStep,
+        setCreateOrderStep
       }}
     >
       {children}

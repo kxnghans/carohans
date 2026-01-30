@@ -153,34 +153,34 @@ function LoginContent() {
                 <div className="flex flex-col items-center mb-8 md:mb-10">
                     <div className="relative mb-4 md:mb-6">
                         <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-primary dark:bg-primary rounded-3xl shadow-xl shadow-primary/10 dark:shadow-none relative z-10 group-hover:scale-105 transition-transform duration-500">
-                            <span className="text-2xl md:text-3xl font-black text-primary-text dark:text-primary-text tracking-tight">CH</span>
+                            <span className="text-theme-label font-bold text-primary-text dark:text-primary-text tracking-tight">CH</span>
                             <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         </div>
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 md:w-32 md:h-32 bg-primary/20 blur-2xl rounded-full -z-10 animate-[pulse-glow_4s_infinite]"></div>
                     </div>
                     
-                    <h1 className="text-theme-header text-foreground tracking-tight text-center font-semibold">Welcome Back</h1>
-                    <p className="text-muted text-theme-body text-center mt-2 font-medium opacity-80">Sign in to your workspace</p>
+                    <h1 className="text-theme-header text-foreground tracking-tight text-center font-normal">Welcome</h1>
+                    <p className="text-muted text-theme-body text-center mt-2 font-normal opacity-80">Sign in to your workspace</p>
                 </div>
 
                 {error && (
                 <div className="bg-error/10 dark:bg-rose-900/20 backdrop-blur-sm border border-rose-100 dark:border-rose-800 text-error dark:text-rose-400 p-4 rounded-2xl mb-8 text-theme-body uppercase tracking-wide flex items-center gap-3 animate-in slide-in-from-top-2">
                     <div className="w-2 h-2 rounded-full bg-error shrink-0 shadow-[0_0_8px_rgba(244,63,94,0.4)]"></div>
-                    <span className="font-semibold">{error}</span>
+                    <span className="font-normal">{error}</span>
                 </div>
                 )}
 
                 <form onSubmit={handleLogin} className="space-y-5">
                 <div className="space-y-2">
-                    <label className="block text-theme-body font-semibold text-muted uppercase tracking-widest ml-1 mb-1">Email</label>
+                    <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">Email</label>
                     <div className="relative group/input">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
+                    <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
                         <User className="w-4 h-4" />
                     </div>
                                         <input
                                             type="text"
                                             required
-                                            className="w-full pl-16 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-medium placeholder:font-normal"
+                                            className="w-full pl-20 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
                                             value={loginInput}
                                             onChange={(e) => setLoginInput(e.target.value)}
                                             placeholder="name@example.com"
@@ -190,16 +190,16 @@ function LoginContent() {
                                     
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between ml-1 mb-1">
-                                        <label className="block text-theme-body font-semibold text-muted uppercase tracking-widest">Password</label>
+                                        <label className="block text-theme-body font-normal text-muted uppercase tracking-widest">Password</label>
                                         </div>
                                         <div className="relative group/input">
-                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
+                                        <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
                                             <Lock className="w-4 h-4" />
                                         </div>
                                                                                                     <input
                                                                                                         type={showPassword ? "text" : "password"}
                                                                                                         required
-                                                                                                        className="w-full pl-16 pr-12 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-medium placeholder:font-normal"
+                                                                                                        className="w-full pl-20 pr-12 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
                                                                                                         value={password}
                                                                                                         onChange={(e) => setPassword(e.target.value)}
                                                                                                         placeholder="Enter password.."
@@ -214,7 +214,7 @@ function LoginContent() {
 
                 <div className="pt-4">
                     <Button 
-                    className="w-full py-4.5 uppercase bg-primary dark:bg-primary hover:bg-primary dark:hover:bg-primary/90 text-primary-text shadow-xl shadow-slate-900/10 dark:shadow-none rounded-2xl transform transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] font-bold tracking-widest" 
+                    className="w-full py-4.5 uppercase bg-primary dark:bg-primary hover:bg-primary dark:hover:bg-primary/90 text-primary-text shadow-xl shadow-slate-900/10 dark:shadow-none rounded-2xl transform transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] font-normal tracking-widest" 
                     disabled={loading} 
                     size="lg"
                     >
@@ -227,8 +227,8 @@ function LoginContent() {
                 </form>
 
                 <div className="mt-8 text-center pt-8 border-t border-border dark:border-slate-800">
-                <p className="text-theme-body text-muted font-medium">
-                    Don&apos;t have an account? <Link href={isAdminIntent ? "/signup?type=admin" : "/signup"} className="text-accent-purple dark:text-warning hover:underline decoration-2 underline-offset-4 transition-colors font-semibold">Sign Up</Link>
+                <p className="text-theme-body text-muted font-normal">
+                    Don&apos;t have an account? <Link href={isAdminIntent ? "/signup?type=admin" : "/signup"} className="text-secondary dark:text-warning hover:underline decoration-2 underline-offset-4 transition-colors text-theme-subtitle">Sign Up</Link>
                 </p>
                 </div>
             </div>

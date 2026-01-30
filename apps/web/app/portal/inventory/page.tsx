@@ -43,7 +43,7 @@ export default function PortalInventoryPage() {
           </div>
           <div className="w-px h-8 bg-border"></div>
           <div className="flex items-center gap-2">
-            <label className="text-theme-subtitle text-muted uppercase px-2">Return</label>
+            <label className="text-theme-subtitle text-muted uppercase px-2">Planned Return</label>
             <input
               type="date"
               className="bg-background border border-border rounded-lg px-3 py-1.5 text-theme-label text-foreground outline-none focus:border-primary"

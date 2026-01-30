@@ -168,10 +168,10 @@ function SignupContent() {
               </div>
               <h1 className="text-theme-header text-foreground tracking-tight">Check your email</h1>
               <p className="text-muted text-theme-body">
-                We&apos;ve sent a confirmation link to <br /><span className="text-foreground font-semibold">{email}</span>. <br />
+                We&apos;ve sent a confirmation link to <br /><span className="text-secondary dark:text-warning font-normal">{email}</span>. <br />
                 Please confirm your account to continue.
               </p>
-              <Button onClick={() => router.push('/login')} className="w-full py-4.5 uppercase tracking-widest bg-primary dark:bg-primary text-primary-text dark:text-primary-text shadow-xl shadow-slate-900/10 dark:shadow-none rounded-2xl transform transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] font-bold" size="lg">
+              <Button onClick={() => router.push('/login')} className="w-full py-4.5 uppercase tracking-widest bg-primary dark:bg-primary text-primary-text dark:text-primary-text shadow-xl shadow-slate-900/10 dark:shadow-none rounded-2xl transform transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] font-normal" size="lg">
                 Continue to Login
               </Button>
             </div>
@@ -227,15 +227,15 @@ function SignupContent() {
         <div className="w-full max-w-xl z-10 animate-in fade-in slide-in-from-bottom-4 duration-700 py-8 md:py-12">
           <div className="text-center mb-6 md:mb-8">
             <div className="relative inline-flex mb-4">
-              <div className="w-14 h-14 md:w-16 md:h-16 bg-primary dark:bg-primary rounded-2xl flex items-center justify-center text-primary-text dark:text-primary-text text-xl md:text-2xl font-black shadow-xl relative z-10">
+              <div className="w-14 h-14 md:w-16 md:h-16 bg-primary dark:bg-primary rounded-2xl flex items-center justify-center text-primary-text dark:text-primary-text text-theme-label font-bold shadow-xl relative z-10">
                 CH
               </div>
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-primary/20 blur-2xl rounded-full -z-10 animate-[pulse-glow_4s_infinite]"></div>
             </div>
-            <h1 className="text-theme-header text-foreground tracking-tight font-semibold">
+            <h1 className="text-theme-header text-foreground tracking-tight font-normal">
               {!isAccessGranted ? "System Access" : "Create Account"}
             </h1>
-            <p className="text-muted text-theme-body font-medium opacity-80">
+            <p className="text-muted text-theme-body font-normal opacity-80">
               {!isAccessGranted ? "Enter security token to proceed" : "Join today"}
             </p>
           </div>
@@ -253,15 +253,15 @@ function SignupContent() {
                   /* TOKEN VERIFICATION FORM */
                   <form onSubmit={handleVerifyToken} className="space-y-6">
                       <div className="space-y-2">
-                          <label className="block text-theme-body font-semibold text-muted uppercase tracking-widest ml-1 mb-1">Security Token</label>
+                          <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">Security Token</label>
                           <div className="relative group/input">
-                              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
+                              <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
                                   <Shield className="w-5 h-5" />
                               </div>
                               <input
                                   type="password"
                                   required
-                                  className="w-full pl-16 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-medium placeholder:font-normal placeholder:tracking-normal tracking-[0.5em] text-center"
+                                  className="w-full pl-20 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal placeholder:tracking-normal tracking-[0.5em] text-center"
                                   value={accessToken}
                                   onChange={(e) => setAccessToken(e.target.value)}
                                   placeholder="Enter security token"
@@ -269,7 +269,7 @@ function SignupContent() {
                           </div>
                       </div>
                       <Button 
-                          className="w-full py-4.5 uppercase bg-primary dark:bg-primary hover:bg-primary dark:hover:bg-primary/90 text-primary-text shadow-xl shadow-slate-900/10 dark:shadow-none rounded-2xl transform transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] font-bold tracking-widest" 
+                          className="w-full py-4.5 uppercase bg-primary dark:bg-primary hover:bg-primary dark:hover:bg-primary/90 text-primary-text shadow-xl shadow-slate-900/10 dark:shadow-none rounded-2xl transform transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] font-normal tracking-widest" 
                           disabled={checkingToken} 
                           size="lg"
                       >
@@ -280,7 +280,7 @@ function SignupContent() {
                 /* ACTUAL SIGNUP FORM */
                 <>
                     {error && (
-                    <div className="bg-error/10 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800 text-error dark:text-rose-400 p-4 rounded-2xl mb-6 text-theme-body font-semibold flex items-center gap-3">
+                    <div className="bg-error/10 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800 text-error dark:text-rose-400 p-4 rounded-2xl mb-6 text-theme-body font-normal flex items-center gap-3">
                         <div className="w-1.5 h-1.5 rounded-full bg-error"></div>
                         {error}
                     </div>
@@ -289,15 +289,15 @@ function SignupContent() {
                     <form onSubmit={handleSignup} className="space-y-5">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="space-y-2">
-                            <label className="block text-theme-body font-semibold text-muted uppercase tracking-widest ml-1 mb-1">First Name</label>
+                            <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">First Name</label>
                             <div className="relative group/input">
-                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
+                                <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
                                 <User className="w-5 h-5" />
                                 </div>
                                 <input
                                 type="text"
                                 required
-                                className="w-full pl-16 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-medium placeholder:font-normal"
+                                className="w-full pl-20 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
                                 value={firstName}
                                 onChange={(e) => setFirstName(e.target.value)}
                                 placeholder="First"
@@ -306,15 +306,15 @@ function SignupContent() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="block text-theme-body font-semibold text-muted uppercase tracking-widest ml-1 mb-1">Last Name</label>
+                            <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">Last Name</label>
                             <div className="relative group/input">
-                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
+                                <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
                                 <User className="w-5 h-5" />
                                 </div>
                                 <input
                                 type="text"
                                 required
-                                className="w-full pl-16 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-medium placeholder:font-normal"
+                                className="w-full pl-20 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
                                 value={lastName}
                                 onChange={(e) => setLastName(e.target.value)}
                                 placeholder="Last"
@@ -324,15 +324,15 @@ function SignupContent() {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="block text-theme-body font-semibold text-muted uppercase tracking-widest ml-1 mb-1">Username</label>
+                        <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">Username</label>
                         <div className="relative group/input">
-                            <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
+                            <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
                             <User className="w-5 h-5" />
                             </div>
                             <input
                             type="text"
                             required
-                            className="w-full pl-16 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-medium placeholder:font-normal"
+                            className="w-full pl-20 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             placeholder="Username"
@@ -341,15 +341,15 @@ function SignupContent() {
                     </div>
                     
                     <div className="space-y-2">
-                        <label className="block text-theme-body font-semibold text-muted uppercase tracking-widest ml-1 mb-1">Phone Number</label>
+                        <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">Phone Number</label>
                         <div className="relative group/input">
-                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
+                        <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
                             <Phone className="w-5 h-5" />
                         </div>
                         <input
                             type="tel"
                             required
-                            className="w-full pl-16 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-medium placeholder:font-normal"
+                            className="w-full pl-20 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
                             placeholder="024-000-0000"
@@ -358,15 +358,15 @@ function SignupContent() {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="block text-theme-body font-semibold text-muted uppercase tracking-widest ml-1 mb-1">Email Address</label>
+                        <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">Email Address</label>
                         <div className="relative group/input">
-                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
+                        <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
                             <Mail className="w-5 h-5" />
                         </div>
                         <input
                             type="email"
                             required
-                            className="w-full pl-16 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-medium placeholder:font-normal"
+                            className="w-full pl-20 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="john@example.com"
@@ -375,16 +375,16 @@ function SignupContent() {
                     </div>
                     
                     <div className="space-y-2">
-                        <label className="block text-theme-body font-semibold text-muted uppercase tracking-widest ml-1 mb-1">Password</label>
+                        <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">Password</label>
                         <div className="relative group/input">
-                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
+                        <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
                             <Lock className="w-5 h-5" />
                         </div>
                         <input
                             type={showPassword ? "text" : "password"}
                             required
                             minLength={6}
-                            className="w-full pl-16 pr-12 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-medium placeholder:font-normal"
+                            className="w-full pl-20 pr-12 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Enter password.."
@@ -399,7 +399,7 @@ function SignupContent() {
                         </div>
                     </div>
                     <div className="pt-4">
-                        <Button className="w-full py-4.5 uppercase bg-primary dark:bg-primary hover:bg-primary dark:hover:bg-primary/90 text-primary-text shadow-xl shadow-slate-900/10 dark:shadow-none rounded-2xl transform transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] font-bold tracking-widest" disabled={loading} size="lg">
+                        <Button className="w-full py-4.5 uppercase bg-primary dark:bg-primary hover:bg-primary dark:hover:bg-primary/90 text-primary-text shadow-xl shadow-slate-900/10 dark:shadow-none rounded-2xl transform transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] font-normal tracking-widest" disabled={loading} size="lg">
                             <span className="flex items-center justify-center gap-3">
                                 {loading ? 'Creating Account...' : 'Get Started'}
                                 {!loading && <ChevronRight className="w-4 h-4" />}
@@ -411,8 +411,8 @@ function SignupContent() {
             )}
 
             <div className="mt-8 text-center">
-              <p className="text-theme-body text-muted">
-                Already have an account? <Link href="/login" className="text-accent-purple dark:text-warning hover:underline underline-offset-4 transition-colors">Sign In</Link>
+              <p className="text-theme-body text-muted font-normal">
+                Already have an account? <Link href="/login" className="text-secondary dark:text-warning hover:underline underline-offset-4 transition-colors text-theme-subtitle">Sign In</Link>
               </p>
             </div>
           </div>
