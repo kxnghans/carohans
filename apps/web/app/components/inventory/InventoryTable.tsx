@@ -199,8 +199,7 @@ export const InventoryTable = ({
     <>
     <ScrollableContainer className="mb-8">
       <table className="w-full text-left border-collapse min-w-[1000px]">
-        <thead>
-          <tr className="bg-background/50 border-b border-border">
+        <thead><tr className="bg-background/50 border-b border-border">
             <th
               className="p-4 pl-6 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] cursor-pointer group hover:bg-surface transition-colors"
               onClick={() => requestSort('name')}
@@ -251,11 +250,8 @@ export const InventoryTable = ({
             </th>
             {showOrderColumn && <th className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right">Order</th>}
             {isEditMode && <th className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-left pr-6">Action</th>}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-
-          {sortedData.map((item, index) => (
+          </tr></thead>
+        <tbody className="divide-y divide-border">{sortedData.map((item, index) => (
               <React.Fragment key={item.id}>
                 <InventoryRow 
                     item={item}

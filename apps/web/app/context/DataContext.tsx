@@ -128,6 +128,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           closedAt: o.closed_at,
           returnStatus: o.return_status,
           itemIntegrity: o.item_integrity,
+          discountName: o.discount_name,
+          discountType: o.discount_type,
+          discountValue: Number(o.discount_value || 0),
           items: o.order_items.map((oi: { inventory_id: number; quantity: number; unit_price: number; returned_qty?: number; lost_qty?: number; damaged_qty?: number }) => ({
             inventoryId: oi.inventory_id,
             qty: oi.quantity,
@@ -156,8 +159,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
               business_phone: settings.business_phone || '',
               business_email: settings.business_email || '',
               business_location: settings.business_location || '',
-              maps_link: settings.maps_link || ''
+              maps_link: settings.maps_link || '',
+              late_penalty: settings.late_penalty || ''
             }));
+            
+            if (settings.late_penalty) {
+                setLatePenaltyPerDay(Number(settings.late_penalty));
+            }
         }
       } catch (e) {
         console.error("Failed to fetch settings", e);
@@ -268,6 +276,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       try {
           await updateSettingsInSupabase(settings);
           setBusinessSettings(settings);
+          if (settings.late_penalty) {
+            setLatePenaltyPerDay(Number(settings.late_penalty));
+          }
           showNotification("Business settings updated!");
       } catch (error) {
           console.error('Error updating business settings:', error);

@@ -23,6 +23,9 @@ interface InvoiceModalProps {
   closedAt?: string;
   amountPaid?: number;
   totalAmount?: number;
+  discountName?: string;
+  discountType?: 'fixed' | 'percentage';
+  discountValue?: number;
 }
 
 export const InvoiceModal = ({
@@ -38,9 +41,12 @@ export const InvoiceModal = ({
   status,
   closedAt,
   amountPaid = 0,
-  totalAmount: totalAmountProp
+  totalAmount: totalAmountProp,
+  discountName,
+  discountType,
+  discountValue
 }: InvoiceModalProps) => {
-  const { Printer, X, Check, AlertCircle } = Icons;
+  const { Printer, X, Check, AlertCircle, Sparkles } = Icons;
   const { businessSettings } = useData();
   const [invoiceId, setInvoiceId] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -68,9 +74,18 @@ export const InvoiceModal = ({
   }, [isOpen]);
 
   const duration = getDurationDays(startDate, endDate);
-  /* ... rest of logic ... */
   const calculatedSubtotal = cart.reduce((sum: number, item: InventoryItem & { qty: number }) => sum + (item.price * item.qty * duration), 0);
   
+  // Discount Calculation
+  let discountAmount = 0;
+  if (discountType && discountValue) {
+    if (discountType === 'fixed') {
+        discountAmount = discountValue;
+    } else {
+        discountAmount = (calculatedSubtotal * discountValue) / 100;
+    }
+  }
+
   // Calculate specific Loss & Damage total from items
   const lossDamageTotal = cart.reduce((sum: number, item: InventoryItem & { lostQty?: number, damagedQty?: number }) => {
     return sum + (((item.lostQty ?? 0) + (item.damagedQty ?? 0)) * (item.replacementCost ?? 0));
@@ -78,8 +93,8 @@ export const InvoiceModal = ({
 
   // Late fees are the remainder of the penaltyAmount
   const lateFees = Math.max(0, penaltyAmount - lossDamageTotal);
-  const calculatedTotal = calculatedSubtotal + lateFees + lossDamageTotal;
-  const finalTotal = totalAmountProp !== undefined ? totalAmountProp : calculatedTotal;
+  const calculatedTotal = calculatedSubtotal - discountAmount + lateFees + lossDamageTotal;
+  const finalTotal = totalAmountProp !== undefined ? totalAmountProp : Math.max(0, calculatedTotal);
   const isFullyPaid = amountPaid >= finalTotal;
 
   const handlePrint = () => {
@@ -184,6 +199,20 @@ export const InvoiceModal = ({
                       </td>
                     </tr>
                   ))}
+                  {discountAmount > 0 && (
+                    <tr className="bg-secondary/10 dark:bg-indigo-900/10 break-inside-avoid">
+                      <td className="py-4" colSpan={3}>
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="w-3.5 h-3.5 text-secondary" />
+                            <p className="font-bold text-secondary dark:text-indigo-400 text-theme-body">Discount: {discountName}</p>
+                        </div>
+                        <p className="text-theme-caption text-secondary/60 uppercase font-bold tracking-tight">
+                          {discountType === 'percentage' ? `${discountValue}% off subtotal` : 'Fixed monetary reduction'}
+                        </p>
+                      </td>
+                      <td className="py-4 text-right font-black text-secondary dark:text-indigo-400 text-theme-body">-{formatCurrency(discountAmount)}</td>
+                    </tr>
+                  )}
                   {lateFees > 0 && (
                     <tr className="bg-error/10/30 dark:bg-rose-900/20 break-inside-avoid">
                       <td className="py-4" colSpan={3}>
@@ -270,6 +299,12 @@ export const InvoiceModal = ({
                     <span>Rental Subtotal</span>
                     <span>{formatCurrency(calculatedSubtotal)}</span>
                   </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-secondary dark:text-indigo-400 text-theme-body font-medium">
+                      <span>Discount ({discountName})</span>
+                      <span>-{formatCurrency(discountAmount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-muted text-theme-body font-medium">
                     <span>Tax (0%)</span>
                     <span>¢0.00</span>
@@ -288,7 +323,7 @@ export const InvoiceModal = ({
                   )}
                   <div className="flex justify-between text-theme-title font-bold text-foreground pt-4 border-t-2 border-foreground">
                     <span>Grand Total</span>
-                    <span>{formatCurrency(calculatedTotal)}</span>
+                    <span>{formatCurrency(finalTotal)}</span>
                   </div>
                 </div>
               </div>

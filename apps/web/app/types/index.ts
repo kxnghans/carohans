@@ -41,6 +41,9 @@ export interface Order {
     closedAt?: string;
     returnStatus?: 'On Time' | 'Early' | 'Late';
     itemIntegrity?: 'Good' | 'Lost' | 'Damaged';
+    discountName?: string;
+    discountType?: 'fixed' | 'percentage';
+    discountValue?: number;
 }
 
 export interface Client {

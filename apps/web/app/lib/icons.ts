@@ -73,7 +73,11 @@ import {
   Laptop,
   Launch,
   Menu,
-  VpnKey
+  VpnKey,
+  Info,
+  HelpOutline,
+  Settings,
+  ShoppingBag
 } from '@mui/icons-material';
 
 // --- SYSTEM ICONS (Replacements for Lucide) ---
@@ -136,7 +140,11 @@ export const Icons = {
   Globe: Language,
   ExternalLink: Launch,
   Menu: Menu,
-  Key: VpnKey
+  Key: VpnKey,
+  Info: Info,
+  HelpCircle: HelpOutline,
+  Settings: Settings,
+  ShoppingBag: ShoppingBag
 };
 
 import React from 'react';

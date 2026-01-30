@@ -31,7 +31,7 @@ export default function PortalLayout({
   const [showInvoice, setShowInvoice] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { Package, ClipboardList, User, ShoppingCart, LogOut, Phone, LayoutDashboard, X, Menu } = Icons;
+  const { Package, ClipboardList, User, ShoppingCart, LogOut, Phone, LayoutDashboard, X, Menu, Info } = Icons;
 
   const cycleTheme = () => {
     if (theme === 'system') setTheme('light');
@@ -86,7 +86,7 @@ export default function PortalLayout({
     ...(user ? [
         { href: '/portal/orders', label: 'My Orders', icon: ClipboardList },
         { href: '/portal/profile', label: 'Profile', icon: User },
-    ] : [])
+    ] : []),
   ];
 
     return (
@@ -193,6 +193,19 @@ export default function PortalLayout({
                     </Link>
                   );
                 })}
+
+                <Link 
+                  href="/portal/help"
+                  className={`
+                    flex items-center justify-center w-[46px] h-[46px] rounded-xl transition-all border-2 ml-2
+                    ${pathname === '/portal/help'
+                      ? 'bg-primary text-primary-text border-primary shadow-md'
+                      : 'bg-surface text-muted hover:bg-primary/5 hover:text-primary hover:border-primary/10 border-border/50'}
+                  `}
+                  title="Help & Documentation"
+                >
+                  <Info className="w-5 h-5" />
+                </Link>
               </div>
             </ScrollableContainer>
 
@@ -238,7 +251,7 @@ export default function PortalLayout({
         <MobileNav 
           isOpen={isMenuOpen}
           onClose={() => setIsMenuOpen(false)}
-          navItems={navItems}
+          navItems={[...navItems, { href: '/portal/help', label: 'Help', icon: Info }]}
           actions={[
               { label: 'Contact Business', icon: Phone, onClick: () => setIsContactOpen(true) },
               ...(userRole === 'admin' ? [{ label: 'Admin Dashboard', icon: LayoutDashboard, onClick: () => router.push('/admin/overview') }] : []),

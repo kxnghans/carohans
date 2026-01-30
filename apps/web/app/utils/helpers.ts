@@ -22,14 +22,14 @@ export const formatDate = (dateString: string | undefined | null) => {
 
 export const getStatusColor = (status: string) => {
   switch (status) {
-    case 'Pending': return 'bg-status-pending text-white border-status-pending dark:bg-status-pending-bg dark:text-status-pending dark:border-status-pending/50';
-    case 'Approved': return 'bg-status-approved text-white border-status-approved dark:bg-status-approved-bg dark:text-status-approved dark:border-status-approved/50';
-    case 'Active': return 'bg-status-active text-white border-status-active dark:bg-status-active-bg dark:text-status-active dark:border-status-active/50';
-    case 'Late': return 'bg-status-late text-white border-status-late dark:bg-status-late-bg dark:text-status-late dark:border-status-late/50';
-    case 'Completed': return 'bg-status-completed text-white border-status-completed dark:bg-status-completed-bg dark:text-status-completed dark:border-status-completed/50';
-    case 'Settlement': return 'bg-secondary text-white border-secondary dark:bg-status-settlement-bg dark:text-status-settlement dark:border-status-settlement/50';
-    case 'Rejected': return 'bg-status-rejected text-white border-status-rejected dark:bg-status-rejected-bg dark:text-status-rejected dark:border-status-rejected/80';
-    case 'Canceled': return 'bg-status-canceled text-white border-status-canceled dark:bg-status-canceled-bg dark:text-status-canceled dark:border-status-canceled/80';
+    case 'Pending': return 'bg-status-pending text-white border-status-pending dark:bg-status-pending dark:text-background dark:border-status-pending';
+    case 'Approved': return 'bg-status-approved text-white border-status-approved dark:bg-status-approved dark:text-background dark:border-status-approved';
+    case 'Active': return 'bg-status-active text-white border-status-active dark:bg-status-active dark:text-background dark:border-status-active';
+    case 'Late': return 'bg-status-late text-white border-status-late dark:bg-status-late dark:text-white dark:border-status-late';
+    case 'Completed': return 'bg-status-completed text-white border-status-completed dark:bg-status-completed dark:text-background dark:border-status-completed';
+    case 'Settlement': return 'bg-secondary text-white border-secondary dark:bg-status-settlement dark:text-background dark:border-status-settlement';
+    case 'Rejected': return 'bg-status-rejected text-white border-status-rejected dark:bg-status-rejected dark:text-background dark:border-status-rejected';
+    case 'Canceled': return 'bg-status-canceled text-white border-status-canceled dark:bg-status-canceled dark:text-background dark:border-status-canceled';
     default: return 'bg-background text-muted border-border';
   }
 };
@@ -50,9 +50,9 @@ export const getStatusDescription = (status: string) => {
 
 export const getReturnStatusColor = (status: string | undefined) => {
   switch (status) {
-    case 'Early': return 'bg-accent-primary text-white border-accent-primary dark:bg-accent-primary/10 dark:text-accent-primary dark:border-accent-primary/20';
-    case 'On Time': return 'bg-success text-white border-success dark:bg-success/10 dark:text-success dark:border-success/20';
-    case 'Late': return 'bg-error text-white border-error dark:bg-error/10 dark:text-error dark:border-error/20';
+    case 'Early': return 'bg-accent-primary text-white border-accent-primary dark:bg-accent-primary dark:text-background dark:border-accent-primary';
+    case 'On Time': return 'bg-success text-white border-success dark:bg-success dark:text-background dark:border-success';
+    case 'Late': return 'bg-status-late text-white border-status-late dark:bg-status-late dark:text-white dark:border-status-late';
     default: return 'bg-surface text-muted border-border';
   }
 };
@@ -78,10 +78,24 @@ export const getDurationDays = (start: string | undefined, end: string | undefin
   return diffDays;
 };
 
-export const calculateOrderTotal = (items: { price: number, qty: number }[], startDate: string, endDate: string) => {
+export const calculateOrderTotal = (
+  items: { price: number, qty: number }[], 
+  startDate: string, 
+  endDate: string,
+  discountType?: 'fixed' | 'percentage',
+  discountValue?: number
+) => {
   const days = getDurationDays(startDate, endDate);
-  const total = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  return total * days;
+  const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0) * days;
+  
+  if (!discountType || !discountValue) return subtotal;
+
+  if (discountType === 'fixed') {
+    return Math.max(0, subtotal - discountValue);
+  } else {
+    const discountAmount = (subtotal * discountValue) / 100;
+    return Math.max(0, subtotal - discountAmount);
+  }
 };
 
 export const calculateMetrics = (orders: Order[]): Metrics => {
