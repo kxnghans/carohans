@@ -58,6 +58,8 @@ build
 *.key
 secrets.json
 *.tsbuildinfo
+supabase/.temp
+out
 
 # Temporary / Assets
 apps/web/image.png

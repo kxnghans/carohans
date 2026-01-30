@@ -7,6 +7,7 @@ export interface BusinessSettings {
   business_email: string;
   business_location: string;
   maps_link: string;
+  late_penalty?: string;
 }
 
 export interface AppContextType {

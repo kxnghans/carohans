@@ -100,12 +100,12 @@
   --error: #fb7185;             /* Softer Rose 400 */
   --warning: #fbbf24;
   
-  --background: #0f172a;
-  --surface: #1e283b;
+  --background: #080c1d;        /* Refined Deep Navy */
+  --surface: #12182b;           /* Slightly lighter surface */
   --foreground: #f8fafc;
-  --primary-text: #0f172a;
+  --primary-text: #080c1d;
   --muted: #94a3b8;
-  --border: #334155;
+  --border: #222d45;            /* Refined border color */
   
   --neutral: #e2e8f0;
 

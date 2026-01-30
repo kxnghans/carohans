@@ -107,8 +107,8 @@ const RenderCustomLabel = (props: unknown) => {
   const formattedValue = value >= 1000 ? `¢${(value / 1000).toFixed(0)}k` : `¢${value}`;
   return (
     <g>
-      <rect x={numX - 20} y={numY - 25} width={40} height={18} rx={4} fill="var(--color-surface)" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))" className="stroke-border stroke-[0.5px]" />
-      <text x={numX} y={numY - 12} fill="var(--color-chart-label)" textAnchor="middle" style={{ fontSize: '10px', fontWeight: 600 }}>
+      <rect x={numX - 25} y={numY - 30} width={50} height={22} rx={6} fill="var(--color-surface)" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))" className="stroke-border stroke-[0.5px]" />
+      <text x={numX} y={numY - 14} fill="var(--color-chart-label)" textAnchor="middle" className="text-theme-body-bold">
         {formattedValue}
       </text>
     </g>
@@ -165,9 +165,8 @@ const RenderPieLabel = ({ cx, cy, midAngle, outerRadius, percent, payload }: Ren
         dy={4}
         textAnchor={textAnchor} 
         fill={sliceColor} 
+        className="text-theme-body-bold"
         style={{ 
-          fontSize: '11px', 
-          fontWeight: 700,
           filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))'
         }}
       >
@@ -199,10 +198,10 @@ const FilterDropdown = ({ label, options, selected, onToggle }: {
 
   return (
     <div className="flex flex-col gap-2 flex-1 min-w-[180px] relative" ref={dropdownRef}>
-      <span className="text-theme-caption font-semibold text-muted uppercase tracking-widest ml-1">{label}</span>
+      <span className="text-theme-body font-semibold text-muted uppercase tracking-widest ml-1">{label}</span>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full h-[38px] px-4 bg-surface border rounded-xl flex items-center justify-between transition-all text-theme-caption font-semibold uppercase tracking-tight shadow-sm active:scale-[0.98] ${isOpen ? 'border-primary ring-4 ring-primary/5' : 'border-border hover:border-muted'}`}
+        className={`w-full h-[38px] px-4 bg-surface border rounded-xl flex items-center justify-between transition-all text-theme-body font-semibold uppercase tracking-tight shadow-sm active:scale-[0.98] ${isOpen ? 'border-primary ring-4 ring-primary/5' : 'border-border hover:border-muted'}`}
       >
         <span className={selected.includes('All') ? 'text-muted' : 'text-primary'}>{displayText}</span>
         <ChevronDown className={`w-3.5 h-3.5 text-muted transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
@@ -230,7 +229,7 @@ const FilterDropdown = ({ label, options, selected, onToggle }: {
               <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes('All') ? 'bg-primary border-primary shadow-sm' : 'bg-background border-border group-hover:border-primary/50'}`}>
                 {selected.includes('All') && <Check className="w-3 h-3 text-primary-text" />}
               </div>
-              <span className={`text-theme-caption font-semibold uppercase tracking-tight ${selected.includes('All') ? 'text-primary' : 'text-muted'}`}>All</span>
+              <span className={`text-theme-body font-semibold uppercase tracking-tight ${selected.includes('All') ? 'text-primary' : 'text-muted'}`}>All</span>
             </div>
           </button>
           <div className="h-px bg-border mx-2 my-1"></div>
@@ -245,7 +244,7 @@ const FilterDropdown = ({ label, options, selected, onToggle }: {
                   <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selected.includes(opt) ? 'bg-primary border-primary shadow-sm' : 'bg-background border-border group-hover:border-primary/50'}`}>
                     {selected.includes(opt) && <Check className="w-3 h-3 text-primary-text" />}
                   </div>
-                  <span className={`text-theme-caption font-semibold uppercase tracking-tight ${selected.includes(opt) ? 'text-primary' : 'text-muted'}`}>{opt}</span>
+                  <span className={`text-theme-body font-semibold uppercase tracking-tight ${selected.includes(opt) ? 'text-primary' : 'text-muted'}`}>{opt}</span>
                 </div>
               </button>
             ))}
@@ -573,7 +572,7 @@ export default function AdminBIPage() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-muted text-theme-caption uppercase tracking-widest mb-1">
+          <div className="flex items-center gap-2 text-muted text-theme-body uppercase tracking-widest mb-1">
              <span>Analytics</span>
              <ChevronRight className="w-3 h-3" />
              <span className="text-primary">Insights</span>
@@ -592,10 +591,10 @@ export default function AdminBIPage() {
             
             {/* Time Range */}
             <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
-             <span className="text-theme-caption text-muted uppercase tracking-widest ml-1">Time Range</span>
+             <span className="text-theme-body text-muted uppercase tracking-widest ml-1">Time Range</span>
              <div className="flex p-1 bg-background rounded-xl h-[38px] items-center w-full">
                {['7D', '30D', '90D', '1Y', 'All'].map(range => (
-                 <button key={range} onClick={() => setTimeRange(range === 'All' ? 'All Time' : range)} className={`flex-1 h-full rounded-lg text-theme-caption transition-all ${timeRange === (range === 'All' ? 'All Time' : range) ? 'bg-surface text-primary shadow-sm' : 'text-muted hover:text-foreground'}`}>{range}</button>
+                 <button key={range} onClick={() => setTimeRange(range === 'All' ? 'All Time' : range)} className={`flex-1 h-full rounded-lg text-theme-body transition-all ${timeRange === (range === 'All' ? 'All Time' : range) ? 'bg-surface text-primary shadow-sm' : 'text-muted hover:text-foreground'}`}>{range}</button>
                ))}
              </div>
           </div>
@@ -625,7 +624,7 @@ export default function AdminBIPage() {
           <div className="flex-none">
             <button 
               onClick={resetFilters}
-              className="h-[38px] px-6 bg-primary dark:bg-primary text-primary-text rounded-xl text-theme-caption font-black uppercase tracking-widest hover:bg-primary dark:hover:bg-primary/90 transition-all shadow-lg shadow-primary/10 dark:shadow-none active:scale-[0.98] whitespace-nowrap"
+              className="h-[38px] px-6 bg-primary dark:bg-primary text-primary-text rounded-xl text-theme-body font-black uppercase tracking-widest hover:bg-primary dark:hover:bg-primary/90 transition-all shadow-lg shadow-primary/10 dark:shadow-none active:scale-[0.98] whitespace-nowrap"
             >
               Reset Filters
             </button>
@@ -686,7 +685,7 @@ export default function AdminBIPage() {
                   Monthly historical booking frequency.
                 </p>
              </div>
-             <select value={volumeRange} onChange={(e) => setVolumeRange(e.target.value)} className="bg-background border border-border text-muted text-theme-caption font-black uppercase tracking-wider rounded-lg px-3 py-1.5 outline-none focus:border-primary transition-all cursor-pointer">
+             <select value={volumeRange} onChange={(e) => setVolumeRange(e.target.value)} className="bg-background border border-border text-muted text-theme-body font-black uppercase tracking-wider rounded-lg px-3 py-1.5 outline-none focus:border-primary transition-all cursor-pointer">
                 {[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(m => <option key={m} value={m.toString()}>{m} Months</option>)}
                 <option value="All">All Time</option>
              </select>
@@ -714,7 +713,7 @@ export default function AdminBIPage() {
                     barSize={30}
                     activeBar={<Rectangle stroke="var(--color-primary)" strokeWidth={1} fillOpacity={0.8} />}
                 >
-                    <LabelList dataKey="orders" position="top" style={{ fill: 'var(--color-muted)', fontSize: '12px', fontWeight: 500 }} />
+                    <LabelList dataKey="orders" position="top" className="text-theme-body font-medium fill-muted" />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -787,7 +786,18 @@ export default function AdminBIPage() {
                 <BarChart layout="vertical" data={usageRankingData} margin={{ left: 30, right: 30 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--color-border)" />
                     <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fill: 'var(--color-muted)', fontSize: 11, fontWeight: 500 }} />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      width={100} 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ 
+                        fill: 'var(--color-muted)', 
+                        fontSize: usageType === 'Categories' ? 13 : 11, 
+                        fontWeight: 500 
+                      }} 
+                    />
                     <RechartsTooltip 
                         content={<CustomTooltip />} 
                         cursor={{ fill: 'var(--color-secondary)', fillOpacity: 0.05 }} 
@@ -799,7 +809,7 @@ export default function AdminBIPage() {
                         barSize={22}
                         activeBar={<Rectangle stroke="var(--color-secondary)" strokeWidth={1} fillOpacity={0.8} />}
                     >
-                        <LabelList dataKey="value" position="right" style={{ fill: 'var(--color-muted)', fontSize: '11px', fontWeight: 500 }} offset={10} />
+                        <LabelList dataKey="value" position="right" className="text-theme-body font-medium fill-muted" offset={10} />
                     </Bar>
                 </BarChart>
             </ResponsiveContainer>

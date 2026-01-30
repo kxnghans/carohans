@@ -55,8 +55,8 @@ export const ClientSelector = ({ clients, onSelect, onClose, isOpen = true }: {
           <div className="flex items-center gap-3">
             <div className="bg-white/10 p-2 rounded-lg text-primary-text dark:text-primary"><Users className="w-5 h-5" /></div>
             <div>
-              <h2 className="text-theme-title font-bold tracking-tight">Select Client</h2>
-              <p className="opacity-70 text-theme-caption font-medium">Search the client database</p>
+              <h2 className="text-theme-title tracking-tight">Select Client</h2>
+              <p className="opacity-70 text-theme-caption">Search the client database</p>
             </div>
           </div>
           <button 
@@ -71,7 +71,7 @@ export const ClientSelector = ({ clients, onSelect, onClose, isOpen = true }: {
           <div className="relative group">
             <Search className="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-secondary transition-colors" />
             <input
-              className="w-full bg-surface border border-border rounded-2xl pl-14 pr-4 py-3.5 outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all font-medium text-foreground placeholder:text-muted/40"
+              className="w-full bg-surface border border-border rounded-2xl pl-14 pr-4 py-3.5 outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all text-theme-body text-foreground placeholder:text-muted/40"
               placeholder="Search by name or phone..."
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -98,10 +98,10 @@ export const ClientSelector = ({ clients, onSelect, onClose, isOpen = true }: {
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-theme-body-bold text-foreground group-hover:text-primary transition-colors truncate">
+                  <p className="text-theme-body-bold text-foreground group-hover:text-primary transition-colors truncate">
                     {c.firstName} {c.lastName}
                   </p>
-                  <p className="text-theme-caption text-muted truncate font-medium">
+                  <p className="text-theme-caption text-muted truncate">
                     {c.phone} • {c.email}
                   </p>
                 </div>
@@ -116,7 +116,7 @@ export const ClientSelector = ({ clients, onSelect, onClose, isOpen = true }: {
               <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mx-auto mb-4 border border-dashed border-border">
                 <Search className="w-8 h-8 text-muted/20" />
               </div>
-              <p className="text-theme-body text-muted font-medium italic">No clients found.</p>
+              <p className="text-theme-body text-muted italic">No clients found.</p>
               <Button variant="secondary" size="sm" className="mt-4 rounded-xl">Create New Client</Button>
             </div>
           )}

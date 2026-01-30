@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
 import { useScrollLock } from '../../hooks/useScrollLock';
@@ -12,6 +13,7 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
   const [blockedDates, setBlockedDates] = useState<string[]>(['2026-02-05', '2026-02-12', '2026-02-19', '2026-02-26', '2026-02-27', '2026-02-28']);
   const [pendingDates, setPendingDates] = useState<string[]>([]);
   const [rangeAnchor, setRangeAnchor] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   const monthYear = viewDate.toLocaleString('default', { month: 'long', year: 'numeric' });
   const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
@@ -51,6 +53,11 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
   }, [blockedDates]);
 
   useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -58,7 +65,7 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
     return () => window.removeEventListener('keydown', handleEsc);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const formatDateDisplay = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -121,9 +128,9 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
     setRangeAnchor(null);
   };
 
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
       {/* Increased max-width for side-by-side layout */}
@@ -137,8 +144,8 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
           <div className="flex items-center gap-3">
             <div className="bg-white/10 p-2 rounded-lg"><CalendarIcon className="w-5 h-5" /></div>
             <div>
-              <h2 className="text-xl font-bold tracking-tight">Availability Calendar</h2>
-              <p className="opacity-70 text-sm font-medium">Manage blackout dates</p>
+              <h2 className="text-theme-header">Availability Calendar</h2>
+              <p className="opacity-70 text-theme-caption">Manage blackout dates</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
@@ -155,13 +162,13 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
             <div className="p-4 bg-background/50 border-b border-border flex gap-2 shrink-0">
                 <button
                     onClick={() => { setSelectionMode('individual'); setRangeAnchor(null); }}
-                    className={`flex-1 py-3 text-sm font-black uppercase tracking-tighter rounded-xl transition-all border-2 ${selectionMode === 'individual' ? 'bg-primary text-primary-text border-primary/20 shadow-lg shadow-primary/10' : 'bg-surface text-muted border-border hover:bg-background'}`}
+                    className={`flex-1 py-3 text-theme-label rounded-xl transition-all border-2 ${selectionMode === 'individual' ? 'bg-primary text-primary-text border-primary/20 shadow-lg shadow-primary/10' : 'bg-surface text-muted border-border hover:bg-background'}`}
                 >
                     Individual
                 </button>
                 <button
                     onClick={() => { setSelectionMode('range'); setRangeAnchor(null); }}
-                    className={`flex-1 py-3 text-sm font-black uppercase tracking-tighter rounded-xl transition-all border-2 ${selectionMode === 'range' ? 'bg-primary text-primary-text border-primary/20 shadow-lg shadow-primary/10' : 'bg-surface text-muted border-border hover:bg-background'}`}
+                    className={`flex-1 py-3 text-theme-label rounded-xl transition-all border-2 ${selectionMode === 'range' ? 'bg-primary text-primary-text border-primary/20 shadow-lg shadow-primary/10' : 'bg-surface text-muted border-border hover:bg-background'}`}
                 >
                     Range Select
                 </button>
@@ -171,10 +178,10 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
               <div className="flex items-center justify-between mb-6">
                 <Button variant="secondary" size="sm" onClick={() => changeMonth(-1)}><ChevronLeft className="w-4 h-4" /></Button>
                 <div className="flex items-center gap-3">
-                    <h3 className="font-black text-xl text-foreground w-40 text-center tracking-tight">{monthYear}</h3>
+                    <h3 className="text-theme-title text-foreground w-40 text-center">{monthYear}</h3>
                     <button 
                       onClick={handleToday} 
-                      className="flex items-center gap-1.5 text-xs font-black text-secondary bg-secondary/10 px-4 py-2 rounded-full hover:bg-secondary/20 transition-all active:scale-95 uppercase tracking-widest border border-secondary/20 shadow-sm"
+                      className="flex items-center gap-1.5 text-theme-body bg-status-active text-white dark:text-background px-4 py-2 rounded-full hover:opacity-90 transition-all active:scale-95 border border-status-active shadow-sm"
                     >
                       Today
                     </button>
@@ -182,13 +189,13 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
                 <Button variant="secondary" size="sm" onClick={() => changeMonth(1)}><ChevronRight className="w-4 h-4" /></Button>
               </div>
 
-              <div className="grid grid-cols-7 gap-2 mb-2">
+              <div className="grid grid-cols-7 gap-3 md:gap-2 mb-2">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-                  <div key={d} className="text-xs font-bold text-muted text-center uppercase tracking-wider">{d}</div>
+                  <div key={d} className="text-theme-caption text-muted text-center">{d}</div>
                 ))}
               </div>
 
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-7 gap-3 md:gap-2">
                 {Array.from({ length: startDay }).map((_, i) => <div key={`empty-${i}`} />)}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const day = i + 1;
@@ -201,7 +208,7 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
                     <button
                       key={day}
                       onClick={() => handleDateClick(dateStr)}
-                      className={`aspect-square rounded-xl flex flex-col items-center justify-center text-sm font-bold transition-all relative ${getDayClass(dateStr)}`}
+                      className={`aspect-square rounded-xl flex flex-col items-center justify-center text-theme-label font-semibold transition-all relative ${getDayClass(dateStr)}`}
                     >
                       <span>{day}</span>
                       {hasEvent && !isPending && !isBlocked && <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1"></div>}
@@ -212,7 +219,7 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
               </div>
               
               <div className="mt-6 text-center">
-                  <p className="text-xs text-muted bg-background/50 inline-block px-3 py-1 rounded-full border border-border">
+                  <p className="text-theme-caption text-muted bg-background/50 inline-block px-3 py-1 rounded-full border border-border">
                       {selectionMode === 'individual' ? "Tap dates to select" : rangeAnchor ? "Select end date" : "Select start date"}
                   </p>
               </div>
@@ -222,7 +229,7 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
           {/* RIGHT: BLOCKED DATES LIST (Sidebar on Desktop, Bottom on Mobile) */}
           <div className="w-full lg:w-80 bg-background/30 flex flex-col min-h-[200px] lg:min-h-0">
              <div className="p-4 border-b border-border bg-background/50">
-                <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <h4 className="text-theme-subtitle text-foreground flex items-center gap-2">
                     Blocked Periods
                     <span className="bg-muted/20 text-muted text-[10px] px-1.5 py-0.5 rounded-full">{groupedBlockedDates.length}</span>
                 </h4>
@@ -232,7 +239,7 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
                 {groupedBlockedDates.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-muted gap-2">
                         <CalendarIcon className="w-8 h-8 opacity-20" />
-                        <p className="text-xs italic">No dates blocked yet.</p>
+                        <p className="text-theme-caption">No dates blocked yet.</p>
                     </div>
                 ) : (
                     groupedBlockedDates.map((group, idx) => {
@@ -248,8 +255,8 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
                                 <div className="flex items-center gap-3">
                                     <div className={`w-1 h-8 rounded-full ${isRange ? 'bg-primary' : 'bg-slate-400'}`}></div>
                                     <div>
-                                        <p className="text-sm font-bold text-foreground">{label}</p>
-                                        {isRange && <p className="text-[10px] text-muted font-medium">{group.length} days</p>}
+                                        <p className="text-theme-body-bold text-foreground">{label}</p>
+                                        {isRange && <p className="text-theme-caption text-muted">{group.length} days</p>}
                                     </div>
                                 </div>
                                 <button 
@@ -269,13 +276,13 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
              <div className="p-4 bg-surface border-t border-border flex gap-2">
                 <Button 
                     variant="secondary" 
-                    className="flex-1 text-error border-error/20 hover:bg-error/5 hover:border-error/30 transition-all font-bold" 
+                    className="flex-1 text-error border-error/20 hover:bg-error/5 hover:border-error/30 transition-all" 
                     onClick={() => { setPendingDates([]); setRangeAnchor(null); }} 
                     disabled={pendingDates.length === 0}
                 >
                     <Trash2 className="w-4 h-4 mr-1" /> Clear
                 </Button>
-                <Button variant="primary" className="flex-[2] dark:bg-primary dark:hover:bg-primary/90 dark:text-primary-text font-bold" onClick={handleBlockSelected} disabled={pendingDates.length === 0}>
+                <Button variant="primary" className="flex-[2] dark:bg-primary dark:hover:bg-primary/90 dark:text-primary-text" onClick={handleBlockSelected} disabled={pendingDates.length === 0}>
                     {pendingDates.length > 0 ? `Block ${pendingDates.length} Days` : 'Block Selected'}
                 </Button>
             </div>
@@ -283,6 +290,7 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
 
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

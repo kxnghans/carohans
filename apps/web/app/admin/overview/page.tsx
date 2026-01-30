@@ -323,7 +323,23 @@ export default function AdminOverviewPage() {
       )}
 
       {viewingInvoice && (
-        <InvoiceModal isOpen={true} onClose={() => setViewingInvoice(null)} cart={viewingInvoice.cart} client={viewingInvoice.client} startDate={viewingInvoice.startDate} endDate={viewingInvoice.endDate} penaltyAmount={viewingInvoice.penaltyAmount} status={viewingInvoice.status} closedAt={viewingInvoice.closedAt} amountPaid={viewingInvoice.amountPaid} totalAmount={viewingInvoice.totalAmount} onConfirm={() => setViewingInvoice(null)} />
+        <InvoiceModal 
+            isOpen={true} 
+            onClose={() => setViewingInvoice(null)} 
+            cart={viewingInvoice.cart} 
+            client={viewingInvoice.client} 
+            startDate={viewingInvoice.startDate} 
+            endDate={viewingInvoice.endDate} 
+            penaltyAmount={viewingInvoice.penaltyAmount} 
+            status={viewingInvoice.status} 
+            closedAt={viewingInvoice.closedAt} 
+            amountPaid={viewingInvoice.amountPaid} 
+            totalAmount={viewingInvoice.totalAmount} 
+            discountName={viewingInvoice.discountName}
+            discountType={viewingInvoice.discountType}
+            discountValue={viewingInvoice.discountValue}
+            onConfirm={() => setViewingInvoice(null)} 
+        />
       )}
 
       {/* ENHANCED RETURN TRACKING DIALOG */}

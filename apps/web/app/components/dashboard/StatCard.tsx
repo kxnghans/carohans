@@ -50,11 +50,12 @@ export const StatCard = ({ title, value, subtext, trend, trendLabel, icon: Icon,
           <div className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl ${colorMap[color]} transition-all duration-500 group-hover:scale-110`}>
             <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          {trend !== undefined && (
-            <div className={`flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg sm:rounded-xl border transition-colors ${
+        {trend !== undefined && (
+          <div className="flex flex-col items-center gap-1">
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${
               trend > 0 
-              ? 'bg-success text-white border-success dark:bg-success/10 dark:text-success dark:border-success/20' 
-              : 'bg-error text-white border-error dark:bg-error/10 dark:text-error dark:border-error/20'
+                ? 'bg-success/10 text-success' 
+                : 'bg-error/10 text-error'
             }`}>
               {trend > 0 ? (
                 <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
@@ -62,11 +63,12 @@ export const StatCard = ({ title, value, subtext, trend, trendLabel, icon: Icon,
                 <TrendingDown className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               )}
               <span className="text-[10px] sm:text-theme-caption font-semibold tracking-tight">{trend > 0 ? '+' : ''}{trend}%</span>
-              {trendLabel && (
-                <span className="hidden xs:inline text-[8px] sm:text-[9px] font-medium opacity-60 uppercase ml-0.5">{trendLabel}</span>
-              )}
             </div>
-          )}
+            {trendLabel && (
+              <span className="text-[8px] sm:text-[9px] font-medium text-muted uppercase tracking-widest">{trendLabel}</span>
+            )}
+          </div>
+        )}
         </div>
 
         <div className="min-w-0">

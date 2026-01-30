@@ -72,6 +72,31 @@ export const submitOrderToSupabase = async (
     return { id: orderId };
 };
 
+/**
+ * Applies a discount to an existing order.
+ */
+export const applyDiscountToOrder = async (
+    orderId: number,
+    discount: {
+        name: string;
+        type: 'fixed' | 'percentage';
+        value: number;
+    },
+    newTotal: number
+) => {
+    const { error } = await supabase
+        .from('orders')
+        .update({
+            discount_name: discount.name,
+            discount_type: discount.type,
+            discount_value: discount.value,
+            total_amount: newTotal
+        })
+        .eq('id', orderId);
+
+    if (error) throw error;
+};
+
 export const updateOrderDates = async (
     orderId: number, 
     data: { 

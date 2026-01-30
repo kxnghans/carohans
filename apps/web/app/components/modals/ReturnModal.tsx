@@ -36,6 +36,8 @@ export const ReturnModal = ({
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
+  const today = new Date().toISOString().split('T')[0] ?? '';
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -217,13 +219,12 @@ export const ReturnModal = ({
                           value={returnDate}
                           onChange={(val) => setReturnDate(val)}
                         />
-                        <button 
-                            onClick={() => setReturnDate(new Date().toISOString().split('T')[0] ?? '')}
-                            className="text-[10px] font-bold text-primary dark:text-warning uppercase tracking-widest hover:underline ml-1"
-                        >
-                            Set to Today
-                        </button>
-                    </div>
+                                          <button 
+                                            onClick={() => setReturnDate(today)}
+                                            className="px-4 py-1.5 bg-muted text-white dark:bg-muted dark:text-background rounded-full text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 shadow-sm border border-muted"
+                                          >
+                                            Set to Today
+                                          </button>                    </div>
                     <div className="space-y-5">
                         <div>
                             <label className="text-[10px] font-black text-muted uppercase tracking-widest block mb-2 ml-1">Return Status</label>

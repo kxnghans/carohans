@@ -41,7 +41,9 @@ export default function AdminLayout({
     Calendar: CalendarIcon,
     Phone,
     ExternalLink,
-    Menu
+    Menu,
+    Info,
+    Shield
   } = Icons;
 
   const cycleTheme = () => {
@@ -72,7 +74,7 @@ export default function AdminLayout({
     { href: '/admin/inventory', label: 'Inventory', icon: Plus },
     { href: '/admin/bi', label: 'Insights', icon: TrendingUp },
     { href: '/admin/clients', label: 'Clients', icon: Users },
-    { href: '/admin/users', label: 'Access', icon: Icons.Shield },
+    { href: '/admin/users', label: 'Access', icon: Shield },
   ];
 
   return (
@@ -177,6 +179,19 @@ export default function AdminLayout({
               </Link>
             );
           })}
+
+          <Link 
+            href="/admin/help"
+            className={`
+              flex items-center justify-center w-[46px] h-[46px] rounded-xl transition-all border-2
+              ${pathname === '/admin/help'
+                ? 'bg-primary text-primary-text border-primary shadow-md'
+                : 'bg-surface text-muted hover:bg-primary/5 hover:text-primary hover:border-primary/10 border-border/50'}
+            `}
+            title="Help & Documentation"
+          >
+            <Info className="w-5 h-5" />
+          </Link>
         </div>
 
         {/* PAGE CONTENT */}
@@ -189,7 +204,7 @@ export default function AdminLayout({
       <MobileNav 
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
-        navItems={navItems}
+        navItems={[...navItems, { href: '/admin/help', label: 'Help', icon: Info }]}
         actions={[
             { label: 'Client Portal', icon: ExternalLink, onClick: () => setIsClientSelectorOpen(true) },
             { label: 'Contact Business', icon: Phone, onClick: () => setIsContactOpen(true) },
