@@ -1,7 +1,9 @@
 ﻿import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function proxy(request: NextRequest) {
+export const runtime = 'experimental-edge'
+
+export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -85,10 +87,10 @@ export async function proxy(request: NextRequest) {
       .select('role')
       .eq('id', user.id)
       .single()
-    
+
     if (profile?.role !== 'admin') {
       // Redirect unauthorized users to portal or home
-      return NextResponse.redirect(new URL('/portal/inventory', request.url)) 
+      return NextResponse.redirect(new URL('/portal/inventory', request.url))
     }
   }
 
@@ -115,7 +117,7 @@ export async function proxy(request: NextRequest) {
              .select('role')
              .eq('id', user.id)
              .single()
-             
+
            if (profile?.role === 'admin') {
                return NextResponse.redirect(new URL('/admin/overview', request.url))
            } else {

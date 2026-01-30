@@ -56,6 +56,7 @@ Run these commands from the **root directory**:
 
 ## Development Conventions
 
+*   **Middleware Compatibility:** Next.js 16 deprecates the `middleware.ts` convention in favor of `proxy.ts`. However, to maintain compatibility with the Cloudflare adapter (`@opennextjs/cloudflare`), we **must** continue using `middleware.ts` with `export const runtime = 'experimental-edge'`. Ignore build warnings regarding this deprecation.
 *   **Styling:** Uses **Tailwind CSS 4**. configuration is minimal (`@import "tailwindcss";` in `globals.css`).
 *   **Theme:** Custom CSS variables (`--background`, `--foreground`) are defined in `globals.css` and exposed via `@theme inline`.
 *   **Responsive Design:** Implements a global `zoom` strategy in `globals.css` to handle responsiveness across different device sizes (Mobile: 0.7, Tablet: 0.8, Desktop: 1).
