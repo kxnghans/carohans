@@ -113,6 +113,9 @@ export default function PortalOrdersPage() {
           endDate={viewingInvoice.endDate}
           penaltyAmount={viewingInvoice.penaltyAmount}
           status={viewingInvoice.status}
+          closedAt={viewingInvoice.closedAt}
+          amountPaid={viewingInvoice.amountPaid}
+          totalAmount={viewingInvoice.totalAmount}
           onConfirm={() => setViewingInvoice(null)}
         />
       )}

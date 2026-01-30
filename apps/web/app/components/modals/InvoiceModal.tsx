@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { formatCurrency, formatDate, getDurationDays } from '../../utils/helpers';
 import { useData } from '../../context/DataContext';
 import { InventoryItem, Client } from '../../types';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface InvoiceModalProps {
   isOpen: boolean;
@@ -19,6 +20,9 @@ interface InvoiceModalProps {
   penaltyAmount?: number;
   latePenaltyPerDay?: number;
   status?: string;
+  closedAt?: string;
+  amountPaid?: number;
+  totalAmount?: number;
 }
 
 export const InvoiceModal = ({
@@ -31,12 +35,17 @@ export const InvoiceModal = ({
   endDate,
   penaltyAmount = 0,
   latePenaltyPerDay = 50,
-  status
+  status,
+  closedAt,
+  amountPaid = 0,
+  totalAmount: totalAmountProp
 }: InvoiceModalProps) => {
   const { Printer, X, Check, AlertCircle } = Icons;
   const { businessSettings } = useData();
   const [invoiceId, setInvoiceId] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+
+  useScrollLock(isOpen);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -51,15 +60,9 @@ export const InvoiceModal = ({
         setMounted(true);
         if (isOpen) {
             setInvoiceId(Math.floor(Math.random() * 10000));
-            document.body.style.overflow = 'hidden';
         }
     }, 0);
-    
-    if (!isOpen) {
-      document.body.style.overflow = 'unset';
-    }
     return () => {
-        document.body.style.overflow = 'unset';
         clearTimeout(timer);
     };
   }, [isOpen]);
@@ -76,6 +79,8 @@ export const InvoiceModal = ({
   // Late fees are the remainder of the penaltyAmount
   const lateFees = Math.max(0, penaltyAmount - lossDamageTotal);
   const calculatedTotal = calculatedSubtotal + lateFees + lossDamageTotal;
+  const finalTotal = totalAmountProp !== undefined ? totalAmountProp : calculatedTotal;
+  const isFullyPaid = amountPaid >= finalTotal;
 
   const handlePrint = () => {
     setTimeout(() => {
@@ -91,18 +96,18 @@ export const InvoiceModal = ({
       onClick={onClose}
     >
       <div 
-        className="invoice-modal-content bg-surface rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
+        className="invoice-modal-content bg-surface rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh] border border-border"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-primary text-primary-text p-6 flex justify-between items-center flex-shrink-0 print:hidden">
+        <div className="bg-primary dark:bg-primary-text text-primary-text dark:text-primary p-6 flex justify-between items-center flex-shrink-0 border-b border-transparent dark:border-white/10 print:hidden">
           <div className="flex items-center gap-3">
-            <div className="bg-white/10 p-2 rounded-lg"><Printer className="w-5 h-5" /></div>
+            <div className="bg-white/10 p-2 rounded-lg text-primary-text dark:text-primary"><Printer className="w-5 h-5" /></div>
             <div>
-              <h2 className="text-theme-title font-bold">Review Invoice</h2>
-              <p className="text-muted text-theme-caption">Draft Order for {client?.firstName && client?.lastName ? `${client.firstName} ${client.lastName}` : (client as unknown as { name?: string })?.name || ''}</p>
+              <h2 className="text-theme-title font-bold tracking-tight">Review Invoice</h2>
+              <p className="opacity-70 text-theme-caption font-medium">Draft Order for {client?.firstName && client?.lastName ? `${client.firstName} ${client.lastName}` : (client as unknown as { name?: string })?.name || ''}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-primary-text dark:text-primary"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="p-8 overflow-y-auto flex-1 custom-scrollbar print:p-0 print:m-0 print:overflow-visible print:h-auto print:block bg-surface">
@@ -130,7 +135,28 @@ export const InvoiceModal = ({
                   <h3 className="font-semibold text-muted text-theme-caption uppercase tracking-wider mb-2">Invoice Details</h3>
                   <p className="text-theme-body-bold text-foreground">INV-#{invoiceId}</p>
                   <p className="text-muted text-theme-caption font-bold mt-1 uppercase tracking-tighter">Date: {formatDate(new Date().toISOString())}</p>
-                  <p className="text-success font-bold text-theme-caption bg-success/10 dark:bg-emerald-900/30 px-2 py-0.5 rounded inline-block mt-2 print:border print:border-emerald-200">Draft Invoice</p>
+                  
+                  <div className="mt-6 flex flex-wrap justify-end gap-6 text-[10px] uppercase font-bold text-muted tracking-widest">
+                    <div className="flex flex-col">
+                      <span>Pickup</span>
+                      <span className="text-theme-body text-foreground font-semibold">{formatDate(startDate)}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span>Planned Return</span>
+                      <span className="text-theme-body text-foreground font-semibold">{formatDate(endDate)}</span>
+                    </div>
+                                      {closedAt && (
+                                        <div className="flex flex-col">
+                                          <span>Actual Return</span>
+                                          <span className="text-theme-body text-secondary dark:text-status-active font-semibold">{formatDate(closedAt)}</span>
+                                        </div>
+                                      )}                  </div>
+
+                  {(status === 'Completed' || (status === 'Settlement' && isFullyPaid)) ? (
+                    <p className="text-white dark:text-success font-semibold text-theme-body bg-success dark:bg-success/10 px-3 py-1 rounded-full inline-block mt-4 print:border print:border-emerald-200 uppercase tracking-wide">Final Paid Receipt</p>
+                  ) : (
+                    <p className="text-white dark:text-success font-semibold text-theme-body bg-success dark:bg-success/10 px-3 py-1 rounded-full inline-block mt-4 print:border print:border-emerald-200 uppercase tracking-wide">Draft Invoice</p>
+                  )}
                 </div>
               </div>
 
@@ -161,8 +187,10 @@ export const InvoiceModal = ({
                   {lateFees > 0 && (
                     <tr className="bg-error/10/30 dark:bg-rose-900/20 break-inside-avoid">
                       <td className="py-4" colSpan={3}>
-                        <p className="font-bold text-rose-700 dark:text-rose-400 text-theme-body">Late Fees</p>
-                        <p className="text-theme-caption text-rose-400 uppercase font-bold tracking-tight">Daily penalty for overdue return</p>
+                        <p className="font-bold text-rose-700 dark:text-rose-400 text-theme-body">Total Late Fees</p>
+                        <p className="text-theme-caption text-rose-400 uppercase font-bold tracking-tight">
+                          Overdue by {Math.round(lateFees / latePenaltyPerDay)} {Math.round(lateFees / latePenaltyPerDay) === 1 ? 'day' : 'days'}
+                        </p>
                       </td>
                       <td className="py-4 text-right font-black text-rose-700 dark:text-rose-400 text-theme-body">{formatCurrency(lateFees)}</td>
                     </tr>
@@ -225,7 +253,7 @@ export const InvoiceModal = ({
                     <li className="flex items-start gap-2">
                       <div className="w-1 h-1 rounded-full bg-muted mt-1.5"></div>
                       <p className="text-theme-caption font-medium text-muted leading-relaxed">
-                        <span className="font-bold text-foreground">Late Penalty:</span> A daily fee of <span className="text-error font-bold">{formatCurrency(latePenaltyPerDay)}</span> applies for every day items are returned after the scheduled date.
+                        <span className="font-bold text-foreground">Late Penalty Per Day:</span> A daily fee of <span className="text-error font-bold">{formatCurrency(latePenaltyPerDay)}</span> applies for every day items are kept after the <span className="font-bold">Planned Return Date</span>.
                       </p>
                     </li>
                     <li className="flex items-start gap-2">
@@ -248,7 +276,7 @@ export const InvoiceModal = ({
                   </div>
                   {lateFees > 0 && (
                     <div className="flex justify-between text-error dark:text-rose-400 text-theme-body font-medium">
-                      <span>Late Fees</span>
+                      <span>Total Late Fees</span>
                       <span>+{formatCurrency(lateFees)}</span>
                     </div>
                   )}

@@ -1,47 +1,41 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { Icons } from '../../lib/icons';
 import { useAppStore } from '../../context/AppContext';
-import { calculateMetrics, formatCurrency, calculateOrderTotal, getDurationDays } from '../../utils/helpers';
+import { calculateMetrics, formatCurrency, calculateOrderTotal } from '../../utils/helpers';
 import { FilterCard } from '../../components/dashboard/FilterCard';
 import { ClientSelector } from '../../components/modals/ClientSelector';
 import { InventoryTable } from '../../components/inventory/InventoryTable';
 import { InvoiceModal } from '../../components/modals/InvoiceModal';
+import { ReturnModal } from '../../components/modals/ReturnModal';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { DynamicIcon } from '../../components/common/DynamicIcon';
 import { Order, Client, InventoryItem, PortalFormData } from '../../types';
-import { updateOrderStatusToSupabase, processOrderReturn } from '../../services/orderService';
+import { updateOrderStatusToSupabase } from '../../services/orderService';
 import { OrderTable } from '../../components/orders/OrderTable';
 
 export default function AdminOverviewPage() {
-  const { Truck, LayoutDashboard, ClipboardList, AlertOctagon, AlertCircle, Check, Search, Plus, X, ChevronRight, Loader2, User, CreditCard } = Icons;
-  const { orders, setOrders, clients, showNotification, inventory, loading, submitOrder, latePenaltyPerDay } = useAppStore();
+  const { Truck, LayoutDashboard, ClipboardList, AlertOctagon, Check, Search, Plus, X, ChevronRight, Loader2, User, CreditCard } = Icons;
+  const { orders, setOrders, clients, showNotification, inventory, loading, submitOrder, latePenaltyPerDay, modifyingOrderId, setModifyingOrderId, cancelModification, setCart, portalFormData, setPortalFormData, cart, createOrderStep, setCreateOrderStep } = useAppStore();
   
   const [mounted, setMounted] = useState(false);
   const [orderFilter, setOrderFilter] = useState('All');
 
   useEffect(() => {
-    const timer = setTimeout(() => setMounted(true), 0);
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 0);
     return () => clearTimeout(timer);
   }, []);
   const [searchQuery, setSearchQuery] = useState('');
-  const [createOrderStep, setCreateOrderStep] = useState<'none' | 'select-client' | 'shop' | 'review'>('none');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [posCart, setPosCart] = useState<(InventoryItem & { qty: number })[]>([]);
-  const [posDates, setPosDates] = useState({ start: '', end: '' });
+
   const [viewingInvoice, setViewingInvoice] = useState<(Order & { cart: (InventoryItem & { qty: number, lostQty?: number, damagedQty?: number })[], client: Partial<Client> }) | null>(null);
   
   const [returnOrder, setReturnOrder] = useState<Order | null>(null);
-  const [returnDate, setReturnDate] = useState(new Date().toISOString().split('T')[0] ?? '');
-  const [returnItemQuantities, setReturnItemQuantities] = useState<Record<number, { returned: number, lost: number, damaged: number }>>({});
-  const [selectedReturnStatus, setSelectedReturnStatus] = useState<'On Time' | 'Early' | 'Late'>('On Time');
-  const [selectedItemIntegrity, setSelectedItemIntegrity] = useState<string[]>(['Good']);
-  const [paymentAmount, setPaymentAmount] = useState<number>(0);
-  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({
     key: 'id',
@@ -49,102 +43,6 @@ export default function AdminOverviewPage() {
   });
 
   const metrics = useMemo(() => calculateMetrics(orders), [orders]);
-
-  useEffect(() => {
-    if (returnOrder) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => { document.body.style.overflow = 'unset'; };
-  }, [returnOrder]);
-
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setReturnOrder(null);
-    };
-    if (returnOrder) window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [returnOrder]);
-
-  useEffect(() => {
-    if (returnOrder) {
-        const initialQtys: Record<number, { returned: number, lost: number, damaged: number }> = {};
-        returnOrder.items.forEach(item => {
-            initialQtys[item.itemId] = { returned: item.qty, lost: 0, damaged: 0 };
-        });
-        
-        const timer = setTimeout(() => {
-            setReturnItemQuantities(initialQtys);
-            setReturnDate(new Date().toISOString().split('T')[0] ?? '');
-            
-            // Auto-determine default return status
-            const today = new Date().toISOString().split('T')[0] ?? '';
-            if (today < returnOrder.endDate) setSelectedReturnStatus('Early');
-            else if (today === returnOrder.endDate) setSelectedReturnStatus('On Time');
-            else setSelectedReturnStatus('Late');
-
-            setSelectedItemIntegrity(['Good']);
-            
-            // Always default to 0 as requested, forcing admin to input actual payment
-            setPaymentAmount(0);
-            setSubmitAttempted(false);
-        }, 0);
-        return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [returnOrder]);
-
-  const toggleIntegrity = (status: string) => {
-    setSelectedItemIntegrity(prev => {
-        if (status === 'Good') return ['Good'];
-        
-        let next = prev.filter(s => s !== 'Good');
-        if (next.includes(status)) {
-            next = next.filter(s => s !== status);
-            if (next.length === 0) return ['Good'];
-            return next;
-        } else {
-            return [...next, status];
-        }
-    });
-  };
-
-  // Derived Financials for Return Modal
-  const returnTotals = useMemo(() => {
-    if (!returnOrder) return { subtotal: 0, lateFee: 0, lossFee: 0, damageFee: 0, total: 0, balance: 0 };
-    
-    // 1. Late Fee Calculation using admin-defined penalty per day
-    const daysLate = Math.max(0, Math.ceil((new Date(returnDate).getTime() - new Date(returnOrder.endDate).getTime()) / (1000 * 60 * 60 * 24)));
-    const lateFee = daysLate * latePenaltyPerDay;
-
-    // 2. Loss & Damage Fees (Both 100% of replacement cost)
-    let lossFee = 0;
-    let damageFee = 0;
-    Object.entries(returnItemQuantities).forEach(([id, qtys]) => {
-        const invItem = inventory.find(i => i.id === Number(id));
-        if (invItem) {
-            if (qtys.lost > 0) {
-                lossFee += invItem.replacementCost * qtys.lost;
-            }
-            if (qtys.damaged > 0) {
-                damageFee += invItem.replacementCost * qtys.damaged;
-            }
-        }
-    });
-
-    const rentalSubtotal = returnOrder.items.reduce((sum, item) => {
-        const invItem = inventory.find(i => i.id === item.itemId);
-        const price = item.price || invItem?.price || 0;
-        const duration = getDurationDays(returnOrder.startDate, returnOrder.endDate);
-        return sum + (price * item.qty * duration);
-    }, 0);
-
-    const total = rentalSubtotal + lateFee + lossFee + damageFee;
-    const balance = total - (returnOrder.amountPaid + paymentAmount);
-
-    return { subtotal: rentalSubtotal, lateFee, lossFee, damageFee, total, balance };
-  }, [returnOrder, returnDate, returnItemQuantities, paymentAmount, inventory, latePenaltyPerDay]);
 
   const filteredOrders = useMemo(() => {
     let result = orders;
@@ -202,6 +100,7 @@ export default function AdminOverviewPage() {
 
     setViewingInvoice({
       ...order,
+      endDate: order.closedAt || order.endDate,
       cart: reconstructedCart,
       client: { firstName: order.clientName, email: order.email, phone: order.phone }
     });
@@ -222,57 +121,15 @@ export default function AdminOverviewPage() {
     }
   };
 
-  const handleConfirmReturn = async () => {
-    if (!returnOrder) return;
-
-    if (!paymentAmount || paymentAmount <= 0) {
-        setSubmitAttempted(true);
-        showNotification("Payment required. Please enter an amount greater than ¢0 to proceed.", "error");
-        return;
-    }
-    
-    setSubmitAttempted(false);
-    const finalStatus = returnTotals.balance <= 0 ? 'Completed' : 'Settlement';
-
-    const returnData = {
-        status: finalStatus,
-        closedAt: returnDate,
-        returnStatus: selectedReturnStatus,
-        itemIntegrity: selectedItemIntegrity.join(', '),
-        penaltyAmount: returnTotals.lateFee + returnTotals.lossFee + returnTotals.damageFee,
-        amountPaid: returnOrder.amountPaid + paymentAmount,
-        totalAmount: returnTotals.total,
-        items: returnOrder.items.map(item => ({
-            itemId: item.itemId,
-            returnedQty: returnItemQuantities[item.itemId]?.returned || 0,
-            lostQty: returnItemQuantities[item.itemId]?.lost || 0,
-            damagedQty: returnItemQuantities[item.itemId]?.damaged || 0
-        }))
-    };
-
-    try {
-        await processOrderReturn(returnOrder.id, returnData);
-        showNotification(`Return processed. Status: ${finalStatus}`);
-        setReturnOrder(null);
-        // Sync state could be refetched or updated locally
-        window.location.reload(); 
-    } catch (error) {
-        console.error("Return process failed", error);
-        showNotification("Failed to process return", "error");
-    }
-  };
-
-
-
   const addToPosCart = (item: InventoryItem, qty: number) => {
-    setPosCart(prev => {
+    setCart(prev => {
       const existing = prev.find(i => i.id === item.id);
       if (existing) {
         const newQty = existing.qty + qty;
         if (newQty <= 0) return prev.filter(i => i.id !== item.id);
         return prev.map(i => i.id === item.id ? { ...i, qty: newQty } : i);
       }
-      if (qty > 0) return [...prev, { ...item, qty }];
+      if (qty > 0) return [...prev, { id: item.id, qty, price: item.price }];
       return prev;
     });
   };
@@ -286,11 +143,11 @@ export default function AdminOverviewPage() {
         phone: selectedClient.phone,
         email: selectedClient.email,
         address: selectedClient.address,
-        start: posDates.start || (new Date().toISOString().split('T')[0] ?? ''),
-        end: posDates.end || (new Date().toISOString().split('T')[0] ?? '')
+        start: portalFormData.start || (new Date().toISOString().split('T')[0] ?? ''),
+        end: portalFormData.end || (new Date().toISOString().split('T')[0] ?? '')
     };
     await submitOrder(orderData);
-    setPosCart([]); setSelectedClient(null); setPosDates({ start: '', end: '' }); setCreateOrderStep('none');
+    setSelectedClient(null); setCreateOrderStep('none');
     showNotification("Order created successfully!", "success");
   };
 
@@ -302,8 +159,6 @@ export default function AdminOverviewPage() {
         </div>
     );
   }
-
-  const posTotal = calculateOrderTotal(posCart, posDates.start, posDates.end);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -347,11 +202,11 @@ export default function AdminOverviewPage() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-6 lg:gap-8">
           <FilterCard title="Total Orders" count={orders.length} status="All" active={orderFilter === 'All'} onClick={() => setOrderFilter('All')} color="bg-primary" icon={LayoutDashboard} />
-          <FilterCard title="Pending" count={metrics.pendingRequests} status="Pending" active={orderFilter === 'Pending'} onClick={() => setOrderFilter('Pending')} color="bg-status-pending" icon={ClipboardList} />
-          <FilterCard title="Active" count={metrics.activeRentals} status="Active" active={orderFilter === 'Active'} onClick={() => setOrderFilter('Active')} color="bg-status-active" icon={Truck} />
-          <FilterCard title="Overdue" count={metrics.lateRentals} status="Late" active={orderFilter === 'Late'} onClick={() => setOrderFilter('Late')} color="bg-status-late" icon={AlertOctagon} />
-          <FilterCard title="Settlement" count={metrics.settlementOrders} status="Settlement" active={orderFilter === 'Settlement'} onClick={() => setOrderFilter('Settlement')} color="bg-status-settlement" icon={CreditCard} />
-          <FilterCard title="Completed" count={metrics.completedRentals} status="Completed" active={orderFilter === 'Completed'} onClick={() => setOrderFilter('Completed')} color="bg-status-completed" icon={Check} />
+          <FilterCard title="Pending" count={metrics.pendingRequests} status="Pending" active={orderFilter === 'Pending'} onClick={() => setOrderFilter('Pending')} color="bg-primary" icon={ClipboardList} />
+          <FilterCard title="Active" count={metrics.activeRentals} status="Active" active={orderFilter === 'Active'} onClick={() => setOrderFilter('Active')} color="bg-primary" icon={Truck} />
+          <FilterCard title="Overdue" count={metrics.lateRentals} status="Late" active={orderFilter === 'Late'} onClick={() => setOrderFilter('Late')} color="bg-primary" icon={AlertOctagon} />
+          <FilterCard title="Settlement" count={metrics.settlementOrders} status="Settlement" active={orderFilter === 'Settlement'} onClick={() => setOrderFilter('Settlement')} color="bg-primary" icon={CreditCard} />
+          <FilterCard title="Completed" count={metrics.completedRentals} status="Completed" active={orderFilter === 'Completed'} onClick={() => setOrderFilter('Completed')} color="bg-primary" icon={Check} />
         </div>
       </div>
 
@@ -364,7 +219,7 @@ export default function AdminOverviewPage() {
           </div>
           <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto items-center">
             <div className="relative w-full md:w-72 group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
               <input 
                 type="text" 
                 placeholder="Search orders, clients..." 
@@ -399,9 +254,9 @@ export default function AdminOverviewPage() {
         <div className="fixed inset-0 bg-background z-50 overflow-y-auto animate-in fade-in duration-300">
           <div className="bg-surface border-b border-border sticky top-0 z-40 px-6 h-16 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-4">
-              <Button variant="secondary" size="sm" onClick={() => { setCreateOrderStep('none'); setPosCart([]); }}><X className="w-4 h-4 mr-2" /> Cancel</Button>
+              <Button variant="secondary" size="sm" onClick={() => { setCreateOrderStep('none'); setModifyingOrderId(null); setCart([]); setPortalFormData(prev => ({ ...prev, start: '', end: '' })); }}><X className="w-4 h-4 mr-2" /> Cancel</Button>
               <div className="h-6 w-px bg-border"></div>
-              <h2 className="text-theme-subtitle text-foreground mr-2 whitespace-nowrap">New Order For</h2>
+              <h2 className="text-theme-subtitle text-foreground mr-2 whitespace-nowrap">{modifyingOrderId ? 'Modifying Order #' + modifyingOrderId : 'New Order For'}</h2>
               <div className="bg-surface py-2 px-3 rounded-2xl border border-border shadow-sm flex items-center gap-3">
                 <div className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center border transition-all ${selectedClient?.color ? selectedClient.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + (selectedClient.color.split('-')[1] || 'slate') + '-200' : 'bg-background border-border'}`}>
                     <DynamicIcon 
@@ -420,9 +275,19 @@ export default function AdminOverviewPage() {
             <div className="flex items-center gap-3">
               <div className="text-right mr-2 hidden md:block">
                 <p className="text-theme-caption font-bold text-muted uppercase tracking-wider">Estimated Total</p>
-                <p className="text-theme-title text-foreground">{formatCurrency(posTotal)}</p>
+                <p className="text-theme-title text-foreground">{formatCurrency(calculateOrderTotal(cart, portalFormData.start, portalFormData.end))}</p>
               </div>
-              <Button onClick={() => setCreateOrderStep('review')} disabled={posCart.length === 0}>Review Order ({posCart.length}) <ChevronRight className="w-4 h-4 ml-2" /></Button>
+              {modifyingOrderId && (
+                  <Button 
+                    variant="danger" 
+                    size="md" 
+                    className="bg-error text-primary-text border-error hover:bg-error/90 dark:bg-error"
+                    onClick={() => { setCreateOrderStep('none'); cancelModification(); }}
+                  >
+                    <X className="w-4 h-4 mr-2" /> Discard Changes
+                  </Button>
+              )}
+              <Button onClick={() => setCreateOrderStep('review')} disabled={cart.length === 0}>Review Order ({cart.length}) <ChevronRight className="w-4 h-4 ml-2" /></Button>
             </div>
           </div>
           <div className="max-w-7xl mx-auto p-6">
@@ -430,254 +295,47 @@ export default function AdminOverviewPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:max-w-lg">
                 <DatePicker 
                   label="Pickup Date"
-                  value={posDates.start}
-                  onChange={(val) => setPosDates({ ...posDates, start: val })}
+                  value={portalFormData.start}
+                  onChange={(val) => setPortalFormData(prev => ({ ...prev, start: val }))}
                 />
                 <DatePicker 
-                  label="Return Date"
-                  value={posDates.end}
-                  onChange={(val) => setPosDates({ ...posDates, end: val })}
+                  label="Planned Return Date"
+                  value={portalFormData.end}
+                  onChange={(val) => setPortalFormData(prev => ({ ...prev, end: val }))}
                 />
               </div>
             </div>
-            <Card noPadding><InventoryTable data={inventory} isAdmin={false} onAddToCart={addToPosCart} cart={posCart} /></Card>
+            <Card noPadding><InventoryTable data={inventory} isAdmin={false} onAddToCart={addToPosCart} cart={cart} /></Card>
           </div>
         </div>
       )}
 
       {createOrderStep === 'review' && (
-        <InvoiceModal isOpen={true} onClose={() => setCreateOrderStep('shop')} cart={posCart} client={selectedClient} startDate={posDates.start} endDate={posDates.end} onConfirm={submitAdminOrder} />
+        <InvoiceModal 
+            isOpen={true} 
+            onClose={() => setCreateOrderStep('shop')} 
+            cart={cart.map(item => ({ ...inventory.find(i => i.id === item.id), ...item })) as (InventoryItem & { qty: number })[]} 
+            client={selectedClient} 
+            startDate={portalFormData.start} 
+            endDate={portalFormData.end} 
+            onConfirm={submitAdminOrder} 
+        />
       )}
 
       {viewingInvoice && (
-        <InvoiceModal isOpen={true} onClose={() => setViewingInvoice(null)} cart={viewingInvoice.cart} client={viewingInvoice.client} startDate={viewingInvoice.startDate} endDate={viewingInvoice.endDate} penaltyAmount={viewingInvoice.penaltyAmount} status={viewingInvoice.status} onConfirm={() => setViewingInvoice(null)} />
+        <InvoiceModal isOpen={true} onClose={() => setViewingInvoice(null)} cart={viewingInvoice.cart} client={viewingInvoice.client} startDate={viewingInvoice.startDate} endDate={viewingInvoice.endDate} penaltyAmount={viewingInvoice.penaltyAmount} status={viewingInvoice.status} closedAt={viewingInvoice.closedAt} amountPaid={viewingInvoice.amountPaid} totalAmount={viewingInvoice.totalAmount} onConfirm={() => setViewingInvoice(null)} />
       )}
 
       {/* ENHANCED RETURN TRACKING DIALOG */}
-      {mounted && returnOrder && createPortal(
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
-          onClick={() => setReturnOrder(null)}
-        >
-            <div 
-              className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh] overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-                {/* Header - Sticky */}
-                <div className="bg-primary text-primary-text p-6 flex justify-between items-center flex-shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary-text/10 rounded-lg text-secondary"><Check className="w-5 h-5" /></div>
-                        <div>
-                            <h3 className="text-theme-title font-bold tracking-tight">Process Return Audit</h3>
-                            <p className="text-theme-caption text-primary-text/60 font-medium">Order #{returnOrder.id} • {returnOrder.clientName}</p>
-                        </div>
-                    </div>
-                    <button onClick={() => setReturnOrder(null)} className="p-2 hover:bg-primary-text/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
-                </div>
-
-                {/* Main Content - Scrollable */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
-                    {/* Dates & Logistics */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <DatePicker 
-                          label="Actual Return Date"
-                          value={returnDate}
-                          onChange={(val) => setReturnDate(val)}
-                        />
-                        <div className="space-y-5">
-                            <div>
-                                <label className="text-[10px] font-black text-muted uppercase tracking-widest block mb-2 ml-1">Return Status</label>
-                                <div className="flex gap-2">
-                                    {(['Early', 'On Time', 'Late'] as const).map(status => {
-                                        const isActive = selectedReturnStatus === status;
-                                        const colors = {
-                                            'Early': isActive ? 'border-accent-primary bg-accent-primary/10 text-accent-primary' : 'border-border text-muted hover:border-accent-primary/30',
-                                            'On Time': isActive ? 'border-success bg-success/10 text-success' : 'border-border text-muted hover:border-success/30',
-                                            'Late': isActive ? 'border-error bg-error/10 text-error' : 'border-border text-muted hover:border-error/30'
-                                        };
-                                        return (
-                                            <button 
-                                                key={status}
-                                                onClick={() => setSelectedReturnStatus(status)} 
-                                                className={`flex-1 py-2.5 border-2 rounded-xl text-[10px] font-black uppercase tracking-tight transition-all text-center ${colors[status]}`}
-                                            >
-                                                {status}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-black text-muted uppercase tracking-widest block mb-2 ml-1">Item Integrity</label>
-                                <div className="flex gap-2">
-                                    {(['Good', 'Lost', 'Damaged'] as const).map(status => {
-                                        const isActive = selectedItemIntegrity.includes(status);
-                                        const colors = {
-                                            'Good': isActive ? 'border-success bg-success/10 text-success' : 'border-border text-muted hover:border-success/30',
-                                            'Lost': isActive ? 'border-error bg-error/10 text-error' : 'border-border text-muted hover:border-error/30',
-                                            'Damaged': isActive ? 'border-warning bg-warning/10 text-warning' : 'border-border text-muted hover:border-warning/30'
-                                        };
-                                        return (
-                                            <button 
-                                                key={status}
-                                                onClick={() => toggleIntegrity(status)} 
-                                                className={`flex-1 py-2.5 border-2 rounded-xl text-[10px] font-black uppercase tracking-tight transition-all text-center ${colors[status]}`}
-                                            >
-                                                {status}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Item Audit List */}
-                    <div>
-                        <div className="flex items-center gap-2 mb-4 ml-1">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
-                            <label className="text-[10px] font-black text-muted uppercase tracking-widest">Item Inspection</label>
-                        </div>
-                        <div className="space-y-3">
-                            {returnOrder.items.map(item => {
-                                const invItem = inventory.find(i => i.id === item.itemId);
-                                const qtys = returnItemQuantities[item.itemId] || { returned: item.qty, lost: 0, damaged: 0 };
-                                
-                                return (
-                                    <div key={item.itemId} className="bg-white border border-border rounded-2xl p-4 shadow-sm group hover:border-border hover:shadow-md transition-all">
-                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 bg-background rounded-xl flex items-center justify-center font-bold text-xl text-muted group-hover:scale-110 transition-transform">{invItem?.image || '📦'}</div>
-                                                <div>
-                                                    <p className="text-theme-body-bold text-foreground">{invItem?.name}</p>
-                                                    <p className="text-theme-caption text-muted font-bold uppercase tracking-tight">Original Qty: {item.qty}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-4 bg-background/50 p-2 rounded-xl border border-border/50">
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-[9px] font-black text-muted uppercase mb-1">Good</span>
-                                                    <input 
-                                                        type="number" 
-                                                        className="w-12 text-center bg-white border border-border rounded-lg p-1.5 text-xs font-black text-success outline-none focus:border-success" 
-                                                        value={qtys.returned} 
-                                                        onChange={(e) => {
-                                                            const val = parseInt(e.target.value) || 0;
-                                                            setReturnItemQuantities({ ...returnItemQuantities, [item.itemId]: { ...qtys, returned: val } });
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-[9px] font-black text-muted uppercase mb-1">Lost</span>
-                                                    <input 
-                                                        type="number" 
-                                                        className="w-12 text-center bg-white border border-border rounded-lg p-1.5 text-xs font-black text-error outline-none focus:border-error" 
-                                                        value={qtys.lost} 
-                                                        onChange={(e) => {
-                                                            const val = parseInt(e.target.value) || 0;
-                                                            setReturnItemQuantities({ ...returnItemQuantities, [item.itemId]: { ...qtys, lost: val } });
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-[9px] font-black text-muted uppercase mb-1">Dmg</span>
-                                                    <input 
-                                                        type="number" 
-                                                        className="w-12 text-center bg-white border border-border rounded-lg p-1.5 text-xs font-black text-warning outline-none focus:border-warning" 
-                                                        value={qtys.damaged} 
-                                                        onChange={(e) => {
-                                                            const val = parseInt(e.target.value) || 0;
-                                                            setReturnItemQuantities({ ...returnItemQuantities, [item.itemId]: { ...qtys, damaged: val } });
-                                                        }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Financial Summary & Payment */}
-                    <div className="bg-background rounded-2xl p-6 border border-border grid grid-cols-1 md:grid-cols-2 gap-8 shadow-inner">
-                        <div className="space-y-2.5">
-                            <h4 className="text-theme-caption font-black text-muted uppercase tracking-widest mb-4">Financial Summary</h4>
-                            <div className="flex justify-between text-theme-body">
-                                <span className="text-muted">Rental Subtotal</span>
-                                <span className="text-foreground font-bold">{formatCurrency(returnTotals.subtotal)}</span>
-                            </div>
-                            <div className="flex justify-between text-theme-body">
-                                <span className="text-muted">Late Fees</span>
-                                <span className="text-error font-bold">+{formatCurrency(returnTotals.lateFee)}</span>
-                            </div>
-                            <div className="flex justify-between text-theme-body">
-                                <span className="text-muted">Damage/Loss Penalty</span>
-                                <span className="text-error font-bold">+{formatCurrency(returnTotals.lossFee + returnTotals.damageFee)}</span>
-                            </div>
-                            <div className="flex justify-between text-theme-body pt-2 border-t border-border">
-                                <span className="text-muted">Total Revised Bill</span>
-                                <span className="text-theme-body-bold text-foreground">{formatCurrency(returnTotals.total)}</span>
-                            </div>
-                            <div className="flex justify-between text-theme-body">
-                                <span className="text-muted">Already Paid</span>
-                                <span className="text-success font-bold">-{formatCurrency(returnOrder.amountPaid)}</span>
-                            </div>
-                            <div className="flex justify-between text-theme-subtitle font-black pt-3 border-t-2 border-foreground mt-2">
-                                <span className="text-foreground uppercase tracking-tighter">Amount Due Now</span>
-                                <span className="text-error text-theme-header">{formatCurrency(Math.max(0, returnTotals.total - returnOrder.amountPaid))}</span>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <h4 className="text-theme-caption font-black text-muted uppercase tracking-widest mb-4">Process Payment</h4>
-                            <div className="relative group">
-                                <div className={`absolute left-4 top-1/2 -translate-y-1/2 font-black text-theme-header transition-colors ${submitAttempted && (!paymentAmount || paymentAmount <= 0) ? 'text-error' : 'text-muted group-focus-within:text-primary'}`}>¢</div>
-                                <input 
-                                    type="number" 
-                                    step="0.01"
-                                    min="0.01"
-                                    required
-                                    className={`w-full pl-10 pr-4 py-5 bg-white border rounded-2xl text-theme-header font-black text-foreground outline-none transition-all shadow-sm ${
-                                        submitAttempted && (!paymentAmount || paymentAmount <= 0) 
-                                        ? 'border-error focus:ring-rose-500/10' 
-                                        : 'border-border focus:border-primary focus:ring-4 focus:ring-primary/10'
-                                    }`}
-                                    placeholder="0.00"
-                                    value={paymentAmount}
-                                    onChange={(e) => {
-                                        setPaymentAmount(parseFloat(e.target.value) || 0);
-                                        if (submitAttempted) setSubmitAttempted(false);
-                                    }}
-                                />
-                            </div>
-                            <div className="flex gap-2">
-                                <button onClick={() => setPaymentAmount(Math.max(0, returnTotals.total - returnOrder.amountPaid))} className="flex-1 py-2.5 bg-primary/10 text-primary text-theme-caption font-black uppercase rounded-xl border border-primary/20 hover:bg-primary/20 transition-colors shadow-sm">Pay Full Balance</button>
-                                <button onClick={() => setPaymentAmount(0)} className="flex-1 py-2.5 bg-surface text-muted text-theme-caption font-black uppercase rounded-xl border border-border hover:bg-background transition-colors shadow-sm">Clear</button>
-                            </div>
-                            {returnTotals.balance > 0 && (
-                                <div className="flex items-start gap-2 p-3 bg-warning/10 rounded-xl border border-amber-100 mt-2">
-                                    <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
-                                    <p className="text-theme-caption text-amber-700 font-bold italic leading-tight">Order remains in &apos;Settlement&apos; until balance is ¢0.</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Footer - Sticky */}
-                <div className="p-6 bg-background border-t border-border flex gap-3 flex-shrink-0">
-                    <Button variant="secondary" className="flex-1 rounded-2xl" onClick={() => setReturnOrder(null)}>Cancel</Button>
-                    <Button 
-                        variant="primary" 
-                        className="flex-1 bg-success hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 rounded-2xl" 
-                        onClick={handleConfirmReturn}
-                    >
-                        {returnTotals.balance <= 0 ? 'Finalize & Close Order' : 'Record Partial Payment'}
-                    </Button>
-                </div>
-            </div>
-        </div>,
-        document.body
+      {mounted && returnOrder && (
+        <ReturnModal 
+          isOpen={true} 
+          onClose={() => setReturnOrder(null)} 
+          returnOrder={returnOrder} 
+          inventory={inventory} 
+          latePenaltyPerDay={latePenaltyPerDay}
+          showNotification={showNotification}
+        />
       )}
     </div>
   );

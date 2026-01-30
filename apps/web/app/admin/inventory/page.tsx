@@ -89,21 +89,23 @@ export default function AdminInventoryPage() {
   
 
     const toggleEditMode = () => {
-
       if (isEditMode) {
-
         setIsEditMode(false);
-
+        showNotification("Inventory updates saved!", "success");
       } else {
-
         setIsEditMode(true);
-
         setIsOrderMode(false); // Disable order mode
-
         setCart([]);
-
       }
+    };
 
+    const discardEditChanges = async () => {
+        setIsEditMode(false);
+        // Re-fetch to discard local state changes
+        const { fetchInventoryFromSupabase } = await import('../../services/inventoryService');
+        const freshInv = await fetchInventoryFromSupabase();
+        setInventory(freshInv);
+        showNotification("Inventory changes discarded", "info");
     };
 
   
@@ -114,11 +116,11 @@ export default function AdminInventoryPage() {
         return;
       }
       if (!orderDates.start || !orderDates.end) {
-        showNotification("Please select both pickup and return dates.", "error");
+        showNotification("Please select both pickup and planned return dates.", "error");
         return;
       }
       if (orderDates.end < orderDates.start) {
-        showNotification("Return date cannot be earlier than the pickup date.", "error");
+        showNotification("Planned return date cannot be earlier than the pickup date.", "error");
         return;
       }
       if (cart.length === 0) {
@@ -164,7 +166,7 @@ export default function AdminInventoryPage() {
                   {/* LATE PENALTY SETTING */}
                   {!isOrderMode && (
                     <div className="flex items-center gap-3 bg-surface px-4 py-2 rounded-xl border border-border shadow-sm">
-                      <label className="text-theme-caption text-muted uppercase tracking-[0.2em] font-semibold">Late Penalty</label>
+                      <label className="text-theme-caption text-muted uppercase tracking-[0.2em] font-semibold">Late Penalty Per Day</label>
                       <div className="flex items-center gap-1.5">
                         <span className="text-muted text-theme-body">¢</span>
                         <input 
@@ -182,13 +184,23 @@ export default function AdminInventoryPage() {
         
             {/* EDIT MODE TOGGLE */}
             {!isOrderMode && (
-              <Button 
-                variant={isEditMode ? "primary" : "secondary"}
-                onClick={toggleEditMode}
-                className={isEditMode ? "shadow-indigo-100" : ""}
-              >
-                {isEditMode ? <><Check className="w-4 h-4 mr-2" /> Done Editing</> : <><Pencil className="w-4 h-4 mr-2" /> Edit Mode</>}
-              </Button>
+              <div className="flex gap-2">
+                {isEditMode && (
+                  <Button 
+                    variant="danger"
+                    onClick={discardEditChanges}
+                  >
+                    <X className="w-4 h-4 mr-2" /> Discard Changes
+                  </Button>
+                )}
+                <Button 
+                  variant={isEditMode ? "primary" : "secondary"}
+                  onClick={toggleEditMode}
+                  className={`transition-all ${isEditMode ? 'dark:bg-surface dark:text-foreground dark:border-border' : ''}`}
+                >
+                  {isEditMode ? <><Check className="w-4 h-4 mr-2" /> Save Changes</> : <><Pencil className="w-4 h-4 mr-2" /> Edit Mode</>}
+                </Button>
+              </div>
             )}
 
           {/* NEW ORDER TOGGLE */}
@@ -233,7 +245,7 @@ export default function AdminInventoryPage() {
                 containerClassName="md:col-span-4"
               />
               <DatePicker 
-                label="Return Date"
+                label="Planned Return Date"
                 value={orderDates.end}
                 onChange={(val) => setOrderDates(prev => ({ ...prev, end: val }))}
                 containerClassName="md:col-span-4"

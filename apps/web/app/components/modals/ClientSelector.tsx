@@ -6,6 +6,7 @@ import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
 import { DynamicIcon } from '../common/DynamicIcon';
 import { Client } from '../../types';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 export const ClientSelector = ({ clients, onSelect, onClose, isOpen = true }: {
   clients: Client[],
@@ -17,24 +18,12 @@ export const ClientSelector = ({ clients, onSelect, onClose, isOpen = true }: {
   const [search, setSearch] = useState('');
   const [mounted, setMounted] = useState(false);
 
+  useScrollLock(isOpen);
+
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0);
     return () => clearTimeout(timer);
   }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
-    }
-    return () => { 
-      document.body.style.overflow = 'unset'; 
-      document.documentElement.style.overflow = 'unset';
-    };
-  }, [isOpen]);
 
   const filtered = clients.filter((c: Client) => {
     const fullName = `${c.firstName || ''} ${c.lastName || ''}`.toLowerCase();
@@ -80,9 +69,9 @@ export const ClientSelector = ({ clients, onSelect, onClose, isOpen = true }: {
         
         <div className="p-4 bg-background/50 border-b border-border">
           <div className="relative group">
-            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-secondary transition-colors" />
+            <Search className="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-secondary transition-colors" />
             <input
-              className="w-full bg-surface border border-border rounded-2xl pl-12 pr-4 py-3.5 outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all font-medium text-foreground placeholder:text-muted/40"
+              className="w-full bg-surface border border-border rounded-2xl pl-14 pr-4 py-3.5 outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all font-medium text-foreground placeholder:text-muted/40"
               placeholder="Search by name or phone..."
               value={search}
               onChange={e => setSearch(e.target.value)}

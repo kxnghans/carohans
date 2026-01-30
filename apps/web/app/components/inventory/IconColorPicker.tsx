@@ -40,36 +40,36 @@ export const IconColorPicker = ({ currentIcon, currentColor, onChange, onClose }
   };
 
   return (
-    <div className="absolute top-full left-0 mt-2 bg-white border border-border rounded-2xl shadow-2xl z-50 w-72 overflow-hidden animate-in zoom-in-95 duration-200">
-      <div className="p-3 border-b border-border flex justify-between items-center bg-background">
+    <div className="absolute top-full left-0 mt-2 bg-surface border border-border rounded-3xl shadow-2xl z-50 w-80 overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="p-5 border-b border-border flex justify-between items-center bg-background/50">
         <span className="text-xs font-bold text-muted uppercase tracking-wider">Customize Icon</span>
-        <button onClick={onClose} className="p-1 hover:bg-slate-200 rounded-full transition-colors">
+        <button onClick={onClose} className="p-1.5 hover:bg-background rounded-full transition-colors">
           <X className="w-4 h-4 text-muted" />
         </button>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="p-6 space-y-6">
         {/* COLOR SELECTOR */}
         <div>
-          <label className="text-[10px] font-bold text-muted uppercase mb-2 block">Color</label>
-          <div className="flex flex-wrap gap-2">
+          <label className="text-theme-body font-semibold text-muted uppercase mb-3 block tracking-widest">Color Palette</label>
+          <div className="flex flex-wrap gap-3">
             {COLORS.map((color) => (
               <button
                 key={color.name}
                 onClick={() => handleColorSelect(color.class)}
-                className={`w-6 h-6 rounded-full ${color.bg} transition-transform hover:scale-110 active:scale-90 ${currentColor === color.class ? 'ring-2 ring-offset-2 ring-slate-300 scale-110' : ''}`}
+                className={`w-7 h-7 rounded-full ${color.bg} transition-all hover:scale-110 active:scale-90 shadow-sm ${currentColor === color.class ? 'ring-2 ring-offset-2 ring-primary scale-110' : ''}`}
                 title={color.name}
               />
             ))}
           </div>
         </div>
 
-        <div className="h-px bg-surface" />
+        <div className="h-px bg-border/50" />
 
         {/* ICON GRID */}
         <div>
-          <label className="text-[10px] font-bold text-muted uppercase mb-2 block">Icons</label>
-          <div className="grid grid-cols-5 gap-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+          <label className="text-theme-body font-semibold text-muted uppercase mb-3 block tracking-widest">Available Icons</label>
+          <div className="grid grid-cols-5 gap-3">
             {Object.keys(InventoryIcons).map((key) => {
               const IconComp = InventoryIcons[key];
               if (!IconComp) return null;
@@ -78,9 +78,9 @@ export const IconColorPicker = ({ currentIcon, currentColor, onChange, onClose }
                 <button
                   key={key}
                   onClick={() => handleIconSelect(key)}
-                  className={`aspect-square flex items-center justify-center rounded-lg border transition-all ${isSelected ? 'bg-primary/10 border-indigo-200' : 'bg-white border-border hover:border-border hover:bg-background'}`}
+                  className={`aspect-square flex items-center justify-center rounded-xl transition-all ${isSelected ? 'bg-background text-primary dark:text-white ring-2 ring-primary dark:ring-white/80 shadow-lg scale-105' : 'bg-background hover:bg-background/80 text-muted hover:text-foreground'}`}
                 >
-                  <IconComp className={`w-5 h-5 ${isSelected ? currentColor : 'text-muted'}`} />
+                  <IconComp className={`w-6 h-6`} />
                 </button>
               );
             })}
@@ -89,15 +89,15 @@ export const IconColorPicker = ({ currentIcon, currentColor, onChange, onClose }
 
         {/* EMOJI GRID */}
         <div>
-          <label className="text-[10px] font-bold text-muted uppercase mb-2 block">Emojis</label>
-          <div className="grid grid-cols-5 gap-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+          <label className="text-theme-body font-semibold text-muted uppercase mb-3 block tracking-widest">Emojis</label>
+          <div className="grid grid-cols-5 gap-3">
             {EMOJIS.map((emoji) => {
               const isSelected = currentIcon === emoji;
               return (
                 <button
                   key={emoji}
                   onClick={() => handleEmojiSelect(emoji)}
-                  className={`aspect-square flex items-center justify-center rounded-lg border text-xl transition-all ${isSelected ? 'bg-primary/10 border-indigo-200' : 'bg-white border-border hover:border-border hover:bg-background'}`}
+                  className={`aspect-square flex items-center justify-center rounded-xl text-xl transition-all ${isSelected ? 'bg-background ring-2 ring-primary dark:ring-white/80 shadow-lg scale-105' : 'bg-background hover:bg-background/80'}`}
                 >
                   {emoji}
                 </button>

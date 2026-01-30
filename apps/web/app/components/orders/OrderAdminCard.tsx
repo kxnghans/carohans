@@ -22,10 +22,10 @@ export const OrderAdminCard = ({ order, updateStatus, onInvoice, inventory }: Or
       <div className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex-1 cursor-pointer" onClick={() => setShowDetails(!showDetails)}>
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-bold text-foreground">#{order.id}</span>
+            <span className="font-normal text-foreground">#{order.id}</span>
             <span 
               title={getStatusDescription(order.status)}
-              className={`text-xs px-2 py-0.5 rounded-full border ${getStatusColor(order.status)} font-bold uppercase tracking-wider cursor-help`}
+              className={`text-theme-body px-2 py-0.5 rounded-full border ${getStatusColor(order.status)} font-semibold uppercase tracking-wider cursor-help`}
             >
               {order.status}
             </span>

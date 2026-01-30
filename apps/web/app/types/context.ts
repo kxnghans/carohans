@@ -35,4 +35,9 @@ export interface AppContextType {
   updateBusinessSettings: (settings: BusinessSettings) => Promise<void>;
   theme: 'light' | 'dark' | 'system';
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
+  modifyingOrderId: number | null;
+  setModifyingOrderId: (id: number | null) => void;
+  cancelModification: () => void;
+  createOrderStep: 'none' | 'select-client' | 'shop' | 'review';
+  setCreateOrderStep: React.Dispatch<React.SetStateAction<'none' | 'select-client' | 'shop' | 'review'>>;
 }

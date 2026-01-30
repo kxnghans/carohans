@@ -67,7 +67,7 @@ export const MobileNav = ({ isOpen, onClose, navItems, actions, footer }: Mobile
         {/* Header */}
         <div className="p-6 border-b border-border/50 flex justify-between items-center">
           <div className="flex items-center gap-3">
-             <div className="flex-shrink-0 w-11 h-11 bg-primary rounded-xl flex items-center justify-center text-primary-text font-black shadow-lg shadow-primary/20">
+             <div className="flex-shrink-0 w-11 h-11 bg-primary rounded-xl flex items-center justify-center text-primary-text text-theme-label font-bold shadow-lg shadow-primary/20">
               CH
             </div>
             <div className="flex flex-col">

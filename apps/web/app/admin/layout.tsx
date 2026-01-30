@@ -15,9 +15,10 @@ import { Client } from '../types';
 
 const ThemeIcon = ({ theme }: { theme: 'light' | 'dark' | 'system' }) => {
   const { Sun, Moon, Laptop } = Icons;
-  if (theme === 'light') return <Sun className="w-4 h-4" />;
-  if (theme === 'dark') return <Moon className="w-4 h-4" />;
-  return <Laptop className="w-4 h-4" />;
+  const iconClass = "w-2.5 h-2.5 lg:w-4 lg:h-4";
+  if (theme === 'light') return <Sun className={iconClass} />;
+  if (theme === 'dark') return <Moon className={iconClass} />;
+  return <Laptop className={iconClass} />;
 };
 
 export default function AdminLayout({
@@ -78,9 +79,9 @@ export default function AdminLayout({
     <div className="min-h-screen bg-background font-sans text-foreground selection:bg-indigo-100 pb-24">
       {/* HEADER */}
       <header className="bg-surface/80 backdrop-blur-md border-b border-border sticky top-0 z-40 shadow-sm md:shadow-md transition-shadow">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-8 h-20 md:h-22 flex items-center justify-between">
+        <div className="max-w-[1440px] mx-auto px-4 md:px-8 h-24 md:h-22 flex items-center justify-between">
           <Link href="/admin/overview" className="flex items-center gap-4 group">
-            <div className="flex-shrink-0 w-11 h-11 bg-primary rounded-xl flex items-center justify-center text-primary-text font-black shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
+            <div className="flex-shrink-0 w-11 h-11 bg-primary rounded-xl flex items-center justify-center text-primary-text text-theme-label font-bold shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
               CH
             </div>
             <div className="block max-w-[140px] xs:max-w-[160px] sm:max-w-none overflow-hidden">
@@ -93,7 +94,7 @@ export default function AdminLayout({
             <div className="hidden lg:flex items-center gap-3">
               <button 
                 onClick={() => setIsClientSelectorOpen(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/5 dark:bg-primary/10 text-primary border border-primary/10 hover:bg-primary/10 transition-all font-semibold text-theme-caption uppercase tracking-wide"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/5 dark:bg-primary/10 text-primary border border-primary/10 hover:bg-primary/10 transition-all font-semibold text-theme-body uppercase tracking-wide"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span className="pt-px">Client Portal</span>
@@ -101,13 +102,13 @@ export default function AdminLayout({
               
               <button 
                 onClick={() => setIsContactOpen(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/5 dark:bg-primary/10 text-primary border border-primary/10 hover:bg-primary/10 transition-all font-semibold text-theme-caption uppercase tracking-wide"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/5 dark:bg-primary/10 text-primary border border-primary/10 hover:bg-primary/10 transition-all font-semibold text-theme-body uppercase tracking-wide"
               >
                 <Phone className="w-3.5 h-3.5" />
                 <span className="pt-px">Contact</span>
               </button>
 
-              <Button variant="secondary" size="sm" className="h-[42px] font-semibold" onClick={() => setIsCalendarOpen(true)}>
+              <Button variant="secondary" size="sm" className="h-[42px] font-semibold text-theme-body" onClick={() => setIsCalendarOpen(true)}>
                 <CalendarIcon className="w-4 h-4 mr-2 text-muted" /> Block Calendar
               </Button>
 
@@ -116,7 +117,7 @@ export default function AdminLayout({
               {/* SIGN OUT */}
               <button
                 onClick={logout}
-                className="text-theme-caption font-semibold text-muted hover:text-foreground h-[42px] px-4 rounded-xl bg-background border border-border hover:bg-surface transition-colors whitespace-nowrap"
+                className="text-theme-body font-semibold text-muted hover:text-foreground h-[42px] px-4 rounded-xl bg-background border border-border hover:bg-surface transition-colors whitespace-nowrap"
               >
                 Sign Out
               </button>
@@ -125,10 +126,10 @@ export default function AdminLayout({
             {/* Mobile Menu Toggle */}
             <button 
               onClick={() => setIsMenuOpen(true)}
-              className="lg:hidden h-[42px] px-4 flex items-center justify-center gap-2.5 rounded-xl bg-primary text-primary-text shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all border border-white/10"
+              className="lg:hidden h-[46px] px-5 flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-text shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all border border-white/10"
             >
               <Menu className="w-5 h-5" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] pt-0.5">Menu</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest pt-0.5">Menu</span>
             </button>
 
             {isClientSelectorOpen && (
@@ -145,7 +146,7 @@ export default function AdminLayout({
             <button 
               onClick={cycleTheme}
               title={`Theme: ${theme}`}
-              className="h-[42px] aspect-square text-muted hover:text-primary dark:hover:text-warning transition-colors flex items-center justify-center rounded-full bg-background border border-border hover:bg-surface"
+              className="h-[46px] w-[46px] lg:h-[42px] lg:w-[42px] text-muted hover:text-primary dark:hover:text-warning transition-colors flex items-center justify-center rounded-full bg-background border border-border hover:bg-surface"
             >
               <ThemeIcon theme={theme} />
             </button>
@@ -167,8 +168,8 @@ export default function AdminLayout({
                 className={`
                     flex items-center gap-2 px-5 py-2.5 rounded-xl text-theme-subtitle transition-all border-2 font-semibold
                     ${isActive
-                    ? 'bg-primary text-primary-text border-primary shadow-xl shadow-primary/20 hover:opacity-90'
-                    : 'bg-surface text-muted hover:bg-primary/5 hover:text-primary hover:border-primary/10 border-transparent'}
+                    ? 'bg-primary text-primary-text border-primary shadow-md shadow-primary/20 hover:opacity-90'
+                    : 'bg-surface text-muted hover:bg-primary/5 hover:text-primary hover:border-primary/10 border-border/50'}
                   `}
               >
                 <tab.icon className="w-4 h-4" />

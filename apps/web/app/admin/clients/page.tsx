@@ -23,12 +23,12 @@ export default function AdminClientsPage() {
         <h1 className="text-theme-header text-foreground tracking-tight">Client Database</h1>
         <div className="relative">
           <input 
-            className="pl-11 pr-4 py-2 border border-border rounded-lg text-sm w-64 outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all" 
+            className="pl-14 pr-4 py-2 border border-border rounded-lg text-sm w-64 outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all" 
             placeholder="Search clients..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <Search className="w-4 h-4 text-muted absolute left-4 top-2.5" />
+          <Search className="w-4 h-4 text-muted absolute left-5 top-2.5" />
         </div>
       </div>
       <Card noPadding>

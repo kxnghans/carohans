@@ -31,7 +31,8 @@ export const createOrder = (
 export const submitOrderToSupabase = async (
     details: PortalFormData,
     cart: CartItem[],
-    inventory: InventoryItem[]
+    inventory: InventoryItem[],
+    modifyingOrderId?: number | null
 ) => {
     const items = cart.map(i => {
         const invItem = inventory.find(inv => inv.id === i.id);
@@ -39,6 +40,35 @@ export const submitOrderToSupabase = async (
     });
     
     const totalAmount = calculateOrderTotal(items, details.start, details.end);
+
+    if (modifyingOrderId) {
+        // 1. Update order record
+        const { error: orderError } = await supabase
+            .from('orders')
+            .update({
+                start_date: details.start,
+                end_date: details.end,
+                total_amount: totalAmount,
+            })
+            .eq('id', modifyingOrderId);
+        
+        if (orderError) throw orderError;
+
+        // 2. Delete old items and insert new ones
+        await supabase.from('order_items').delete().eq('order_id', modifyingOrderId);
+
+        const orderItems = cart.map(item => ({
+            order_id: modifyingOrderId,
+            inventory_id: item.id,
+            quantity: item.qty,
+            unit_price: item.price
+        }));
+
+        const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+        if (itemsError) throw itemsError;
+
+        return { id: modifyingOrderId };
+    }
 
     // 1. Find Client ID by Email (assume auth user email matches or form data matches)
     const { data: client, error: clientError } = await supabase
@@ -86,6 +116,24 @@ export const submitOrderToSupabase = async (
     if (itemsError) throw itemsError;
 
     return order;
+};
+
+export const updateOrderDates = async (
+    orderId: number, 
+    data: { 
+        start_date?: string; 
+        end_date?: string; 
+        closed_at?: string | null;
+        total_amount?: number;
+        penalty_amount?: number;
+    }
+) => {
+    const { error } = await supabase
+        .from('orders')
+        .update(data)
+        .eq('id', orderId);
+
+    if (error) throw error;
 };
 
 export const updateOrderStatusToSupabase = async (

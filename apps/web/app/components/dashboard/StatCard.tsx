@@ -53,8 +53,8 @@ export const StatCard = ({ title, value, subtext, trend, trendLabel, icon: Icon,
           {trend !== undefined && (
             <div className={`flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg sm:rounded-xl border transition-colors ${
               trend > 0 
-              ? 'bg-success/10 text-success border-success/20' 
-              : 'bg-error/10 text-error border-error/20'
+              ? 'bg-success text-white border-success dark:bg-success/10 dark:text-success dark:border-success/20' 
+              : 'bg-error text-white border-error dark:bg-error/10 dark:text-error dark:border-error/20'
             }`}>
               {trend > 0 ? (
                 <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5" />

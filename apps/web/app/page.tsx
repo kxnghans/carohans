@@ -27,7 +27,7 @@ export default function LandingPage() {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary dark:bg-slate-200 text-primary-text dark:text-primary-text text-theme-caption tracking-wide uppercase hover:bg-primary dark:hover:bg-white transition-colors shadow-sm"
           >
             <Phone className="w-3 h-3" />
-            <span className="pt-px">Contact</span>
+            <span className="pt-px font-semibold">Contact</span>
           </button>
           <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
             <h1 className="text-theme-hero text-foreground leading-tight mb-4">
