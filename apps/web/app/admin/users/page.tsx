@@ -23,7 +23,8 @@ import { DynamicIcon } from '../../components/common/DynamicIcon';
 
 interface ClientRow {
     user_id: string;
-    name: string;
+    first_name: string;
+    last_name: string;
     email: string;
     username: string;
     image: string;
@@ -99,7 +100,7 @@ export default function AdminUsersPage() {
 
         const { data: clientsData, error: clientError } = await supabase
             .from('clients')
-            .select('user_id, name, email, username, image, color');
+            .select('user_id, first_name, last_name, email, username, image, color');
             
         if (clientError) {
             console.error('Error fetching clients', clientError);
@@ -115,7 +116,7 @@ export default function AdminUsersPage() {
                     id: p.id,
                     email: client?.email || 'No Email',
                     role: p.role as 'admin' | 'client',
-                    clientName: client?.name || null,
+                    clientName: client ? `${client.first_name} ${client.last_name}`.trim() : null,
                     clientEmail: client?.email || null,
                     username: client?.username || '-',
                     image: client?.image || '',
