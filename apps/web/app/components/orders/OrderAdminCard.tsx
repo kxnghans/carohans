@@ -54,7 +54,7 @@ export const OrderAdminCard = ({ order, updateStatus, onInvoice, inventory }: Or
               <div className="space-y-2 mb-6">
                 {order.items.map((item: OrderItem, idx: number) => {
                   // Start of rudimentary item lookup - ideally pass inventory
-                  const itemName = inventory.find(i => i.id === item.itemId)?.name || 'Unknown Item';
+                  const itemName = inventory.find(i => i.id === item.inventoryId)?.name || 'Unknown Item';
                   return (
                     <div key={idx} className="flex justify-between text-sm bg-white p-2 rounded border border-border">
                       <span className="font-medium text-slate-700">{itemName}</span>

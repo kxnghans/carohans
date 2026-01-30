@@ -54,7 +54,7 @@ export const ReturnModal = ({
             // Initialize state from returnOrder
             const initialQtys: Record<number, { returned: number, lost: number, damaged: number }> = {};
             returnOrder.items.forEach(item => {
-                initialQtys[item.itemId] = { returned: item.qty, lost: 0, damaged: 0 };
+                initialQtys[item.inventoryId] = { returned: item.qty, lost: 0, damaged: 0 };
             });
             setReturnItemQuantities(initialQtys);
             
@@ -118,7 +118,7 @@ export const ReturnModal = ({
     });
 
     const rentalSubtotal = returnOrder.items.reduce((sum, item) => {
-        const invItem = inventory.find(i => i.id === item.itemId);
+        const invItem = inventory.find(i => i.id === item.inventoryId);
         const price = item.price || invItem?.price || 0;
         const actualDuration = getDurationDays(returnOrder.startDate, returnDate);
         return sum + (price * item.qty * actualDuration);
@@ -166,10 +166,10 @@ export const ReturnModal = ({
         amountPaid: returnOrder.amountPaid + paymentAmount,
         totalAmount: returnTotals.total,
         items: returnOrder.items.map(item => ({
-            itemId: item.itemId,
-            returnedQty: returnItemQuantities[item.itemId]?.returned || 0,
-            lostQty: returnItemQuantities[item.itemId]?.lost || 0,
-            damagedQty: returnItemQuantities[item.itemId]?.damaged || 0
+            inventoryId: item.inventoryId,
+            returnedQty: returnItemQuantities[item.inventoryId]?.returned || 0,
+            lostQty: returnItemQuantities[item.inventoryId]?.lost || 0,
+            damagedQty: returnItemQuantities[item.inventoryId]?.damaged || 0
         }))
     };
 
@@ -271,11 +271,11 @@ export const ReturnModal = ({
                     </div>
                     <div className="space-y-3">
                         {returnOrder.items.map(item => {
-                            const invItem = inventory.find(i => i.id === item.itemId);
-                            const qtys = returnItemQuantities[item.itemId] || { returned: item.qty, lost: 0, damaged: 0 };
+                            const invItem = inventory.find(i => i.id === item.inventoryId);
+                            const qtys = returnItemQuantities[item.inventoryId] || { returned: item.qty, lost: 0, damaged: 0 };
                             
                             return (
-                                <div key={item.itemId} className="bg-background border border-border rounded-2xl p-4 shadow-sm group hover:border-primary/20 hover:shadow-md transition-all">
+                                <div key={item.inventoryId} className="bg-background border border-border rounded-2xl p-4 shadow-sm group hover:border-primary/20 hover:shadow-md transition-all">
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-12 h-12 bg-surface rounded-xl flex items-center justify-center font-bold text-xl text-muted group-hover:scale-110 transition-transform">{invItem?.image || '📦'}</div>
@@ -293,7 +293,7 @@ export const ReturnModal = ({
                                                     value={qtys.returned} 
                                                     onChange={(e) => {
                                                         const val = parseInt(e.target.value) || 0;
-                                                        setReturnItemQuantities({ ...returnItemQuantities, [item.itemId]: { ...qtys, returned: val } });
+                                                        setReturnItemQuantities({ ...returnItemQuantities, [item.inventoryId]: { ...qtys, returned: val } });
                                                     }}
                                                 />
                                             </div>
@@ -305,7 +305,7 @@ export const ReturnModal = ({
                                                     value={qtys.lost} 
                                                     onChange={(e) => {
                                                         const val = parseInt(e.target.value) || 0;
-                                                        setReturnItemQuantities({ ...returnItemQuantities, [item.itemId]: { ...qtys, lost: val } });
+                                                        setReturnItemQuantities({ ...returnItemQuantities, [item.inventoryId]: { ...qtys, lost: val } });
                                                     }}
                                                 />
                                             </div>
@@ -317,7 +317,7 @@ export const ReturnModal = ({
                                                     value={qtys.damaged} 
                                                     onChange={(e) => {
                                                         const val = parseInt(e.target.value) || 0;
-                                                        setReturnItemQuantities({ ...returnItemQuantities, [item.itemId]: { ...qtys, damaged: val } });
+                                                        setReturnItemQuantities({ ...returnItemQuantities, [item.inventoryId]: { ...qtys, damaged: val } });
                                                     }}
                                                 />
                                             </div>

@@ -53,11 +53,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [createOrderStep, setCreateOrderStep] = useState<'none' | 'select-client' | 'shop' | 'review'>('none');
   
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings>({
-    business_name: 'CaroHans Ventures',
-    business_phone: '+233248298336',
-    business_email: 'carohansv@gmail.com',
-    business_location: 'Boundary Road, East Legon, on the opposite side across the street from Melcom',
-    maps_link: 'https://maps.app.goo.gl/QVnRFvQJGUAKg4aWA?g_st=ic'
+    business_name: '',
+    business_phone: '',
+    business_email: '',
+    business_location: '',
+    maps_link: ''
   });
 
   const [portalFormData, setPortalFormData] = useState<PortalFormData>({
@@ -129,7 +129,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           returnStatus: o.return_status,
           itemIntegrity: o.item_integrity,
           items: o.order_items.map((oi: { inventory_id: number; quantity: number; unit_price: number; returned_qty?: number; lost_qty?: number; damaged_qty?: number }) => ({
-            itemId: oi.inventory_id,
+            inventoryId: oi.inventory_id,
             qty: oi.quantity,
             price: Number(oi.unit_price),
             returnedQty: oi.returned_qty,
@@ -149,8 +149,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       // Fetch Settings
       try {
         const settings = await fetchSettingsFromSupabase();
-        if (Object.keys(settings).length > 0) {
-            setBusinessSettings(prev => ({ ...prev, ...settings }));
+        if (settings && Object.keys(settings).length > 0) {
+            setBusinessSettings(prev => ({ 
+              ...prev, 
+              business_name: settings.business_name || '',
+              business_phone: settings.business_phone || '',
+              business_email: settings.business_email || '',
+              business_location: settings.business_location || '',
+              maps_link: settings.maps_link || ''
+            }));
         }
       } catch (e) {
         console.error("Failed to fetch settings", e);

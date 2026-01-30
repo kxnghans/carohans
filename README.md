@@ -11,6 +11,7 @@ This project uses a modern Monorepo architecture:
 *   **Web Framework:** Next.js 16 (App Router), React 19
 *   **Styling:** Tailwind CSS 4.0
 *   **Database & Auth:** Supabase (PostgreSQL)
+*   **Edge Middleware:** Next.js 16 `proxy.ts` architecture
 *   **Icons:** Lucide React & Material UI Icons (@mui/icons-material)
 *   **Charts:** Recharts
 *   **Deployment:** Cloudflare Pages (OpenNext)

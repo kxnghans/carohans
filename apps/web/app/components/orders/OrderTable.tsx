@@ -57,7 +57,7 @@ export const OrderTable = ({
         setModifyingOrderId(order.id);
         setCreateOrderStep('shop');
         // Pre-populate cart
-        setCart(order.items.map(item => ({ id: item.itemId, qty: item.qty, price: item.price })));
+        setCart(order.items.map(item => ({ id: item.inventoryId, qty: item.qty, price: item.price })));
         // Pre-populate dates
         setPortalFormData(prev => ({
             ...prev,
@@ -212,7 +212,7 @@ export const OrderTable = ({
                                                                 </thead>
                                                                 <tbody className="divide-y divide-border">
                                                                     {order.items.map((item, idx) => {
-                                                                        const invItem = inventory.find(i => i.id === item.itemId);
+                                                                        const invItem = inventory.find(i => i.id === item.inventoryId);
                                                                         const price = (item.price ?? invItem?.price) || 0;
                                                                         // Calculate actual duration for this item row
                                                                         const actualDuration = getDurationDays(order.startDate, order.closedAt || order.endDate);

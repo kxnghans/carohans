@@ -2,18 +2,21 @@
 
 **Project:** CaroHans Ventures ERMS  
 **Target Platform:** Cloudflare Pages  
-**Runtime:** Cloudflare Edge Runtime  
-**Adapter:** `@opennextjs/cloudflare` (OpenNext)
+**Runtime:** Cloudflare Edge Runtime (Experimental)  
+**Adapter:** `@opennextjs/cloudflare` (OpenNext)  
+**Next.js Version:** 16.1.4+ (Turbopack)
 
-This guide provides the necessary technical configuration and deployment workflows for hosting the CaroHans Ventures ERMS on Cloudflare Pages using the OpenNext adapter.
+This guide provides the technical configuration and deployment workflows for hosting the CaroHans Ventures ERMS on Cloudflare Pages using the OpenNext adapter.
 
 ---
 
 ## 1. Architecture Overview
 
-The application utilizes the **Next.js App Router**. To ensure compatibility with Cloudflare’s global edge network, we utilize `@opennextjs/cloudflare`.
+The application utilizes the **Next.js 16 App Router** with **Turbopack**. To ensure compatibility with Cloudflare’s global edge network, we utilize `@opennextjs/cloudflare`.
 
-*   **Build Logic:** Standard `next build` output is transformed into a Cloudflare-compatible Worker script and asset bundle.
+*   **Build Engine:** Turbopack is enabled for optimized production builds.
+*   **Edge Runtime:** The application targets the Cloudflare Edge Runtime. Note that as of Next.js 16, this is considered experimental and APIs may evolve.
+*   **Adapter:** `@opennextjs/cloudflare` transforms standard `next build` output into a Cloudflare-compatible Worker script and asset bundle.
 *   **Output Path:** The final assets and worker script are generated in `apps/web/.open-next/`.
 
 ---
@@ -47,63 +50,62 @@ export default defineCloudflareConfig();
 
 ---
 
-## 3. Environment Variables & Secrets
+## 3. Middleware to Proxy Migration
 
-Environment variables are critical for connecting the Edge Runtime to external services like Supabase.
+Next.js 16+ has deprecated the `middleware.ts` convention in favor of `proxy.ts`. This change clarifies that the logic runs at the Edge as a network boundary (Proxy) rather than standard application middleware.
 
-### 3.1 Required Variables
+### 3.1 Migration Status
+*   **Current File:** `apps/web/middleware.ts` (Active, but triggers deprecation warnings).
+*   **Recommended Action:** Rename to `proxy.ts` and update the function name to `proxy`.
+
+### 3.2 Manual Migration Steps
+1. Rename `apps/web/middleware.ts` to `apps/web/proxy.ts`.
+2. Update the export:
+   ```typescript
+   // FROM
+   export function middleware(request: NextRequest) { ... }
+   // TO
+   export function proxy(request: NextRequest) { ... }
+   ```
+
+Alternatively, use the Next.js codemod:
+```bash
+npx @next/codemod@canary middleware-to-proxy .
+```
+
+---
+
+## 4. Environment Variables & Secrets
+
+### 4.1 Required Variables
 *   **`NEXT_PUBLIC_SUPABASE_URL`**: The API URL for your Supabase project.
 *   **`NEXT_PUBLIC_SUPABASE_ANON_KEY`**: The anonymous public key for Supabase.
 
-### 3.2 Management via Dashboard
-1.  Navigate to **Workers & Pages** > **[Project Name]** > **Settings** > **Variables and Secrets**.
-2.  Add variables for both **Production** and **Preview** environments.
-3.  **Redeploy Requirement:** Variables prefixed with `NEXT_PUBLIC_` are statically bundled into the client-side code during build. You **must redeploy** after any change.
-
-### 3.3 Management via Wrangler
-Variables can be defined in `wrangler.toml` under the `[vars]` block or per environment:
-
-```toml
-[vars]
-NEXT_PUBLIC_SUPABASE_URL = "https://your-project.supabase.co"
-
-[env.production.vars]
-NEXT_PUBLIC_SUPABASE_URL = "https://prod-project.supabase.co"
-```
-
-### 3.4 Local Development & Secrets
-*   **`.dev.vars` File:** Put secrets for local development in a `.dev.vars` file in the same directory as `wrangler.toml`. This file should **never** be committed to git.
-*   **Precedence:** If `.dev.vars` exists, `.env` files will not be loaded. Otherwise, `.env` files are merged with the following precedence (most to least specific):
-    1. `.env.<environment>.local`
-    2. `.env.local`
-    3. `.env.<environment>`
-    4. `.env`
-*   **Node.js Compatibility:** With `nodejs_compat` enabled, environment variables are exposed via the global `process.env`. Text variables are exposed as strings; JSON values are exposed as raw JSON strings.
+### 4.2 Management
+*   **Dashboard:** Add variables in **Workers & Pages** > **[Project Name]** > **Settings** > **Variables and Secrets**.
+*   **Static Bundling:** Variables prefixed with `NEXT_PUBLIC_` are bundled at **build time**. You must trigger a new build/deploy after changing these.
+*   **Local Dev:** Use a `.dev.vars` file in `apps/web/` for secrets. **Do not commit this file.**
 
 ---
 
-## 4. Authentication at the Edge
+## 5. Build & Deployment Workflow
 
-The system utilizes `@supabase/ssr` to manage sessions directly on the edge.
-
-*   **Middleware:** `apps/web/middleware.ts` runs on the Cloudflare Edge Runtime to intercept and validate requests.
-*   **Security:** It validates JWTs and performs role-based checks (via the `profiles` table) before granting access to `/admin/*` routes.
-*   **Fail-Safe:** If critical environment variables are missing, the middleware blocks protected routes to prevent unauthorized access.
-
----
-
-## 5. Build & Deployment Commands
+Based on current CI/CD logs (`Node v22.16.0`, `pnpm v9.15.4`):
 
 | Command | Level | Description |
 | :--- | :--- | :--- |
-| `pnpm build:pages` | Root | Triggers `turbo run pages:build`, executing the OpenNext build. |
-| `pnpm deploy` | Root | Deploys the `.open-next` artifacts via Wrangler. |
-| `pnpm preview` | App | Local simulation of the Cloudflare environment using `wrangler dev`. |
+| `pnpm build:pages` | Root | Executes `turbo run pages:build`, which runs `opennextjs-cloudflare build`. |
+| `pnpm deploy` | Root | Deploys the `.open-next` bundle using `wrangler deploy`. |
+| `pnpm preview` | Root | Locally simulates the Cloudflare environment. |
+
+### 5.1 Deployment Output
+Successful builds deploy to:  
+`https://carohans.hansoncreation.workers.dev`
 
 ---
 
-## 6. Runtime Considerations
+## 6. Development Notes
 
-*   **`nodejs_compat`**: Required for Supabase and Next.js internal APIs.
-*   **Edge Compliance**: All server-side logic (Middleware, Server Actions, API Routes) must be compatible with the Cloudflare Workers/Pages environment.
-*   **Local Testing**: Use `pnpm --filter web preview` to run in a environment that closely mimics production (`workerd`).
+*   **`nodejs_compat`**: This flag is mandatory in `wrangler.toml` to support Node.js APIs within the Worker environment.
+*   **Telemetry:** Both Turborepo and Next.js collect anonymous telemetry.
+*   **Experimental Warnings:** Expect warnings regarding the experimental nature of the Edge Runtime in Next.js 16. These are expected and do not currently block deployment.

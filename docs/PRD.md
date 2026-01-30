@@ -23,11 +23,11 @@ To provide CaroHans Ventures with a robust web application that manages the full
 
 ## 2. Architecture & Tech Stack
 
-*   **Framework:** Next.js 15+ (App Router)
+*   **Framework:** Next.js 16+ (App Router)
 *   **State Management:** React Context API (`AppProvider`) for global persistent state (Inventory, Orders, Customers).
 *   **Styling:** Tailwind CSS 4.0
 *   **Icons:** Material Design Icons (`@mui/icons-material`) via centralized registry.
-*   **Deployment:** Vercel (recommended)
+*   **Deployment:** Cloudflare (via OpenNext)
 
 ---
 

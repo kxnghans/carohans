@@ -57,6 +57,17 @@ Transaction lifecycle tracking.
 *   `item_integrity`: `text` (`Good`, `Damaged`, `Lost`)
 *   `closed_at`: `timestamp`
 
+### 1.5 `order_items` Table
+Line items for each order.
+*   `id`: `bigint` (Primary Key)
+*   `order_id`: `bigint` (References `orders.id`)
+*   `inventory_id`: `bigint` (References `inventory.id`)
+*   `quantity`: `integer`
+*   `unit_price`: `numeric`
+*   `returned_qty`: `integer`
+*   `lost_qty`: `integer`
+*   `damaged_qty`: `integer`
+
 ---
 
 ## 2. Row Level Security (RLS)

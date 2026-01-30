@@ -89,7 +89,7 @@ export default function AdminOverviewPage() {
 
   const handleOrderInvoice = (order: Order) => {
     const reconstructedCart = order.items.map((item) => {
-      const inventoryItem = inventory.find(i => i.id === item.itemId);
+      const inventoryItem = inventory.find(i => i.id === item.inventoryId);
       return { 
         ...inventoryItem, 
         qty: item.qty,

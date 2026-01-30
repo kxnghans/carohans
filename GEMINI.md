@@ -21,22 +21,13 @@ When implementing modals (using `createPortal`), it is critical to prevent "Scro
 By default, even if a modal overlay is fixed, the underlying `body` or `html` elements can still receive scroll events. This creates a confusing user experience where the background moves while interacting with a modal.
 
 ### Best Practice for New Modals
-Every modal must include a `useEffect` hook to lock both the `body` and `documentElement` (html).
+Every modal must utilize the `useScrollLock` hook (found in `apps/web/app/hooks/useScrollLock.ts`) to lock both the `body` and `documentElement` (html).
 
 ```tsx
-useEffect(() => {
-  if (isOpen) {
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = 'unset';
-    document.documentElement.style.overflow = 'unset';
-  }
-  return () => { 
-    document.body.style.overflow = 'unset'; 
-    document.documentElement.style.overflow = 'unset';
-  };
-}, [isOpen]);
+import { useScrollLock } from '../../hooks/useScrollLock';
+
+// Inside your modal component:
+useScrollLock(isOpen);
 ```
 
 ## Directory Structure

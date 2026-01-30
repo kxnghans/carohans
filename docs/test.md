@@ -89,5 +89,6 @@ This document outlines the verification steps required to ensure the application
 ## 8. Error Handling & Edge Cases
 - [ ] **Module Resolution:** Ensure no "Module Not Found" errors appear in the console (verifies central icon registry).
 - [ ] **Empty States:** Filter orders by a status that has zero records; verify the "No orders found" illustration appears.
-- [ ] **Unified Order UI:** Verify that the "Total" column in Admin Order list does NOT show "Due" amounts (these are reserved for the Return Modal).
+- [ ] **Unified Order UI:** Verify that the "Total" column in Admin Order list shows the total billable amount, while detailed breakdowns (Late Fees, Damage Penalties) are managed within the standalone `ReturnModal`.
+- [ ] **Return Audit Extraction:** Verify that the `ReturnModal` handles all item inspections (Good/Lost/Damaged) and correctly updates the `order_items` table and inventory stock levels.
 - [ ] **Validation Race Conditions:** Rapidly clicking "Discard" and "Keep Editing" on the draft row validation.

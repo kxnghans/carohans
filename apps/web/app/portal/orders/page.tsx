@@ -57,7 +57,7 @@ export default function PortalOrdersPage() {
 
   const handleViewInvoice = (order: Order) => {
     const reconstructedCart = order.items.map((item: OrderItem) => {
-      const inventoryItem = inventory.find(i => i.id === item.itemId);
+      const inventoryItem = inventory.find(i => i.id === item.inventoryId);
       return { 
         ...inventoryItem, 
         qty: item.qty,

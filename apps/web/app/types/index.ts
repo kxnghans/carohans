@@ -17,7 +17,7 @@ export interface CartItem {
 }
 
 export interface OrderItem {
-    itemId: number;
+    inventoryId: number;
     qty: number;
     price: number;
     returnedQty?: number;

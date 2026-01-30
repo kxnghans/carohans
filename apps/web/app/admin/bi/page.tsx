@@ -307,7 +307,7 @@ export default function AdminBIPage() {
       if (!categoryFilter.includes('All')) {
           result = result.map(order => {
               const filteredItems = order.items.filter(item => {
-                  const invItem = inventory.find(i => i.id === item.itemId);
+                  const invItem = inventory.find(i => i.id === item.inventoryId);
                   return invItem && categoryFilter.includes(invItem.category);
               });
               if (filteredItems.length === 0) return null;
@@ -394,7 +394,7 @@ export default function AdminBIPage() {
           const catMap: Record<string, number> = {};
           categoryFilteredData.forEach(order => {
               order.items.forEach(item => {
-                  const invItem = inventory.find(i => i.id === item.itemId);
+                  const invItem = inventory.find(i => i.id === item.inventoryId);
                   if (invItem) {
                       catMap[invItem.category] = (catMap[invItem.category] || 0) + 1; // Frequency
                   }
@@ -408,7 +408,7 @@ export default function AdminBIPage() {
           const itemMap: Record<string, number> = {};
           categoryFilteredData.forEach(order => {
               order.items.forEach(item => {
-                  const invItem = inventory.find(i => i.id === item.itemId);
+                  const invItem = inventory.find(i => i.id === item.inventoryId);
                   if (invItem) {
                       itemMap[invItem.name] = (itemMap[invItem.name] || 0) + 1; // Frequency
                   }
@@ -426,7 +426,7 @@ export default function AdminBIPage() {
       const itemMap: Record<string, number> = {};
       categoryFilteredData.forEach(order => {
           order.items.forEach(item => {
-              const invItem = inventory.find(i => i.id === item.itemId);
+              const invItem = inventory.find(i => i.id === item.inventoryId);
               if (invItem) {
                   itemMap[invItem.name] = (itemMap[invItem.name] || 0) + Number(item.qty);
               }

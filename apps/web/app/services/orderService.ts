@@ -18,7 +18,7 @@ export const createOrder = (
         phone: details.phone,
         email: details.email || 'no-email@provided.com',
         status: 'Pending',
-        items: cart.map(i => ({ itemId: i.id, qty: i.qty, price: i.price })),
+        items: cart.map(i => ({ inventoryId: i.id, qty: i.qty, price: i.price })),
         startDate: details.start,
         endDate: details.end,
         totalAmount: calculateOrderTotal(items, details.start, details.end),
@@ -36,41 +36,16 @@ export const submitOrderToSupabase = async (
 ) => {
     const items = cart.map(i => {
         const invItem = inventory.find(inv => inv.id === i.id);
-        return { price: invItem?.price || 0, qty: i.qty };
+        return { 
+            inventory_id: i.id, 
+            quantity: i.qty, 
+            unit_price: invItem?.price || 0 
+        };
     });
     
-    const totalAmount = calculateOrderTotal(items, details.start, details.end);
+    const totalAmount = calculateOrderTotal(items.map(i => ({ price: i.unit_price, qty: i.quantity })), details.start, details.end);
 
-    if (modifyingOrderId) {
-        // 1. Update order record
-        const { error: orderError } = await supabase
-            .from('orders')
-            .update({
-                start_date: details.start,
-                end_date: details.end,
-                total_amount: totalAmount,
-            })
-            .eq('id', modifyingOrderId);
-        
-        if (orderError) throw orderError;
-
-        // 2. Delete old items and insert new ones
-        await supabase.from('order_items').delete().eq('order_id', modifyingOrderId);
-
-        const orderItems = cart.map(item => ({
-            order_id: modifyingOrderId,
-            inventory_id: item.id,
-            quantity: item.qty,
-            unit_price: item.price
-        }));
-
-        const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
-        if (itemsError) throw itemsError;
-
-        return { id: modifyingOrderId };
-    }
-
-    // 1. Find Client ID by Email (assume auth user email matches or form data matches)
+    // 1. Find Client ID by Email if not provided (assume details.email is consistent)
     const { data: client, error: clientError } = await supabase
         .from('clients')
         .select('id')
@@ -79,43 +54,22 @@ export const submitOrderToSupabase = async (
 
     if (clientError) throw new Error("Client not found. Please contact support.");
 
-    // 2. Create the order
-    const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-            client_id: client.id,
-            client_name: `${details.firstName} ${details.lastName}`.trim(),
-            phone: details.phone,
-            email: details.email,
-            status: 'Pending',
-            start_date: details.start,
-            end_date: details.end,
-            total_amount: totalAmount,
-            deposit_paid: false
-        })
-        .select()
-        .single();
-
-    if (orderError) throw orderError;
-
-    // 2. Create order items
-    const orderItems = cart.map(item => {
-        const invItem = inventory.find(i => i.id === item.id);
-        return {
-            order_id: order.id,
-            inventory_id: item.id,
-            quantity: item.qty,
-            unit_price: invItem?.price || 0
-        };
+    // 2. Call the atomic RPC
+    const { data: orderId, error: rpcError } = await supabase.rpc('submit_order', {
+        p_client_id: client.id,
+        p_client_name: `${details.firstName} ${details.lastName}`.trim(),
+        p_phone: details.phone,
+        p_email: details.email,
+        p_start_date: details.start,
+        p_end_date: details.end,
+        p_total_amount: totalAmount,
+        p_items: items,
+        p_order_id: modifyingOrderId || null
     });
 
-    const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
+    if (rpcError) throw rpcError;
 
-    if (itemsError) throw itemsError;
-
-    return order;
+    return { id: orderId };
 };
 
 export const updateOrderDates = async (
@@ -165,58 +119,29 @@ export const processOrderReturn = async (
         amountPaid: number;
         totalAmount: number;
         items: {
-            itemId: number;
+            inventoryId: number;
             returnedQty: number;
             lostQty: number;
             damagedQty: number;
         }[];
     }
 ) => {
-    // 1. Update the order record
-    const { error: orderError } = await supabase
-        .from('orders')
-        .update({
-            status: data.status,
-            closed_at: data.closedAt,
-            return_status: data.returnStatus,
-            item_integrity: data.itemIntegrity,
-            penalty_amount: data.penaltyAmount,
-            amount_paid: data.amountPaid,
-            total_amount: data.totalAmount
-        })
-        .eq('id', orderId);
+    const { error } = await supabase.rpc('process_order_return', {
+        p_order_id: orderId,
+        p_status: data.status,
+        p_closed_at: data.closedAt ? new Date(data.closedAt).toISOString() : null,
+        p_return_status: data.returnStatus,
+        p_item_integrity: data.itemIntegrity,
+        p_penalty_amount: data.penaltyAmount,
+        p_amount_paid: data.amountPaid,
+        p_total_amount: data.totalAmount,
+        p_items: data.items.map(i => ({
+            inventory_id: i.inventoryId,
+            returned_qty: i.returnedQty,
+            lost_qty: i.lostQty,
+            damaged_qty: i.damagedQty
+        }))
+    });
 
-    if (orderError) throw orderError;
-
-    // 2. Update order items and inventory stock
-    for (const item of data.items) {
-        // Update item-level return data
-        const { error: itemError } = await supabase
-            .from('order_items')
-            .update({
-                returned_qty: item.returnedQty,
-                lost_qty: item.lostQty,
-                damaged_qty: item.damagedQty
-            })
-            .eq('order_id', orderId)
-            .eq('inventory_id', item.itemId);
-
-        if (itemError) throw itemError;
-
-        // If items are lost, reduce permanent inventory stock
-        if (item.lostQty > 0) {
-            const { data: invItem } = await supabase
-                .from('inventory')
-                .select('stock')
-                .eq('id', item.itemId)
-                .single();
-            
-            if (invItem) {
-                await supabase
-                    .from('inventory')
-                    .update({ stock: Math.max(0, invItem.stock - item.lostQty) })
-                    .eq('id', item.itemId);
-            }
-        }
-    }
+    if (error) throw error;
 };
