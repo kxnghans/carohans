@@ -60,6 +60,7 @@ export const OrderTable = ({
         returned_qty?: number;
         lost_qty?: number;
         damaged_qty?: number;
+        inventory?: Partial<InventoryItem>;
     }
 
     interface OrderQueryResult {

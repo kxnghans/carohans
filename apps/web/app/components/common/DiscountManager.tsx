@@ -19,6 +19,7 @@ interface DiscountManagerProps {
     onClear: () => void;
     variant?: 'compact' | 'featured';
     showNotification: (msg: string, type?: 'success' | 'error' | 'info') => void;
+    readOnly?: boolean;
 }
 
 export const DiscountManager = ({
@@ -28,7 +29,8 @@ export const DiscountManager = ({
     onApply,
     onClear,
     variant = 'compact',
-    showNotification
+    showNotification,
+    readOnly
 }: DiscountManagerProps) => {
     const { Sparkles, Tag, Pencil, X } = Icons;
     const {

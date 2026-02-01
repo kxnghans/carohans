@@ -97,12 +97,34 @@ function SignupContent() {
             
         if (clientError) throw clientError;
 
+        // 3. Set Role (Explicitly for Admin vs Client)
+        // If isTypeAdmin is true (and token verified implicitly by being here), set role to 'admin'
+        // Otherwise default to 'client' (though DB trigger might do this, explicit is safer for admin)
+        if (isTypeAdmin) {
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .upsert({
+                    id: data.user.id,
+                    role: 'admin'
+                });
+            
+            if (profileError) {
+                console.error("Failed to set admin role:", profileError);
+                // Don't block signup success, but maybe warn? 
+                // Actually, if this fails, they won't be admin. 
+            }
+        }
+
         if (!data.session) {
           showNotification("Account created! Please check your email to confirm your account.", "success");
           setIsSuccess(true);
         } else {
           showNotification("Account created successfully!", "success");
-          router.push('/portal/orders');
+          if (isTypeAdmin) {
+              router.push('/admin/overview');
+          } else {
+              router.push('/portal/orders');
+          }
         }
       }
     } catch (err: unknown) {

@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Icons } from '../lib/icons';
 import { useAppStore } from '../context/AppContext';
 import { InventoryItem } from '../types';
-import { InvoiceModal } from '../components/modals/InvoiceModal';
+import { InvoiceModal, DiscountInfo } from '../components/modals/InvoiceModal';
 import { ContactModal } from '../components/modals/ContactModal';
 import { NotificationToast } from '../components/common/NotificationToast';
 import { ScrollableContainer } from '../components/common/ScrollableContainer';
@@ -85,7 +85,7 @@ export default function PortalLayout({
     }
   };
 
-  const handleConfirmOrder = async (discountInfo?: any) => {
+  const handleConfirmOrder = async (discountInfo?: DiscountInfo) => {
     try {
         const finalData = discountInfo ? { 
             ...portalFormData, 

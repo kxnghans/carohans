@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Icons } from '../../lib/icons';
 import { InventoryTable } from '../../components/inventory/InventoryTable';
@@ -13,7 +13,7 @@ import { ClientSelector } from '../../components/modals/ClientSelector';
 import { InvoiceModal } from '../../components/modals/InvoiceModal';
 import { DiscountManager } from '../../components/common/DiscountManager';
 
-export default function AdminInventoryPage() {
+function InventoryPageContent() {
   const { Plus, Check, X, Pencil, Loader2, Calendar } = Icons;
   const { 
     inventory, setInventory, cart, setCart, clients, submitOrder, showNotification, 
@@ -364,5 +364,18 @@ export default function AdminInventoryPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function AdminInventoryPage() {
+  return (
+    <Suspense fallback={
+        <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-theme-body font-medium">Loading Inventory...</p>
+        </div>
+    }>
+        <InventoryPageContent />
+    </Suspense>
   );
 }

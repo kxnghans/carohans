@@ -64,7 +64,7 @@ export const InvoiceModal = ({
 }: InvoiceModalProps) => {
   const { Printer, X, Check, AlertCircle, Sparkles } = Icons;
   const { businessSettings } = useData();
-  const { user, portalFormData, setPortalFormData, showNotification } = useAppStore();
+  const { user, portalFormData } = useAppStore();
   const [mounted, setMounted] = useState(false);
   const [localDiscountCode, setLocalDiscountCode] = useState(portalFormData?.discountCode || '');
   const [localDiscountData, setLocalDiscountData] = useState<{ name: string, type: 'fixed' | 'percentage', value: number } | null>(null);
@@ -78,6 +78,7 @@ export const InvoiceModal = ({
     if (portalFormData?.discountCode !== localDiscountCode) {
        setLocalDiscountCode(portalFormData?.discountCode || '');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portalFormData?.discountCode]);
 
   // Discount Validation Logic
