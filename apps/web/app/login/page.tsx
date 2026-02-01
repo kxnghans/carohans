@@ -60,7 +60,18 @@ function LoginContent() {
               if (client && client.email) {
                   emailToUse = client.email;
               } else {
-                  throw new Error('Invalid username or email.');
+                  // 3. Fallback for Admins: Query profiles table
+                  const { data: profile } = await supabase
+                      .from('profiles')
+                      .select('email')
+                      .eq('username', loginInput.toLowerCase())
+                      .single();
+
+                  if (profile && profile.email) {
+                      emailToUse = profile.email;
+                  } else {
+                      throw new Error('Invalid username or email.');
+                  }
               }
           }
       }

@@ -32,7 +32,6 @@ function SignupContent() {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleVerifyToken = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,61 +69,42 @@ function SignupContent() {
     setLoading(true);
     setError(null);
 
+    const determinedRole = isTypeAdmin ? 'admin' : 'client';
+
     try {
-      // 1. Sign up auth user
+      // 1. Sign up auth user with Metadata
+      // The SQL Trigger we created will see this 'data' block and automatically 
+      // create the 'client' or 'profile' row in the database.
       const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+            data: {
+                first_name: firstName,
+                last_name: lastName,
+                username: username.toLowerCase(),
+                phone: phone,
+                role: determinedRole, 
+            }
+        }
       });
 
       if (authError) throw authError;
 
-      if (data.user) {
-        // 2. Create client record linked to auth user
-        const { error: clientError } = await supabase
-            .from('clients')
-            .insert({
-                user_id: data.user.id,
-                name: `${firstName} ${lastName}`.trim(),
-                username: username.toLowerCase(),
-                phone,
-                email,
-                total_orders: 0,
-                total_spent: 0,
-                image: 'icon:User',
-                color: 'text-primary'
-            });
-            
-        if (clientError) throw clientError;
-
-        // 3. Set Role (Explicitly for Admin vs Client)
-        // If isTypeAdmin is true (and token verified implicitly by being here), set role to 'admin'
-        // Otherwise default to 'client' (though DB trigger might do this, explicit is safer for admin)
+      // 2. Success Handling
+      // We no longer manually insert rows here. The trigger handles it.
+      if (data.user && !data.session) {
+        // Email confirmation required
+        router.push('/');
+        showNotification("Account created! Please check your email to confirm.", "success");
+      } else if (data.user && data.session) {
+        // Auto-login success (Email confirm disabled)
+        showNotification("Account created successfully!", "success");
         if (isTypeAdmin) {
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .upsert({
-                    id: data.user.id,
-                    role: 'admin'
-                });
-            
-            if (profileError) {
-                console.error("Failed to set admin role:", profileError);
-                // Don't block signup success, but maybe warn? 
-                // Actually, if this fails, they won't be admin. 
-            }
+            router.push('/admin/overview');
         }
-
-        if (!data.session) {
-          showNotification("Account created! Please check your email to confirm your account.", "success");
-          setIsSuccess(true);
-        } else {
-          showNotification("Account created successfully!", "success");
-          if (isTypeAdmin) {
-              router.push('/admin/overview');
-          } else {
-              router.push('/portal/orders');
-          }
+        else {
+            router.push('/portal/orders');
         }
       }
     } catch (err: unknown) {
@@ -137,71 +117,6 @@ function SignupContent() {
       setLoading(false);
     }
   };
-
-  if (isSuccess) {
-    return (
-      <>
-        <style jsx>{`
-          @keyframes float-slow {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            50% { transform: translate(30px, 50px) rotate(5deg); }
-            100% { transform: translate(0, 0) rotate(0deg); }
-          }
-          @keyframes float-reverse {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            50% { transform: translate(-40px, -30px) rotate(-5deg); }
-            100% { transform: translate(0, 0) rotate(0deg); }
-          }
-          @keyframes pulse-glow {
-            0%, 100% { opacity: 0.5; transform: scale(1); }
-            50% { opacity: 0.7; transform: scale(1.05); }
-          }
-          .bg-flow {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-          }
-          .flow-shape {
-            position: absolute;
-            filter: blur(60px);
-            opacity: 0.6;
-            will-change: transform;
-          }
-        `}</style>
-        <div className="min-h-screen flex flex-col items-center justify-center bg-background p-3 md:p-4 relative overflow-hidden text-center">
-          
-          <NotificationToast />
-          <div className="w-full max-w-xl bg-surface/60 dark:bg-surface/80 backdrop-blur-2xl p-8 md:p-12 rounded-[2rem] md:rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-border dark:border-border/50 relative overflow-hidden group flex flex-col items-center gap-6">
-            
-            {/* Exclusive Creative Background for Success Card */}
-            <div className="bg-flow pointer-events-none">
-              <div className="flow-shape w-[300px] h-[300px] md:w-[400px] md:h-[400px] bg-primary/[0.08] dark:bg-primary/5 rounded-full top-[-20%] left-[-20%] animate-[float-slow_20s_infinite_ease-in-out]"></div>
-              <div className="flow-shape w-[350px] h-[350px] md:w-[450px] md:h-[450px] bg-secondary/10 rounded-full bottom-[-20%] right-[-20%] animate-[float-reverse_25s_infinite_ease-in-out]"></div>
-            </div>
-
-            <div className="relative z-10 flex flex-col items-center gap-6 w-full">
-              <div className="relative mb-2">
-                <div className="w-16 h-16 md:w-20 md:h-20 bg-success/10 dark:bg-success/20 text-success dark:text-success rounded-3xl flex items-center justify-center shadow-inner relative z-10">
-                  <Check className="w-8 h-8 md:w-10 md:h-10" />
-                </div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-success/20 blur-2xl rounded-full -z-10 animate-[pulse-glow_4s_infinite]"></div>
-              </div>
-              <h1 className="text-theme-header text-foreground tracking-tight">Check your email</h1>
-              <p className="text-muted text-theme-body">
-                We&apos;ve sent a confirmation link to <br /><span className="text-secondary dark:text-warning font-normal">{email}</span>. <br />
-                Please confirm your account to continue.
-              </p>
-              <Button onClick={() => router.push('/login')} className="w-full py-4.5 uppercase tracking-widest bg-primary dark:bg-primary text-primary-text dark:text-primary-text shadow-xl shadow-slate-900/10 dark:shadow-none rounded-2xl transform transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] font-normal" size="lg">
-                Continue to Login
-              </Button>
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  }
 
   return (
     <>
