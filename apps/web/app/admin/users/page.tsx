@@ -54,11 +54,26 @@ export default function AdminUsersPage() {
     const [sections, setSections] = useState({
         admins: true,
         clients: true,
-        discounts: true
+        discounts: false
     });
 
     const toggleSection = (key: keyof typeof sections) => {
-        setSections(prev => ({ ...prev, [key]: !prev[key] }));
+        setSections(prev => {
+            const newState = { ...prev, [key]: !prev[key] };
+            
+            // If expanding Discounts, collapse System Access (admins/clients)
+            if (key === 'discounts' && newState.discounts) {
+                newState.admins = false;
+                newState.clients = false;
+            }
+            
+            // If expanding an Admin or Client table, collapse Discounts
+            if ((key === 'admins' || key === 'clients') && newState[key]) {
+                newState.discounts = false;
+            }
+            
+            return newState;
+        });
     };
 
     // Token State
@@ -378,43 +393,66 @@ export default function AdminUsersPage() {
     const clientsData = users.filter(u => u.role === 'client');
 
     return (
-        <div className="animate-in fade-in duration-500 space-y-6 font-sans">
-             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <div className="flex items-center gap-2 text-muted text-theme-caption font-semibold uppercase tracking-widest mb-1">
-                        <span>Management</span><ChevronRight className="w-3 h-3" /><span className="text-primary">Access</span>
+        <div className="animate-in fade-in duration-500 space-y-12 font-sans">
+            {/* SECTION 1: SYSTEM ACCESS */}
+            <div className="space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <div className="flex items-center gap-2 text-muted text-theme-caption font-semibold uppercase tracking-widest mb-1">
+                            <span>Management</span><ChevronRight className="w-3 h-3" /><span className="text-primary">Access</span>
+                        </div>
+                        <h1 className="text-theme-header text-foreground tracking-tight">System Access</h1>
                     </div>
-                    <h1 className="text-theme-header text-foreground tracking-tight">System Access</h1>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setShowTokenDialog(true)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface border border-border text-muted hover:text-primary hover:border-primary/30 transition-all font-semibold text-theme-caption uppercase tracking-wide shadow-sm font-sans">
+                            <Key className="w-3 h-3" />Change Access Token
+                        </button>
+                        {/* INVERTED BUTTON: Background takes text color, text takes background color */}
+                        <Button 
+                            onClick={() => fetchAllData()} 
+                            size="sm" 
+                            className="bg-foreground text-background border-none hover:opacity-90 font-sans"
+                        >
+                            Refresh List
+                        </Button>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <button onClick={() => setShowTokenDialog(true)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface border border-border text-muted hover:text-primary hover:border-primary/30 transition-all font-semibold text-theme-caption uppercase tracking-wide shadow-sm font-sans"><Key className="w-3 h-3" />Change Access Token</button>
-                    <Button onClick={() => fetchAllData()} variant="secondary" size="sm" className="font-sans">Refresh List</Button>
-                </div>
+
+                {loading ? (
+                    <div className="p-12 text-center text-muted bg-surface rounded-2xl shadow-sm border border-border font-sans"><Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin opacity-20" /><p className="text-theme-body font-medium">Loading Access Data...</p></div>
+                ) : (
+                    <>
+                        <UserTable 
+                            data={admins} 
+                            title="Admin Team" 
+                            isOpen={sections.admins} 
+                            onToggle={() => toggleSection('admins')} 
+                            countColor="bg-primary"
+                            shadowColor="shadow-primary/20"
+                        />
+                        <UserTable 
+                            data={clientsData} 
+                            title="Client Accounts" 
+                            isOpen={sections.clients} 
+                            onToggle={() => toggleSection('clients')} 
+                            countColor="bg-primary"
+                            shadowColor="shadow-primary/20"
+                        />
+                    </>
+                )}
             </div>
 
-            {loading ? (
-                <div className="p-12 text-center text-muted bg-surface rounded-2xl shadow-sm border border-border font-sans"><Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin opacity-20" /><p className="text-theme-body font-medium">Loading Access Data...</p></div>
-            ) : (
-                <>
-                    <UserTable 
-                        data={admins} 
-                        title="Admin Team" 
-                        isOpen={sections.admins} 
-                        onToggle={() => toggleSection('admins')} 
-                        countColor="bg-primary"
-                        shadowColor="shadow-primary/20"
-                    />
-                    <UserTable 
-                        data={clientsData} 
-                        title="Client Accounts" 
-                        isOpen={sections.clients} 
-                        onToggle={() => toggleSection('clients')} 
-                        countColor="bg-primary"
-                        shadowColor="shadow-primary/20"
-                    />
-                    <DiscountTable />
-                </>
-            )}
+            {/* SECTION 2: DISCOUNTS MANAGER */}
+            <div className="space-y-6">
+                <div>
+                    <div className="flex items-center gap-2 text-muted text-theme-caption font-semibold uppercase tracking-widest mb-1">
+                        <span>Management</span><ChevronRight className="w-3 h-3" /><span className="text-secondary">Promotion</span>
+                    </div>
+                    <h1 className="text-theme-header text-foreground tracking-tight">Discounts Manager</h1>
+                </div>
+                
+                {!loading && <DiscountTable />}
+            </div>
 
             <DiscountCreationModal 
                 isOpen={showDiscountDialog}

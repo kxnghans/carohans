@@ -348,7 +348,13 @@ export const getOrderDetails = async (orderId: number): Promise<Order | null> =>
                 unit_price,
                 returned_qty,
                 lost_qty,
-                damaged_qty
+                damaged_qty,
+                inventory (
+                    name,
+                    category,
+                    image,
+                    color
+                )
             )
         `)
         .eq('id', orderId)
@@ -398,7 +404,8 @@ export const getOrderDetails = async (orderId: number): Promise<Order | null> =>
             price: i.unit_price,
             returnedQty: i.returned_qty,
             lostQty: i.lost_qty,
-            damagedQty: i.damaged_qty
+            damagedQty: i.damaged_qty,
+            _fallback: i.inventory
         }))
     };
 };

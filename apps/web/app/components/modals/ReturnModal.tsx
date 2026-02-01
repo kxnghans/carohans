@@ -500,11 +500,11 @@ export const ReturnModal = ({
                             <span className="text-theme-body-bold text-foreground">{formatCurrency(returnTotals.total)}</span>
                         </div>
                         <div className="flex justify-between text-theme-body">
-                            <span className="text-muted">Amount Paid</span>
+                            <span className="text-muted">Previous Payments</span>
                             <span className="text-success font-bold">-{formatCurrency(activeOrder.amountPaid)}</span>
                         </div>
                         <div className="flex justify-between text-theme-subtitle font-black pt-3 border-t-2 border-foreground mt-2 dark:border-white">
-                            <span className="text-foreground uppercase tracking-tighter">Balance Due</span>
+                            <span className="text-foreground uppercase tracking-tighter">Net Balance Due</span>
                             <span className="text-error text-theme-header">{formatCurrency(Math.max(0, returnTotals.total - activeOrder.amountPaid))}</span>
                         </div>
                     </div>

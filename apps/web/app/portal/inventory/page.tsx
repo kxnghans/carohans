@@ -4,33 +4,10 @@ import { useAppStore } from '../../context/AppContext';
 import { InventoryTable } from '../../components/inventory/InventoryTable';
 import { Card } from '../../components/ui/Card';
 import { InventoryItem } from '../../types';
-import { validateDiscount } from '../../services/discountService';
 import { useEffect } from 'react';
 
 export default function PortalInventoryPage() {
   const { inventory, cart, setCart, portalFormData, setPortalFormData, loading, checkAvailability, showNotification, user } = useAppStore();
-
-  // Debounced Discount Validation
-  useEffect(() => {
-      const code = portalFormData.discountCode;
-      if (!code || code.length < 3) return;
-
-      const timer = setTimeout(async () => {
-          try {
-              const clientId = (user as { clientId?: number } | null)?.clientId;
-              const { isValid, message } = await validateDiscount(code, clientId);
-              if (!isValid) {
-                  showNotification(message || "Invalid discount code", "error");
-              } else {
-                  showNotification("Discount applied successfully!", "success");
-              }
-          } catch (error) {
-              console.error("Discount validation failed", error);
-          }
-      }, 800);
-
-      return () => clearTimeout(timer);
-  }, [portalFormData.discountCode, user, showNotification]);
 
   const addToCart = (item: InventoryItem, qty: number) => {
     setCart(prev => {
@@ -89,18 +66,6 @@ export default function PortalInventoryPage() {
           </div>
 
           <div className="hidden sm:block w-px h-8 bg-border mx-2"></div>
-
-          {/* DISCOUNT - RIGHT */}
-          <div className="flex items-center gap-2 px-2 border-t sm:border-t-0 pt-2 sm:pt-0 w-full sm:w-auto">
-            <label className="text-theme-subtitle text-muted uppercase">Code</label>
-            <input
-              type="text"
-              placeholder="DISCOUNT"
-              className="flex-1 sm:w-24 bg-background border border-border rounded-lg px-3 py-1.5 text-theme-label text-foreground outline-none focus:border-secondary transition-all uppercase font-mono placeholder:normal-case placeholder:font-sans placeholder:text-[10px]"
-              value={portalFormData.discountCode || ''}
-              onChange={(e) => setPortalFormData(prev => ({ ...prev, discountCode: e.target.value }))}
-            />
-          </div>
         </div>
       </div>
 

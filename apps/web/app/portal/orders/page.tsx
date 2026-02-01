@@ -355,6 +355,9 @@ export default function PortalOrdersPage() {
           closedAt={viewingInvoice.closedAt}
           amountPaid={viewingInvoice.amountPaid}
           totalAmount={viewingInvoice.totalAmount}
+          discountName={viewingInvoice.discountName}
+          discountType={viewingInvoice.discountType}
+          discountValue={viewingInvoice.discountValue}
           orderId={viewingInvoice.id}
           publicId={viewingInvoice.publicId}
           onConfirm={() => setViewingInvoice(null)}

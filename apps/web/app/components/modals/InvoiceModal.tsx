@@ -8,13 +8,23 @@ import { formatCurrency, formatDate, getDurationDays, calculateOrderTotal } from
 import { useData } from '../../context/DataContext';
 import { InventoryItem, Client } from '../../types';
 import { useScrollLock } from '../../hooks/useScrollLock';
+import { validateDiscount } from '../../services/discountService';
+import { useAppStore } from '../../context/AppContext';
+import { encodeOrderId } from '../../utils/idHandler';
+
+export interface DiscountInfo {
+  code: string;
+  name: string;
+  type: 'fixed' | 'percentage';
+  value: number;
+}
 
 interface InvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   cart: (InventoryItem & { qty: number, lostQty?: number, damagedQty?: number })[];
   client: Partial<Client> | null;
-  onConfirm?: () => void;
+  onConfirm?: (discount?: DiscountInfo) => void;
   startDate: string;
   endDate: string;
   penaltyAmount?: number;
@@ -28,6 +38,7 @@ interface InvoiceModalProps {
   discountValue?: number | null;
   orderId?: number;
   publicId?: string;
+  isEditable?: boolean;
 }
 
 export const InvoiceModal = ({
@@ -48,13 +59,70 @@ export const InvoiceModal = ({
   discountType,
   discountValue,
   orderId,
-  publicId
+  publicId,
+  isEditable
 }: InvoiceModalProps) => {
   const { Printer, X, Check, AlertCircle, Sparkles } = Icons;
   const { businessSettings } = useData();
+  const { user, portalFormData, setPortalFormData, showNotification } = useAppStore();
   const [mounted, setMounted] = useState(false);
+  const [localDiscountCode, setLocalDiscountCode] = useState(portalFormData?.discountCode || '');
+  const [localDiscountData, setLocalDiscountData] = useState<{ name: string, type: 'fixed' | 'percentage', value: number } | null>(null);
+  const [discountMessage, setDiscountMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
 
   useScrollLock(isOpen);
+
+  // Sync local code with portal form data
+  useEffect(() => {
+    if (portalFormData?.discountCode !== localDiscountCode) {
+       setLocalDiscountCode(portalFormData?.discountCode || '');
+    }
+  }, [portalFormData?.discountCode]);
+
+  // Discount Validation Logic
+  useEffect(() => {
+      const code = localDiscountCode;
+      if (!code || code.length < 3) {
+          setDiscountMessage(null);
+          return;
+      }
+      
+      // Only validate if editable (no status or pending)
+      // If isEditable is explicitly true, we skip the status check here or assume it's valid to validate
+      if (!isEditable && status && status !== 'Pending') return;
+
+      setIsValidating(true);
+      const timer = setTimeout(async () => {
+          try {
+              const clientId = (user as { clientId?: number } | null)?.clientId;
+              const { isValid, message, discount } = await validateDiscount(code, clientId);
+              
+              if (!isValid) {
+                  setDiscountMessage({ text: message || "Invalid code", type: 'error' });
+                  setLocalDiscountData(null);
+              } else {
+                  setDiscountMessage({ text: "Discount applied!", type: 'success' });
+                  // Store in local state, DO NOT update portalFormData yet
+                  if (discount) {
+                    setLocalDiscountData({ 
+                        name: discount.name,
+                        type: discount.discount_type as 'fixed' | 'percentage',
+                        value: discount.discount_value
+                    });
+                  }
+              }
+          } catch (error) {
+              console.error("Discount validation failed", error);
+              setDiscountMessage({ text: "Validation error", type: 'error' });
+              setLocalDiscountData(null);
+          } finally {
+              setIsValidating(false);
+          }
+      }, 800);
+
+      return () => clearTimeout(timer);
+  }, [localDiscountCode, user, status, isEditable]);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -86,25 +154,37 @@ export const InvoiceModal = ({
   const lateFees = Math.max(0, penaltyAmount - lossDamageTotal);
   
   // Use standardized helper for Grand Total
+  const isDraft = isEditable ?? !orderId; // If explicitly editable OR no ID, treat as draft (use local state)
+  
+  // Priority for live preview: Local Modal State -> Portal Form Data -> Props
+  const isLocalActive = isDraft && localDiscountData && localDiscountCode.length >= 3;
+  
+  const activeDiscountType = isLocalActive ? localDiscountData?.type : 
+                             (isDraft && portalFormData?.discountType ? portalFormData.discountType : discountType);
+  const activeDiscountValue = isLocalActive ? localDiscountData?.value : 
+                              (isDraft && portalFormData?.discountValue !== undefined ? portalFormData.discountValue : discountValue);
+  const activeDiscountName = isLocalActive ? localDiscountData?.name : 
+                             (isDraft && portalFormData?.discountName ? portalFormData.discountName : discountName);
+
   const calculatedTotal = calculateOrderTotal(
     rentalItems, 
     startDate, 
     endDate, 
-    (discountType as 'fixed' | 'percentage') || undefined, 
-    discountValue || undefined, 
+    (activeDiscountType as 'fixed' | 'percentage') || undefined, 
+    activeDiscountValue || undefined, 
     penaltyAmount
   );
 
-  const finalTotal = totalAmountProp !== undefined ? totalAmountProp : calculatedTotal;
+  const finalTotal = totalAmountProp !== undefined && !isDraft ? totalAmountProp : calculatedTotal;
   const isFullyPaid = amountPaid >= finalTotal;
 
   // Actual discount amount for display - CAPPED at subtotal
   let discountDisplayAmount = 0;
-  if (discountType && discountValue) {
-    if (discountType === 'fixed') {
-        discountDisplayAmount = Math.min(calculatedSubtotal, discountValue);
+  if (activeDiscountType && activeDiscountValue) {
+    if (activeDiscountType === 'fixed') {
+        discountDisplayAmount = Math.min(calculatedSubtotal, activeDiscountValue);
     } else {
-        discountDisplayAmount = (calculatedSubtotal * discountValue) / 100;
+        discountDisplayAmount = (calculatedSubtotal * activeDiscountValue) / 100;
     }
   }
 
@@ -112,6 +192,17 @@ export const InvoiceModal = ({
     setTimeout(() => {
       window.print();
     }, 50);
+  };
+
+  const handleConfirmClick = () => {
+    if (isDraft && localDiscountData && localDiscountCode) {
+        onConfirm?.({
+            code: localDiscountCode,
+            ...localDiscountData
+        });
+    } else {
+        onConfirm?.();
+    }
   };
 
   if (!isOpen || !mounted) return null;
@@ -157,9 +248,38 @@ export const InvoiceModal = ({
                   <p className="text-theme-title text-foreground">{client?.firstName && client?.lastName ? `${client.firstName} ${client.lastName}` : (client as unknown as { name?: string })?.name || ''}</p>
                   <p className="text-muted text-theme-body">{client?.email}</p>
                   <p className="text-muted text-theme-body">{client?.phone}</p>
+                  
+                  {/* DISCOUNT INPUT - Editable for Drafts ONLY */}
+                  {isDraft && (
+                      <div className="mt-4 print:hidden">
+                          <label className="text-[10px] font-black text-muted uppercase tracking-widest block mb-1">Discount Code</label>
+                          <div className="relative max-w-[200px]">
+                              <input 
+                                  type="text" 
+                                  value={localDiscountCode}
+                                  onChange={(e) => setLocalDiscountCode(e.target.value)}
+                                  placeholder="ENTER CODE"
+                                  className={`w-full bg-background border rounded-lg px-3 py-1.5 text-xs font-mono uppercase outline-none focus:ring-2 transition-all ${
+                                      discountMessage?.type === 'error' ? 'border-error focus:ring-error/20 text-error' : 
+                                      discountMessage?.type === 'success' ? 'border-success focus:ring-success/20 text-success' : 'border-border focus:ring-primary/20'
+                                  }`}
+                              />
+                              {isValidating && (
+                                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                      <Icons.Loader2 className="w-3 h-3 text-primary animate-spin" />
+                                  </div>
+                              )}
+                              {discountMessage && !isValidating && (
+                                  <div className={`absolute left-0 -bottom-5 text-[9px] font-bold uppercase tracking-tight ${discountMessage.type === 'error' ? 'text-error' : 'text-success'}`}>
+                                      {discountMessage.text}
+                                  </div>
+                              )}
+                          </div>
+                      </div>
+                  )}
                 </div>                <div className="text-right">
                   <h3 className="font-semibold text-muted text-theme-caption uppercase tracking-wider mb-2">Order Details</h3>
-                  <p className="text-theme-body-bold text-foreground">{publicId || (orderId ? `#${orderId}` : 'New Order')}</p>
+                  <p className="text-theme-body-bold text-foreground">{publicId || (orderId ? encodeOrderId(orderId) : 'New Order')}</p>
                   <p className="text-muted text-theme-caption font-bold mt-1 uppercase tracking-tighter">Date: {formatDate(new Date().toISOString())}</p>
                   
                   <div className="mt-6 flex flex-wrap justify-end gap-6 text-[10px] uppercase font-bold text-muted tracking-widest">
@@ -196,11 +316,11 @@ export const InvoiceModal = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {cart.map((item: InventoryItem & { qty: number, lostQty?: number, damagedQty?: number }) => (
+                  {cart.map((item: InventoryItem & { qty: number, lostQty?: number, damagedQty?: number, _fallback?: Partial<InventoryItem> }) => (
                     <tr key={item.id} className="break-inside-avoid">
                       <td className="py-4">
-                        <p className="text-theme-body-bold text-foreground">{item.name}</p>
-                        <p className="text-theme-caption text-muted uppercase font-bold tracking-tight">{item.category}</p>
+                        <p className="text-theme-body-bold text-foreground">{item.name || item._fallback?.name || 'Unknown Item'}</p>
+                        <p className="text-theme-caption text-muted uppercase font-bold tracking-tight">{item.category || item._fallback?.category || 'General'}</p>
                       </td>
                       <td className="py-4 text-center font-bold text-muted text-theme-body">{item.qty}</td>
                       <td className="py-4 text-right text-muted text-theme-body">{formatCurrency(item.price)}</td>
@@ -215,29 +335,57 @@ export const InvoiceModal = ({
                       <td className="py-4" colSpan={3}>
                         <div className="flex items-center gap-2">
                             <Sparkles className="w-3.5 h-3.5 text-secondary" />
-                            <p className="font-bold text-secondary dark:text-indigo-400 text-theme-body">Discount: {discountName}</p>
+                            <p className="font-bold text-secondary dark:text-indigo-400 text-theme-body">Discount: {activeDiscountName}</p>
                         </div>
                         <p className="text-theme-caption text-secondary/60 uppercase font-bold tracking-tight">
-                          {discountType === 'percentage' ? `${discountValue}% off subtotal` : 
-                           (discountValue || 0) > calculatedSubtotal ? `Fixed reduction (Capped at subtotal)` : 'Fixed monetary reduction'}
+                          {activeDiscountType === 'percentage' ? `${activeDiscountValue}% off subtotal` : 
+                           (activeDiscountValue || 0) > calculatedSubtotal ? `Fixed reduction (Capped at subtotal)` : 'Fixed monetary reduction'}
                         </p>
                       </td>
                       <td className="py-4 text-right font-black text-secondary dark:text-indigo-400 text-theme-body">-{formatCurrency(discountDisplayAmount)}</td>
                     </tr>
                   )}
-                  {lateFees > 0 && (
-                    <tr className="bg-error/10/30 dark:bg-rose-900/20 break-inside-avoid">
-                      <td className="py-4" colSpan={3}>
-                        <p className="font-bold text-rose-700 dark:text-rose-400 text-theme-body">Total Late Fees</p>
-                        <p className="text-theme-caption text-rose-400 uppercase font-bold tracking-tight">
-                          Overdue by {Math.round(lateFees / latePenaltyPerDay)} {Math.round(lateFees / latePenaltyPerDay) === 1 ? 'day' : 'days'}
-                        </p>
-                      </td>
-                      <td className="py-4 text-right font-black text-rose-700 dark:text-rose-400 text-theme-body">{formatCurrency(lateFees)}</td>
-                    </tr>
-                  )}
                 </tbody>
               </table>
+
+              {/* Late Fees Section */}
+              {lateFees > 0 && (
+                <div className="break-inside-avoid mb-8">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-1.5 h-1.5 rounded-full bg-error"></div>
+                    <h3 className="font-bold text-error text-theme-caption uppercase tracking-[0.2em]">
+                      Late Fees Audit
+                    </h3>
+                  </div>
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b-2 border-rose-100">
+                        <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest">Description</th>
+                        <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest text-center">Days Overdue</th>
+                        <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest text-right">Daily Rate</th>
+                        <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest text-right">Line Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-rose-50 dark:divide-rose-900/30">
+                      <tr>
+                        <td className="py-4">
+                          <p className="text-theme-body-bold text-foreground">Late Return Fees</p>
+                          <p className="text-theme-caption text-muted uppercase font-bold tracking-tight">Schedule Variance Penalty</p>
+                        </td>
+                        <td className="py-4 text-center font-bold text-muted text-theme-body">
+                          {Math.round(lateFees / latePenaltyPerDay)}
+                        </td>
+                        <td className="py-4 text-right text-muted text-theme-body">
+                          {formatCurrency(latePenaltyPerDay)}
+                        </td>
+                        <td className="py-4 text-right font-black text-rose-700 dark:text-rose-400 text-theme-body">
+                          {formatCurrency(lateFees)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               {/* Loss & Damage Section */}
               {lossDamageTotal > 0 && (
@@ -313,7 +461,7 @@ export const InvoiceModal = ({
                   </div>
                   {discountDisplayAmount > 0 && (
                     <div className="flex justify-between text-secondary dark:text-indigo-400 text-theme-body font-medium">
-                      <span>Discount ({discountName})</span>
+                      <span>Discount ({activeDiscountName})</span>
                       <span>-{formatCurrency(discountDisplayAmount)}</span>
                     </div>
                   )}
@@ -367,8 +515,10 @@ export const InvoiceModal = ({
             <Printer className="w-4 h-4 mr-2" /> Print to PDF
           </Button>
           {onConfirm && (
-            <Button onClick={onConfirm} variant="success">
-              {status === 'Pending' || !status ? (
+            <Button onClick={handleConfirmClick} variant="success">
+              {orderId && isEditable ? (
+                <><Check className="w-4 h-4 mr-2" /> Confirm & Update Order</>
+              ) : (status === 'Pending' || !status) ? (
                 <><Check className="w-4 h-4 mr-2" /> Confirm & Place Order</>
               ) : ['Completed', 'Settlement', 'Rejected', 'Canceled'].includes(status) ? (
                 'Close Invoice'
