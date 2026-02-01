@@ -60,6 +60,12 @@ secrets.json
 *.tsbuildinfo
 supabase/.temp
 out
+*.local
+.pnpm-store/
+*.pcap
+core
+[Cc]onfig.local
+[Ll]ocal.settings.json
 
 # Temporary / Assets
 apps/web/image.png

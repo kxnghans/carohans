@@ -50,22 +50,28 @@ export const ReturnModal = ({
     const actual = new Date(returnDate).setHours(0,0,0,0);
     const planned = new Date(activeOrder.endDate).setHours(0,0,0,0);
     
-    if (actual < planned) setSelectedReturnStatus('Early');
-    else if (actual > planned) setSelectedReturnStatus('Late');
-    else setSelectedReturnStatus('On Time');
-  }, [returnDate, activeOrder]);
+    let newStatus: 'Early' | 'Late' | 'On Time' = 'On Time';
+    if (actual < planned) newStatus = 'Early';
+    else if (actual > planned) newStatus = 'Late';
+
+    if (selectedReturnStatus !== newStatus) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelectedReturnStatus(newStatus);
+    }
+  }, [returnDate, activeOrder, selectedReturnStatus]);
 
   // 2. Auto-update Item Integrity based on Item Audit
   useEffect(() => {
     const hasLost = Object.values(returnItemQuantities).some(q => q.lost > 0);
     const hasDamaged = Object.values(returnItemQuantities).some(q => q.damaged > 0);
     
-    let next: string[] = [];
+    const next: string[] = [];
     if (hasLost) next.push('Lost');
     if (hasDamaged) next.push('Damaged');
     if (next.length === 0) next.push('Good');
     
-    setSelectedItemIntegrity(next);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedItemIntegrity(prev => JSON.stringify(prev) !== JSON.stringify(next) ? next : prev);
   }, [returnItemQuantities]);
 
   useEffect(() => {
@@ -149,21 +155,6 @@ export const ReturnModal = ({
         clearTimeout(timer);
     };
   }, [isOpen, returnOrder]);
-
-  const toggleIntegrity = (status: string) => {
-    setSelectedItemIntegrity(prev => {
-        if (status === 'Good') return ['Good'];
-        
-        let next = prev.filter(s => s !== 'Good');
-        if (next.includes(status)) {
-            next = next.filter(s => s !== status);
-            if (next.length === 0) return ['Good'];
-            return next;
-        } else {
-            return [...next, status];
-        }
-    });
-  };
 
   const handleQuantityChange = (itemId: number, type: 'lost' | 'damaged', value: number, originalQty: number) => {
       const current = returnItemQuantities[itemId] || { returned: originalQty, lost: 0, damaged: 0 };
@@ -297,15 +288,18 @@ export const ReturnModal = ({
         showNotification(`Order #${activeOrder.id} return processed. Status: ${finalStatus}`, "success");
         await fetchData(); // Refresh local state
         onClose();
-    } catch (error: any) {
+    } catch (error) {
         console.error("Return process failed:", error);
         // Extract the most descriptive message possible
-        const message = error?.message || (typeof error === 'string' ? error : "Failed to process return. Please check your network connection.");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message = (error as any)?.message || (typeof error === 'string' ? error : "Failed to process return. Please check your network connection.");
         showNotification(message, "error");
         
         // Log additional details if available (Supabase specific)
-        if (error?.details) console.error("Error details:", error.details);
-        if (error?.hint) console.error("Error hint:", error.hint);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((error as any)?.details) console.error("Error details:", (error as any).details);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((error as any)?.hint) console.error("Error hint:", (error as any).hint);
     }
   };
 
@@ -377,7 +371,7 @@ export const ReturnModal = ({
                                     {selectedItemIntegrity.map(status => (
                                         <div 
                                             key={status}
-                                            className={`flex-1 min-w-[80px] py-2.5 border-2 rounded-xl text-theme-subtitle uppercase tracking-tight transition-all text-center font-bold ${getItemIntegrityColor(status as any)}`}
+                                            className={`flex-1 min-w-[80px] py-2.5 border-2 rounded-xl text-theme-subtitle uppercase tracking-tight transition-all text-center font-bold ${getItemIntegrityColor(status as string)}`}
                                         >
                                             {status}
                                         </div>

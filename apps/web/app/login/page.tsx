@@ -43,13 +43,26 @@ function LoginContent() {
       const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginInput);
       
       if (!isEmail) {
+          // 1. Try RPC first
           const { data: resolvedEmail, error: rpcError } = await supabase
             .rpc('get_email_for_login', { login_input: loginInput.toLowerCase() });
 
-          if (rpcError || !resolvedEmail) {
-              throw new Error('Invalid username or email.');
+          if (!rpcError && resolvedEmail) {
+              emailToUse = resolvedEmail;
+          } else {
+              // 2. Fallback: Query clients table directly
+              const { data: client } = await supabase
+                  .from('clients')
+                  .select('email')
+                  .eq('username', loginInput.toLowerCase())
+                  .single();
+              
+              if (client && client.email) {
+                  emailToUse = client.email;
+              } else {
+                  throw new Error('Invalid username or email.');
+              }
           }
-          emailToUse = resolvedEmail;
       }
 
       const { data, error } = await supabase.auth.signInWithPassword({

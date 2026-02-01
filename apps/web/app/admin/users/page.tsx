@@ -13,6 +13,7 @@ import { fetchDiscountsWithStats, createDiscount, deleteDiscount } from '../../s
 import { formatDate, formatCurrency } from '../../utils/helpers';
 import { DiscountCreationModal } from '../../components/modals/DiscountCreationModal';
 import { RedemptionLedgerModal } from '../../components/modals/RedemptionLedgerModal';
+import { UserCleanupModal } from '../../components/modals/UserCleanupModal';
 
 interface UserProfile {
     id: string;
@@ -91,9 +92,8 @@ export default function AdminUsersPage() {
     const [demoteTarget, setDemoteTarget] = useState<UserProfile | null>(null);
     const [alwaysApproveDemote, setAlwaysApproveDemote] = useState(false);
 
-    // Delete User Confirmation State
-    const [deleteTarget, setDeleteTarget] = useState<UserProfile | null>(null);
-    const [alwaysApproveDelete, setAlwaysApproveDelete] = useState(false);
+    // Delete User / Cleanup State
+    const [cleanupTarget, setCleanupTarget] = useState<UserProfile | null>(null);
 
     const fetchUsers = useCallback(async () => {
         const { data: profiles, error: profileError } = await supabase
@@ -206,20 +206,6 @@ export default function AdminUsersPage() {
         } else showNotification("Failed to update role", "error");
     };
 
-    const deleteUser = async (userId: string) => {
-        try {
-            const { error: unlinkError } = await supabase.from('clients').update({ user_id: null }).eq('user_id', userId);
-            if (unlinkError) console.error("Unlink error:", unlinkError);
-            const { error: profileError } = await supabase.from('profiles').delete().eq('id', userId);
-            if (profileError) throw profileError;
-            showNotification("Access deleted successfully");
-            setUsers(prev => prev.filter(u => u.id !== userId));
-            fetchUsers();
-        } catch {
-            showNotification("Failed to delete access.", "error");
-        }
-    };
-
     // User Table Component
     const UserTable = ({ data, title, isOpen, onToggle, countColor, shadowColor }: { data: UserProfile[], title: string, isOpen: boolean, onToggle: () => void, countColor: string, shadowColor: string }) => (
         <Card noPadding className="mb-8 transition-all duration-300 border-border font-sans font-normal">
@@ -245,15 +231,9 @@ export default function AdminUsersPage() {
                                 <td className="p-4 pr-6">
                                     <div className="flex justify-end">
                                         <button 
-                                            onClick={() => {
-                                                if (alwaysApproveDelete) {
-                                                    deleteUser(user.id);
-                                                } else {
-                                                    setDeleteTarget(user);
-                                                }
-                                            }}
+                                            onClick={() => setCleanupTarget(user)}
                                             className="p-2 bg-error text-white dark:text-background hover:opacity-90 rounded-xl transition-all shadow-lg shadow-error/20 active:scale-90"
-                                            title="Delete Access"
+                                            title="Revoke Access"
                                         >
                                             <Trash2 className="w-4.5 h-4.5" />
                                         </button>
@@ -488,16 +468,17 @@ export default function AdminUsersPage() {
                 onCancel={() => setDemoteTarget(null)} 
             />
 
-            <ConfirmDialog 
-                isOpen={!!deleteTarget} 
-                title="Delete Account" 
-                message={`Are you sure you want to delete ${deleteTarget?.clientName}'s access? This will remove their profile and client record. This action cannot be undone.`} 
-                confirmText="Delete Access" 
-                confirmVariant="danger" 
-                showAlwaysDeleteOption={true} 
-                onConfirm={(always) => { if (always) setAlwaysApproveDelete(true); if (deleteTarget) deleteUser(deleteTarget.id); setDeleteTarget(null); }} 
-                onCancel={() => setDeleteTarget(null)} 
-            />
+            {cleanupTarget && (
+                <UserCleanupModal 
+                    isOpen={!!cleanupTarget}
+                    onClose={() => setCleanupTarget(null)}
+                    userId={cleanupTarget.id}
+                    clientName={cleanupTarget.clientName || 'Unknown'}
+                    clientEmail={cleanupTarget.email}
+                    onSuccess={fetchUsers}
+                    showNotification={showNotification}
+                />
+            )}
 
             <ConfirmDialog 
                 isOpen={!!discountDeleteTarget} 

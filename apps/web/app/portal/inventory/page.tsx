@@ -4,10 +4,9 @@ import { useAppStore } from '../../context/AppContext';
 import { InventoryTable } from '../../components/inventory/InventoryTable';
 import { Card } from '../../components/ui/Card';
 import { InventoryItem } from '../../types';
-import { useEffect } from 'react';
 
 export default function PortalInventoryPage() {
-  const { inventory, cart, setCart, portalFormData, setPortalFormData, loading, checkAvailability, showNotification, user } = useAppStore();
+  const { inventory, cart, setCart, portalFormData, setPortalFormData, loading, checkAvailability } = useAppStore();
 
   const addToCart = (item: InventoryItem, qty: number) => {
     setCart(prev => {

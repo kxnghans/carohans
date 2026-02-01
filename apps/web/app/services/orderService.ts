@@ -368,20 +368,7 @@ export const getOrderDetails = async (orderId: number): Promise<Order | null> =>
     return {
         id: data.id,
         publicId: encodeOrderId(data.id),
-        clientName: data.client_name || data.client_id, // Fallback if name not joined, though searchOrders uses client_name. 
-                                                         // Ideally we should join clients too, but searchOrders result usually has it.
-                                                         // For now, let's assume client_name is on the order or we might need to fetch it if it's missing.
-                                                         // Actually, looking at searchOrders, it gets client_name.
-                                                         // Let's modify the select to get client name if it's a relation or column.
-                                                         // If client_name is not on orders table (likely on clients table), we need to join.
-                                                         // Checking createOrder: it uses p_client_name in submit_order RPC, suggesting it might be stored or joined.
-                                                         // Let's trust the data structure for now, but safer to join clients if needed.
-                                                         // However, to be safe and match searchOrders output style:
-        clientName: data.client_name || '', // Assuming it might be a view or denormalized, or we need to join. 
-                                            // Wait, searchOrders returns client_name. Let's look at submitOrder... p_client_name. 
-                                            // It's possible 'client_name' is a column on 'orders' (denormalized) or 'orders' is a view.
-                                            // If it's a raw table select, and client_name isn't there, we miss it.
-                                            // Let's add the client join to be safe.
+        clientName: data.client_name || data.client_id || '',
         phone: data.phone || '',
         email: data.email || '',
         status: data.status,
@@ -398,7 +385,15 @@ export const getOrderDetails = async (orderId: number): Promise<Order | null> =>
         discountType: data.discount_type,
         discountValue: Number(data.discount_value || 0),
         itemCount: data.items.length,
-        items: data.items.map((i: any) => ({
+        items: data.items.map((i: {
+            inventory_id: number;
+            quantity: number;
+            unit_price: number;
+            returned_qty?: number;
+            lost_qty?: number;
+            damaged_qty?: number;
+            inventory?: unknown;
+        }) => ({
             inventoryId: i.inventory_id,
             qty: i.quantity,
             price: i.unit_price,
@@ -408,4 +403,27 @@ export const getOrderDetails = async (orderId: number): Promise<Order | null> =>
             _fallback: i.inventory
         }))
     };
+};
+
+/**
+ * Batch deletes orders and their items.
+ */
+export const deleteOrders = async (orderIds: number[]) => {
+    if (orderIds.length === 0) return;
+
+    // 1. Delete items first (FK constraint)
+    const { error: itemsError } = await supabase
+        .from('order_items')
+        .delete()
+        .in('order_id', orderIds);
+    
+    if (itemsError) throw itemsError;
+
+    // 2. Delete orders
+    const { error: ordersError } = await supabase
+        .from('orders')
+        .delete()
+        .in('id', orderIds);
+
+    if (ordersError) throw ordersError;
 };
