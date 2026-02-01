@@ -12,6 +12,7 @@ import { DiscountManager } from '../common/DiscountManager';
 import { useAppStore } from '../../context/AppContext';
 import { useRouter } from 'next/navigation';
 import { applyDiscountToOrder } from '../../services/orderService';
+import { encodeOrderId } from '../../utils/idHandler';
 
 const SortIcon = ({ 
     column, 
@@ -89,12 +90,12 @@ export const OrderTable = ({
                 try {
                     const { data, error } = await import('../../lib/supabase').then(m => m.supabase
                         .from('orders')
-                        .select(`order_items (inventory_id, quantity, unit_price, returned_qty, lost_qty, damaged_qty)`)
+                        .select(`order_items (inventory_id, quantity, unit_price, returned_qty, lost_qty, damaged_qty, inventory (name, category, image, color))`)
                         .eq('id', orderId)
                         .single()
                     );
                     if (data && !error) {
-                        const result = data as unknown as OrderQueryResult;
+                        const result = data as unknown as OrderQueryResult & { order_items: { inventory: InventoryItem }[] };
                         if (result.order_items) {
                             const mappedItems = result.order_items.map((oi) => ({
                                 inventoryId: oi.inventory_id,
@@ -102,8 +103,9 @@ export const OrderTable = ({
                                 price: Number(oi.unit_price),
                                 returnedQty: oi.returned_qty,
                                 lostQty: oi.lost_qty,
-                                damagedQty: oi.damaged_qty
-                            })) as { inventoryId: number; qty: number; price: number; returnedQty?: number; lostQty?: number; damagedQty?: number; }[];
+                                damagedQty: oi.damaged_qty,
+                                _fallback: oi.inventory
+                            })) as { inventoryId: number; qty: number; price: number; returnedQty?: number; lostQty?: number; damagedQty?: number; _fallback?: Partial<InventoryItem> }[];
                             setLazyOrderItems(prev => ({ ...prev, [orderId]: mappedItems }));
                         }
                     }
@@ -156,12 +158,12 @@ export const OrderTable = ({
                 try {
                     const { data, error } = await import('../../lib/supabase').then(m => m.supabase
                         .from('orders')
-                        .select(`order_items (inventory_id, quantity, unit_price, returned_qty, lost_qty, damaged_qty)`)
+                        .select(`order_items (inventory_id, quantity, unit_price, returned_qty, lost_qty, damaged_qty, inventory (name, category, image, color))`)
                         .eq('id', order.id)
                         .single()
                     );
                     if (data && !error) {
-                        const result = data as unknown as OrderQueryResult;
+                        const result = data as unknown as OrderQueryResult & { order_items: { inventory: InventoryItem }[] };
                         if (result.order_items) {
                             itemsToUse = result.order_items.map((oi) => ({
                                 inventoryId: oi.inventory_id,
@@ -169,8 +171,9 @@ export const OrderTable = ({
                                 price: Number(oi.unit_price),
                                 returnedQty: oi.returned_qty,
                                 lostQty: oi.lost_qty,
-                                damagedQty: oi.damaged_qty
-                            })) as { inventoryId: number; qty: number; price: number; returnedQty?: number; lostQty?: number; damagedQty?: number; }[];
+                                damagedQty: oi.damaged_qty,
+                                _fallback: oi.inventory
+                            })) as { inventoryId: number; qty: number; price: number; returnedQty?: number; lostQty?: number; damagedQty?: number; _fallback?: Partial<InventoryItem> }[];
                             setLazyOrderItems(prev => ({ ...prev, [order.id]: itemsToUse }));
                         }
                     }
@@ -262,7 +265,7 @@ export const OrderTable = ({
                         {orders.map((order) => (
                             <Fragment key={order.id}>
                                 <tr className="hover:bg-background/40 transition-colors group cursor-pointer" onClick={() => toggleExpand(order.id)}>
-                                    <td className="p-4 pl-6"><span className="text-theme-body-bold text-foreground">{order.publicId || `#${order.id}`}</span></td>
+                                    <td className="p-4 pl-6"><span className="text-theme-body-bold text-foreground">{order.publicId || encodeOrderId(order.id)}</span></td>
                                     <td className="p-4 text-center"><div className="flex flex-col items-center gap-1"><span title={getStatusDescription(order.status)} className={`text-theme-body px-3 py-1 rounded-full border-2 ${getStatusColor(order.status)} uppercase tracking-tighter shadow-sm inline-block min-w-[95px] cursor-help font-semibold`}>{order.status}</span></div></td>
                                     <td className="p-4 text-theme-body text-muted"><div className="hidden sm:block">{formatDate(order.startDate)} - {formatDate(order.closedAt || order.endDate)}</div><div className="sm:hidden flex flex-col items-start w-max"><span>{formatDate(order.startDate)}</span><span className="w-full text-center leading-none my-0.5">-</span><span>{formatDate(order.closedAt || order.endDate)}</span></div></td>
                                     {isAdmin && (
@@ -388,127 +391,104 @@ export const OrderTable = ({
                                                                     );
                                                                 })}
                                                                 
-                                                                {/* PENALTY SECTION */}
+                                                                {/* PENALTY & DISCOUNT SECTION */}
                                                                 {(order.penaltyAmount ?? 0) > 0 && (
-                                                                    <tr className="bg-error/5 dark:bg-rose-900/10 border-t border-border">
-                                                                        <td colSpan={7} className="p-0">
-                                                                            <div className="p-6 flex flex-col gap-4">
-                                                                                <div className="flex justify-between items-center border-b border-error/10 pb-2">
-                                                                                    <span className="text-theme-caption font-black text-error dark:text-rose-400 uppercase tracking-widest">Penalty Breakdown</span>
-                                                                                    <span className="text-theme-body-bold text-error dark:text-rose-400">+{formatCurrency(order.penaltyAmount)}</span>
-                                                                                </div>
-                                                                                
-                                                                                {(() => {
-                                                                                    const activeItems = (order.items.length > 0 ? order.items : (lazyOrderItems[order.id] || []));
-                                                                                    let assetPenalty = 0;
-                                                                                    // Capture full inventory item for rendering icon
-                                                                                    const brokenItems: { invItem: InventoryItem | undefined; type: string; qty: number; cost: number }[] = [];
-
-                                                                                    activeItems.forEach(item => {
-                                                                                        const invItem = inventory.find(i => i.id === item.inventoryId);
-                                                                                        const replacementCost = invItem?.replacementCost || 0;
-                                                                                        if ((item.lostQty || 0) > 0) {
-                                                                                            const cost = (item.lostQty || 0) * replacementCost;
-                                                                                            assetPenalty += cost;
-                                                                                            brokenItems.push({ invItem, type: 'Lost', qty: item.lostQty || 0, cost });
-                                                                                        }
-                                                                                        if ((item.damagedQty || 0) > 0) {
-                                                                                            const cost = (item.damagedQty || 0) * replacementCost;
-                                                                                            assetPenalty += cost;
-                                                                                            brokenItems.push({ invItem, type: 'Damaged', qty: item.damagedQty || 0, cost });
-                                                                                        }
-                                                                                    });
-
-                                                                                    const lateFee = Math.max(0, (order.penaltyAmount || 0) - assetPenalty);
-                                                                                    
-                                                                                    // Calculate days late
-                                                                                    const actualReturn = order.closedAt ? new Date(order.closedAt) : new Date();
-                                                                                    const plannedReturn = new Date(order.endDate);
-                                                                                    // Set to midnight for fair day comparison
-                                                                                    actualReturn.setHours(0,0,0,0);
-                                                                                    plannedReturn.setHours(0,0,0,0);
-                                                                                    const diffTime = actualReturn.getTime() - plannedReturn.getTime();
-                                                                                    const daysLate = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-
-                                                                                    return (
-                                                                                        <div className="space-y-4">
-                                                                                            {lateFee > 0 && (
-                                                                                                <div className="flex justify-between items-center text-sm bg-error/5 p-3 rounded-xl border border-error/10">
-                                                                                                    <div className="flex items-center gap-2">
-                                                                                                        <span className="text-theme-body font-bold text-muted">Late Fees</span>
-                                                                                                        <span className="text-xs px-2 py-0.5 rounded-md bg-error/10 text-error font-black uppercase tracking-wide">
-                                                                                                            {daysLate} {daysLate === 1 ? 'day' : 'days'} overdue
-                                                                                                        </span>
-                                                                                                    </div>
-                                                                                                    <span className="text-theme-body font-bold text-error dark:text-rose-400">+{formatCurrency(lateFee)}</span>
-                                                                                                </div>
-                                                                                            )}
-
-                                                                                            {brokenItems.length > 0 && (
-                                                                                                <div className="space-y-2">
-                                                                                                    <div className="flex justify-between items-center text-sm px-1">
-                                                                                                        <span className="text-[10px] font-black text-muted uppercase tracking-widest">Asset Integrity Details</span>
-                                                                                                        <span className="text-theme-body font-bold text-error dark:text-rose-400">+{formatCurrency(assetPenalty)}</span>
-                                                                                                    </div>
-                                                                                                    
-                                                                                                    <div className="border border-error/10 rounded-xl overflow-hidden">
-                                                                                                        <table className="w-full text-left text-sm">
-                                                                                                            <thead>
-                                                                                                                <tr className="bg-error/5 text-muted text-[10px] uppercase tracking-wider border-b border-error/10">
-                                                                                                                    <th className="py-2 px-4 font-bold">Item</th>
-                                                                                                                    <th className="py-2 px-4 font-bold">Status</th>
-                                                                                                                    <th className="py-2 px-4 text-right font-bold">Qty</th>
-                                                                                                                    <th className="py-2 px-4 text-right font-bold">Unit Cost</th>
-                                                                                                                    <th className="py-2 px-4 text-right font-bold">Line Total</th>
-                                                                                                                </tr>
-                                                                                                            </thead>
-                                                                                                            <tbody className="divide-y divide-error/5 bg-background/50">
-                                                                                                                {brokenItems.map((row, i) => (
-                                                                                                                    <tr key={i} className="hover:bg-error/5 transition-colors">
-                                                                                                                        <td className="py-2 px-4">
-                                                                                                                            <div className="flex items-center gap-3">
-                                                                                                                                <DynamicIcon iconString={row.invItem?.image} color={row.invItem?.color} className="w-4 h-4" fallback={<span>📦</span>} />
-                                                                                                                                <span className="text-theme-body font-medium">{row.invItem?.name || 'Unknown Item'}</span>
-                                                                                                                            </div>
-                                                                                                                        </td>
-                                                                                                                        <td className="py-2 px-4">
-                                                                                                                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${row.type === 'Lost' ? 'bg-error/10 text-error' : 'bg-warning/10 text-warning'}`}>
-                                                                                                                                {row.type}
-                                                                                                                            </span>
-                                                                                                                        </td>
-                                                                                                                        <td className="py-2 px-4 text-right font-bold text-theme-body">{row.qty}</td>
-                                                                                                                        <td className="py-2 px-4 text-right text-muted text-theme-body">{formatCurrency(row.invItem?.replacementCost)}</td>
-                                                                                                                        <td className="py-2 px-4 text-right font-bold text-error text-theme-body">+{formatCurrency(row.cost)}</td>
-                                                                                                                    </tr>
-                                                                                                                ))}
-                                                                                                            </tbody>
-                                                                                                        </table>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            )}
-                                                                                        </div>
+                                                                    <>
+                                                                        {/* HEADER: LOST & DAMAGED */}
+                                                                        <tr className="bg-background border-y border-border text-theme-body text-muted uppercase tracking-widest">
+                                                                            <th colSpan={3} className="p-3 pl-6">Lost and Damaged Penalties</th>
+                                                                            <th className="p-3 text-right">Qty</th>
+                                                                            <th className="p-3 text-right">Unit Cost</th>
+                                                                            <th className="p-3 text-right">Duration</th>
+                                                                            <th className="p-3 text-right pr-6">Subtotal</th>
+                                                                        </tr>
+                                                                        {(() => {
+                                                                            const activeItems = (order.items.length > 0 ? order.items : (lazyOrderItems[order.id] || []));
+                                                                            return activeItems.flatMap((item, i) => {
+                                                                                const invItem = inventory.find(inv => inv.id === item.inventoryId);
+                                                                                const rows = [];
+                                                                                if ((item.lostQty || 0) > 0) {
+                                                                                    rows.push(
+                                                                                        <tr key={`lost-${i}`} className="bg-error/5 hover:bg-error/10 transition-colors">
+                                                                                            <td className="p-3 pl-6 flex items-center gap-3">
+                                                                                                <DynamicIcon iconString={invItem?.image} color={invItem?.color} className="w-4 h-4" />
+                                                                                                <span className="text-theme-body font-medium">{invItem?.name} (Lost)</span>
+                                                                                            </td>
+                                                                                            <td className="p-3 text-theme-body text-muted">Asset Integrity</td>
+                                                                                            <td className="p-3 text-right text-error">{formatCurrency(invItem?.replacementCost || 0)}</td>
+                                                                                            <td className="p-3 text-right font-bold">{item.lostQty}</td>
+                                                                                            <td className="p-3 text-right text-muted">{formatCurrency(invItem?.replacementCost)}</td>
+                                                                                            <td className="p-3 text-right text-muted">N/A</td>
+                                                                                            <td className="p-3 text-right pr-6 font-bold text-error">+{formatCurrency((item.lostQty || 0) * (invItem?.replacementCost || 0))}</td>
+                                                                                        </tr>
                                                                                     );
-                                                                                })()}
-                                                                            </div>
-                                                                        </td>
-                                                                    </tr>
+                                                                                }
+                                                                                if ((item.damagedQty || 0) > 0) {
+                                                                                    rows.push(
+                                                                                        <tr key={`dmg-${i}`} className="bg-warning/5 hover:bg-warning/10 transition-colors">
+                                                                                            <td className="p-3 pl-6 flex items-center gap-3">
+                                                                                                <DynamicIcon iconString={invItem?.image} color={invItem?.color} className="w-4 h-4" />
+                                                                                                <span className="text-theme-body font-medium">{invItem?.name} (Damaged)</span>
+                                                                                            </td>
+                                                                                            <td className="p-3 text-theme-body text-muted">Asset Integrity</td>
+                                                                                            <td className="p-3 text-right text-error">{formatCurrency(invItem?.replacementCost || 0)}</td>
+                                                                                            <td className="p-3 text-right font-bold">{item.damagedQty}</td>
+                                                                                            <td className="p-3 text-right text-muted">{formatCurrency(invItem?.replacementCost)}</td>
+                                                                                            <td className="p-3 text-right text-muted">N/A</td>
+                                                                                            <td className="p-3 text-right pr-6 font-bold text-error">+{formatCurrency((item.damagedQty || 0) * (invItem?.replacementCost || 0))}</td>
+                                                                                        </tr>
+                                                                                    );
+                                                                                }
+                                                                                return rows;
+                                                                            });
+                                                                        })()}
+                                                                        {/* HEADER: LATE PENALTIES */}
+                                                                        <tr className="bg-background border-y border-border text-theme-body text-muted uppercase tracking-widest">
+                                                                            <th colSpan={3} className="p-3 pl-6">Late Penalties</th>
+                                                                            <th className="p-3 text-right">Days Late</th>
+                                                                            <th className="p-3 text-right">Daily Rate</th>
+                                                                            <th className="p-3 text-right">Duration</th>
+                                                                            <th className="p-3 text-right pr-6">Subtotal</th>
+                                                                        </tr>
+                                                                        {(() => {
+                                                                            const actualReturn = order.closedAt ? new Date(order.closedAt) : new Date();
+                                                                            const plannedReturn = new Date(order.endDate);
+                                                                            const daysLate = Math.max(0, Math.ceil((actualReturn.setHours(0,0,0,0) - plannedReturn.setHours(0,0,0,0)) / (1000 * 60 * 60 * 24)));
+
+                                                                            if (daysLate <= 0) return null;
+
+                                                                            return (
+                                                                                <tr className="bg-error/5 hover:bg-error/10 transition-colors">
+                                                                                    <td className="p-3 pl-6 font-bold text-error">Late Fees</td>
+                                                                                    <td className="p-3 text-theme-body text-muted">Schedule Variance</td>
+                                                                                    <td className="p-3 text-right text-error">—</td>
+                                                                                    <td className="p-3 text-right font-bold">{daysLate}</td>
+                                                                                    <td className="p-3 text-right text-muted">{formatCurrency(latePenaltyPerDay)}</td>
+                                                                                    <td className="p-3 text-right text-muted">{daysLate} days</td>
+                                                                                    <td className="p-3 text-right pr-6 font-bold text-error">+{formatCurrency(daysLate * latePenaltyPerDay)}</td>
+                                                                                </tr>
+                                                                            );
+                                                                        })()}
+                                                                    </>
                                                                 )}
 
-                                                                {/* DISCOUNT SECTION */}
-                                                                <tr className="border-t border-border">
-                                                                    <td colSpan={7} className="p-0">
-                                                                        <DiscountManager 
-                                                                            subtotal={calculateOrderTotal((order.items.length > 0 ? order.items : (lazyOrderItems[order.id] || [])).map(i => ({ price: i.price, qty: i.qty })), order.startDate, order.endDate)} 
-                                                                            onApply={(form) => handleApplySync(order, form)} 
-                                                                            onClear={() => handleClearDiscount(order)} 
-                                                                            variant="compact" 
-                                                                            initialDiscount={{ name: order.discountName || '', type: order.discountType as 'fixed' | 'percentage' || 'fixed', value: order.discountValue || 0, code: '' }} 
-                                                                            isConfirmedInitial={!!order.discountName}
-                                                                            showNotification={showNotification} 
-                                                                        />
-                                                                    </td>
-                                                                </tr>
-
+                                                                {/* DISCOUNT SECTION - ADMIN ONLY */}
+                                                                {isAdmin && (
+                                                                    <tr className="border-t border-border">
+                                                                        <td colSpan={7} className="p-0">
+                                                                            <DiscountManager 
+                                                                                subtotal={calculateOrderTotal((order.items.length > 0 ? order.items : (lazyOrderItems[order.id] || [])).map(i => ({ price: i.price, qty: i.qty })), order.startDate, order.endDate)} 
+                                                                                onApply={(form) => handleApplySync(order, form)} 
+                                                                                onClear={() => handleClearDiscount(order)} 
+                                                                                variant="compact" 
+                                                                                                                                initialDiscount={{ name: order.discountName || '', type: order.discountType as 'fixed' | 'percentage' || 'fixed', value: order.discountValue || 0, code: '' }} 
+                                                                                                                                isConfirmedInitial={!!order.discountName}
+                                                                                                                                showNotification={showNotification} 
+                                                                                                                                readOnly={['Completed', 'Settlement', 'Rejected', 'Canceled'].includes(order.status)}
+                                                                                                                            />
+                                                                                                                        </td>
+                                                                                                                    </tr>
+                                                                                                                )}
                                                                 {/* GRAND TOTAL ROW */}
                                                                 <tr className="bg-background/50 border-t border-border">
                                                                     <td colSpan={6} className="p-4 pl-6 text-right text-theme-body-bold text-foreground uppercase tracking-tighter">
@@ -537,19 +517,18 @@ export const OrderTable = ({
                                                                                     <span>Actual Return</span>
                                                                                     <span className="text-theme-body text-foreground font-semibold">{order.closedAt ? formatDate(order.closedAt) : '—'}</span>
                                                                                 </div>
-                                                                                <div className="flex flex-col">
-                                                                                    <span>Order Variance</span>
-                                                                                    {(() => {
-                                                                                        if (!order.closedAt) return <span className="text-theme-body text-muted font-semibold italic">In Progress</span>;
-                                                                                        const actual = new Date(order.closedAt).setHours(0,0,0,0);
-                                                                                        const planned = new Date(order.endDate).setHours(0,0,0,0);
-                                                                                        const diffDays = Math.round((actual - planned) / (1000 * 60 * 60 * 24));
-                                                                                        if (diffDays < 0) return <span className="text-theme-body text-secondary font-semibold">{Math.abs(diffDays)} Days Early</span>;
-                                                                                        if (diffDays > 0) return <span className="text-theme-body text-error font-semibold">{diffDays} Days Late</span>;
-                                                                                        return <span className="text-theme-body text-status-completed font-semibold">On Time</span>;
-                                                                                    })()}
-                                                                                </div>
-                                                                            </div>
+                                                                                                                            <div className="flex flex-col">
+                                                                                                                                    <span>Return Variance</span>
+                                                                                                                                    <span className={`text-theme-body font-semibold uppercase ${
+                                                                                                                                        !order.closedAt ? 'text-muted italic' :
+                                                                                                                                        order.returnStatus?.toLowerCase() === 'early' ? 'text-secondary' :
+                                                                                                                                        order.returnStatus?.toLowerCase() === 'late' ? 'text-error' :
+                                                                                                                                        order.returnStatus?.toLowerCase() === 'on time' ? 'text-status-completed' :
+                                                                                                                                        'text-muted italic'
+                                                                                                                                    }`}>
+                                                                                                                                        {order.closedAt ? (order.returnStatus || '—') : '—'}
+                                                                                                                                    </span>
+                                                                                                                                </div>                                                                            </div>
                                                                             
                                                                             <Button 
                                                                                 onClick={() => handleModifyOrder(order)} 

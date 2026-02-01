@@ -85,9 +85,17 @@ export default function PortalLayout({
     }
   };
 
-  const handleConfirmOrder = async () => {
+  const handleConfirmOrder = async (discountInfo?: any) => {
     try {
-        await submitOrder(portalFormData, portalFormData.discountCode);
+        const finalData = discountInfo ? { 
+            ...portalFormData, 
+            discountCode: discountInfo.code,
+            discountName: discountInfo.name,
+            discountType: discountInfo.type,
+            discountValue: discountInfo.value
+        } : portalFormData;
+
+        await submitOrder(finalData, finalData.discountCode);
         setShowInvoice(false);
         showNotification(modifyingOrderId ? "Order updated successfully!" : "Order placed successfully!", "success");
     } catch (error) {
@@ -302,6 +310,7 @@ export default function PortalLayout({
           startDate={portalFormData.start}
           endDate={portalFormData.end}
           orderId={modifyingOrderId || undefined}
+          isEditable={true}
         />
       </div>
     );

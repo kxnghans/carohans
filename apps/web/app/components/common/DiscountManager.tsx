@@ -72,6 +72,8 @@ export const DiscountManager = ({
 
     // 1. Render Empty State
     if (!isApplyingDiscount && !isDiscountConfirmed) {
+        if (readOnly) return null; // Don't show "Apply" button if read-only
+
         if (variant === 'compact') {
             return (
                 <div className="flex items-center justify-end gap-8 p-6 bg-surface border-y border-border/50 animate-in fade-in duration-300">
@@ -138,22 +140,24 @@ export const DiscountManager = ({
                                 <span className="text-theme-body font-mono text-muted uppercase">{discountForm.code}</span>
                             </div>
                         )}
-                        <div className="flex gap-2">
-                            <button 
-                                onClick={() => setIsDiscountConfirmed(false)} 
-                                className="p-2.5 bg-secondary/20 dark:bg-secondary/30 text-secondary hover:bg-secondary hover:text-white dark:text-primary-text rounded-xl transition-all shadow-sm active:scale-90 border border-secondary/10 dark:border-secondary/20" 
-                                title="Modify Discount"
-                            >
-                                <Pencil className="w-4.5 h-4.5" />
-                            </button>
-                            <button 
-                                onClick={handleClear} 
-                                className="p-2.5 bg-error/20 dark:bg-error/30 text-error hover:bg-error hover:text-white dark:text-primary-text rounded-xl transition-all shadow-sm active:scale-90 border border-error/10 dark:border-error/20" 
-                                title="Remove Discount"
-                            >
-                                <X className="w-4.5 h-4.5" />
-                            </button>
-                        </div>
+                        {!readOnly && (
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => setIsDiscountConfirmed(false)} 
+                                    className="p-2.5 bg-secondary/20 dark:bg-secondary/30 text-secondary hover:bg-secondary hover:text-white dark:text-primary-text rounded-xl transition-all shadow-sm active:scale-90 border border-secondary/10 dark:border-secondary/20" 
+                                    title="Modify Discount"
+                                >
+                                    <Pencil className="w-4.5 h-4.5" />
+                                </button>
+                                <button 
+                                    onClick={handleClear} 
+                                    className="p-2.5 bg-error/20 dark:bg-error/30 text-error hover:bg-error hover:text-white dark:text-primary-text rounded-xl transition-all shadow-sm active:scale-90 border border-error/10 dark:border-error/20" 
+                                    title="Remove Discount"
+                                >
+                                    <X className="w-4.5 h-4.5" />
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             );
