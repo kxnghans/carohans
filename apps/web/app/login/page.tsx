@@ -172,7 +172,7 @@ function LoginContent() {
 
                 <form onSubmit={handleLogin} className="space-y-5">
                 <div className="space-y-2">
-                    <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">Email</label>
+                    <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">Email or Username</label>
                     <div className="relative group/input">
                     <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
                         <User className="w-4 h-4" />
@@ -183,7 +183,7 @@ function LoginContent() {
                                             className="w-full pl-20 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
                                             value={loginInput}
                                             onChange={(e) => setLoginInput(e.target.value)}
-                                            placeholder="name@example.com"
+                                            placeholder="Enter email or username..."
                                         />
                                       </div>
                                     </div>

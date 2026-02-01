@@ -4,7 +4,7 @@ import { Icons } from '../../lib/icons';
 import { Card } from '../../components/ui/Card';
 
 export default function AdminHelpPage() {
-    const { Truck, Package, BarChart, Shield, Calendar, Users } = Icons;
+    const { Truck, Package, BarChart, Shield, Calendar, Users, Tag } = Icons;
 
     const sections = [
         {
@@ -15,15 +15,31 @@ export default function AdminHelpPage() {
             items: [
                 {
                     label: "The Order Lifecycle",
-                    content: "Orders transition through: Pending -> Approved -> Active -> Completed. Use row action buttons to advance statuses."
+                    content: "Orders transition through: Pending -> Approved -> Active -> Completed. Row buttons advance statuses and trigger stock updates."
                 },
                 {
-                    label: "Status Override",
-                    content: "Admins can click the Pencil icon next to 'Closed' statuses to manually re-open or adjust any order status via the radio selector."
+                    label: "Self-Healing Totals",
+                    content: "Financial totals are database-enforced. If you change an item price or rental date, the Order Total corrects itself automatically."
                 },
                 {
                     label: "Managing Returns",
-                    content: "Click 'Return' to verify items. You can log lost/damaged quantities and apply automated late penalties during this step."
+                    content: "The Return Audit highlights Late Fees vs Damage Penalties separately, ensuring clear billing for the client."
+                }
+            ]
+        },
+        {
+            title: "Promotions & ROI",
+            icon: Tag,
+            color: "text-secondary",
+            bg: "bg-secondary/10",
+            items: [
+                {
+                    label: "Redemption Ledger",
+                    content: "Click the 'Usage' count in the discount table to see exactly which clients and orders used a specific promotion."
+                },
+                {
+                    label: "Ad-Hoc Adjustments",
+                    content: "Apply one-time manual discounts during return audits to handle customer service goodwill or special concessions."
                 }
             ]
         },

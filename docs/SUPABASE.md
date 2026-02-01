@@ -36,7 +36,7 @@ Stock management and rental catalog.
 *   `id`: `bigint` (Primary Key)
 *   `name`: `text`
 *   `category`: `text`
-*   `stock`: `integer`
+*   `stock`: `integer` (Total Fleet Count)
 *   `price`: `numeric` (Daily rate)
 *   `replacement_cost`: `numeric`
 *   `maintenance`: `integer`
@@ -50,12 +50,15 @@ Transaction lifecycle tracking.
 *   `status`: `text` (`Pending`, `Approved`, `Active`, `Overdue`, `Completed`, `Settlement`)
 *   `start_date`: `date`
 *   `end_date`: `date`
-*   `total_amount`: `numeric`
+*   `total_amount`: `numeric` (Calculated automatically via triggers)
 *   `amount_paid`: `numeric`
 *   `penalty_amount`: `numeric`
 *   `return_status`: `text` (`Early`, `On Time`, `Late`)
 *   `item_integrity`: `text` (`Good`, `Damaged`, `Lost`)
 *   `closed_at`: `timestamp`
+*   `discount_name`: `text`
+*   `discount_type`: `text` (`fixed`, `percentage`)
+*   `discount_value`: `numeric`
 
 ### 1.5 `order_items` Table
 Line items for each order.
@@ -68,9 +71,36 @@ Line items for each order.
 *   `lost_qty`: `integer`
 *   `damaged_qty`: `integer`
 
+### 1.6 `discount_redemptions` Table
+Usage tracking for promotional codes.
+*   `id`: `bigint` (Primary Key)
+*   `discount_id`: `bigint` (References `discounts.id`)
+*   `order_id`: `bigint` (References `orders.id`)
+*   `client_id`: `bigint` (References `clients.id`)
+*   `applied_at`: `timestamptz`
+*   `discount_amount_applied`: `numeric`
+*   `approval_status`: `text` (`approved`, `pending`, `rejected`)
+
 ---
 
-## 2. Row Level Security (RLS)
+## 2. Business Logic & Triggers
+
+### 2.1 Automated Financials
+The system uses Postgres triggers to ensure the `total_amount` column is always correct.
+*   **Triggers:** `trg_update_order_total_items` and `trg_update_order_total_details`.
+*   **Logic:** Whenever an item is changed or order dates/discounts are updated, the `calculate_expected_order_total` function runs.
+*   **Guardrails:** Fixed discounts are capped at the rental subtotal to prevent negative totals.
+
+---
+
+## 3. Security Hardening
+
+### 3.1 Function Isolation
+All critical RPCs and triggers use `SECURITY DEFINER` with a fixed `search_path`.
+*   **Fixed Path:** `SET search_path = public, extensions`
+*   **Impact:** Prevents malicious search path manipulation from hijacking system-level operations.
+
+### 3.2 Row Level Security (RLS)
 
 ### 2.1 Inventory
 *   **SELECT**: Anonymous access (Public) to allow catalog browsing without login.
@@ -87,9 +117,38 @@ Line items for each order.
 
 ---
 
-## 3. Maintenance Commands
+### 4.3 search_orders (RPC)
+Performs a dual-lookup search to minimize network round-trips.
+*   **Parameters:** `search_term` (text), `filter_criteria` (jsonb), `limit_count` (int).
+*   **Logic:**
+    *   **Numeric Check:** If `search_term` is a number, return `WHERE orders.id = search_term`.
+    *   **Text Check:** If `search_term` is text, `JOIN clients ON orders.client_id = clients.id` and return `WHERE clients.name ILIKE %search_term%`.
+    *   **Apply Filters:** Parse `filter_criteria` to apply standard column filters (e.g., `status = 'Active'`).
+    *   **Limit:** Apply `limit_count` (default 200).
 
-To refresh types after schema changes:
-```bash
-cd apps/web && pnpm supabase gen types typescript --local > app/types/supabase.ts
-```
+---
+
+## 5. Query Optimization & Connection Health
+
+### 5.1 Efficient Data Loading
+*   **Pagination:** Ensure orders and clients tables use server-side pagination (`range(0, 50)`) rather than fetching 1000+ rows at once.
+*   **Column Selection:** Strict adherence to `select('id, name, status')` rather than `select('*')` for list views to reduce payload size.
+
+### 5.2 Indexing Strategy
+To prevent slow queries from locking connections, the following indexes are applied:
+*   **Client Filtering:** `CREATE INDEX idx_orders_client_id ON orders(client_id);`
+*   **Status Filtering:** `CREATE INDEX idx_orders_status ON orders(status);`
+*   **Date Range Lookups:** `CREATE INDEX idx_orders_date_range ON orders(start_date, end_date);`
+
+---
+
+## 6. Database Economy
+
+### 6.1 Connection Management (Supavisor)
+Next.js apps must connect via the Transaction Pooler (Port 6543) to prevent connection exhaustion. Free tier limits are strictly managed via this pooler.
+
+### 6.2 Select Policy
+`select('*')` is banned for list views. Explicit column selection is required to minimize Egress quotas and improve query plan performance.
+
+### 6.3 RLS & CPU Optimization
+Ensure RLS policies index the columns used in filters (`user_id`, `status`, `client_id`) to reduce CPU load. Heavy scans on the free tier can lead to temporary rate limiting.

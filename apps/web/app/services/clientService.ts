@@ -5,7 +5,10 @@ import { Client, PortalFormData } from '../types';
  * Fetches all clients. RBAC is handled via Supabase RLS policies.
  */
 export const fetchClientsFromSupabase = async (): Promise<Client[]> => {
-  const { data, error } = await supabase.from('clients').select('*').order('first_name');
+  const { data, error } = await supabase
+    .from('clients')
+    .select('id, first_name, last_name, username, phone, email, total_orders, total_spent, last_order, image, color, address')
+    .order('first_name');
   if (error) throw error;
 
   return (data || []).map(c => ({

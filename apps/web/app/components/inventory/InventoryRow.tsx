@@ -3,6 +3,7 @@ import { formatCurrency } from '../../utils/helpers';
 import { InventoryItem, CartItem } from '../../types';
 import { IconColorPicker } from './IconColorPicker';
 import { DynamicIcon } from '../common/DynamicIcon';
+import { useUI } from '../../context/UIContext';
 
 interface InventoryRowProps {
     item: InventoryItem & { isNew?: boolean };
@@ -44,6 +45,7 @@ export const InventoryRow = ({
     handleIconChange
 }: InventoryRowProps) => {
     const { Minus, Plus, Trash2 } = Icons;
+    const { showNotification } = useUI();
     const isNew = item.isNew;
 
     const isFieldEditing = (field: string) => 
@@ -162,25 +164,41 @@ export const InventoryRow = ({
                 )}
             </td>
 
+            {isAdmin && (
+                <td className="p-4 text-right">
+                    {isFieldEditing('stock') ? (
+                        <input
+                            className="border border-primary ring-4 ring-indigo-500/10 rounded px-2 py-1 text-theme-label w-16 text-right outline-none bg-surface text-foreground dark:[color-scheme:dark]"
+                            type="number"
+                            value={editValue as number}
+                            onChange={(e) => setEditValue(Number(e.target.value))}
+                            onBlur={handleSave}
+                            onKeyDown={handleKeyDown}
+                            autoFocus
+                        />
+                    ) : (
+                        <span 
+                            onClick={() => startEditing(item.id, 'stock', item.stock)}
+                            className="inline-block px-2.5 py-1 rounded-full text-theme-label font-semibold cursor-text bg-background text-muted border border-border"
+                        >
+                            {item.stock}
+                        </span>
+                    )}
+                </td>
+            )}
+
             <td className="p-4 text-right">
-                {isFieldEditing('stock') ? (
-                    <input
-                        className="border border-primary ring-4 ring-indigo-500/10 rounded px-2 py-1 text-theme-label w-16 text-right outline-none bg-surface text-foreground dark:[color-scheme:dark]"
-                        type="number"
-                        value={editValue as number}
-                        onChange={(e) => setEditValue(Number(e.target.value))}
-                        onBlur={handleSave}
-                        onKeyDown={handleKeyDown}
-                        autoFocus
-                    />
-                ) : (
-                    <span 
-                        onClick={() => startEditing(item.id, 'stock', item.stock)}
-                        className="inline-block px-2.5 py-1 rounded-full text-theme-label font-semibold cursor-text bg-background text-muted border border-border"
-                    >
-                        {item.stock}
-                    </span>
-                )}
+                <span 
+                    className={`inline-block px-2.5 py-1 rounded-full text-theme-label font-semibold border ${
+                        (item.availableStock ?? item.stock) <= 0 
+                        ? 'bg-error/10 text-error border-error/20' 
+                        : (item.availableStock ?? item.stock) < item.stock 
+                            ? 'bg-warning/10 text-warning border-warning/20'
+                            : 'bg-success/10 text-success border-success/20'
+                    }`}
+                >
+                    {item.availableStock ?? item.stock}
+                </span>
             </td>
             
             {showOrderColumn && (
@@ -200,14 +218,26 @@ export const InventoryRow = ({
                             onChange={(e) => {
                                 const newVal = parseInt(e.target.value) || 0;
                                 const currentVal = cart?.find((c: CartItem) => c.id === item.id)?.qty || 0;
+                                const maxAvailable = item.availableStock ?? item.stock;
+                                
+                                if (newVal > maxAvailable) {
+                                    showNotification(`Only ${maxAvailable} available for selected dates`, "error");
+                                    return; // Discard input, do not keep max
+                                }
+
+                                if (newVal < 0) return; // Ignore negative inputs
+
                                 const delta = newVal - currentVal;
+                                
                                 if (delta !== 0 && onAddToCart) onAddToCart(item, delta);
                             }}
                             onFocus={(e) => e.target.select()}
                         />
                         <button
                             onClick={() => onAddToCart && onAddToCart(item, 1)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-background text-muted hover:bg-surface border border-border transition-colors"
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-background text-muted hover:bg-surface border border-border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={(cart?.find((c: CartItem) => c.id === item.id)?.qty || 0) >= (item.availableStock ?? item.stock)}
+                            title={(cart?.find((c: CartItem) => c.id === item.id)?.qty || 0) >= (item.availableStock ?? item.stock) ? "Max available stock reached for selected dates" : "Add to cart"}
                         >
                             <Plus className="w-3 h-3" />
                         </button>

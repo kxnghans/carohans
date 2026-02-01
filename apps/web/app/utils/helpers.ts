@@ -2,10 +2,24 @@ import { Order, Metrics } from '../types';
 
 export const formatCurrency = (amount: number | undefined | null) => {
   if (amount === undefined || amount === null || isNaN(amount)) return '¢0';
+  
   if (amount >= 1000000) {
-    return `¢${(amount / 1000000).toFixed(2)}M`;
+    const millions = amount / 1000000;
+    const formattedMillions = millions % 1 === 0 ? millions.toFixed(0) : millions.toFixed(2);
+    return `¢${formattedMillions}M`;
   }
-  return `¢${amount.toLocaleString()}`;
+
+  if (amount % 1 !== 0) {
+    return `¢${amount.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  }
+  
+  return `¢${amount.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  })}`;
 };
 
 export const formatDate = (dateString: string | undefined | null) => {
@@ -50,9 +64,9 @@ export const getStatusDescription = (status: string) => {
 
 export const getReturnStatusColor = (status: string | undefined) => {
   switch (status) {
-    case 'Early': return 'bg-accent-primary text-white border-accent-primary dark:bg-accent-primary dark:text-background dark:border-accent-primary';
-    case 'On Time': return 'bg-success text-white border-success dark:bg-success dark:text-background dark:border-success';
-    case 'Late': return 'bg-status-late text-white border-status-late dark:bg-status-late dark:text-white dark:border-status-late';
+    case 'Early': return 'bg-accent-primary text-white border-accent-primary dark:bg-accent-primary dark:text-background dark:border-accent-primary shadow-sm';
+    case 'On Time': return 'bg-success text-white border-success dark:bg-success dark:text-background dark:border-success shadow-sm';
+    case 'Late': return 'bg-error text-white border-error dark:bg-error dark:text-background dark:border-error shadow-sm';
     default: return 'bg-surface text-muted border-border';
   }
 };
@@ -60,9 +74,9 @@ export const getReturnStatusColor = (status: string | undefined) => {
 export const getItemIntegrityColor = (status: string | undefined) => {
   if (!status) return 'bg-surface text-muted border-border';
   
-  if (status.includes('Lost')) return 'bg-error text-white border-error dark:bg-error/10 dark:text-error dark:border-error/20';
-  if (status.includes('Damaged')) return 'bg-warning text-white border-warning dark:bg-warning/10 dark:text-warning dark:border-warning/20';
-  if (status === 'Good') return 'bg-success text-white border-success dark:bg-success/10 dark:text-success dark:border-success/20';
+  if (status.includes('Lost')) return 'bg-error text-white border-error dark:bg-error dark:text-background dark:border-error shadow-sm';
+  if (status.includes('Damaged')) return 'bg-warning text-white border-warning dark:bg-warning dark:text-background dark:border-warning shadow-sm';
+  if (status === 'Good') return 'bg-success text-white border-success dark:bg-success dark:text-background dark:border-success shadow-sm';
   
   return 'bg-surface text-muted border-border';
 };
@@ -83,19 +97,23 @@ export const calculateOrderTotal = (
   startDate: string, 
   endDate: string,
   discountType?: 'fixed' | 'percentage',
-  discountValue?: number
+  discountValue?: number,
+  penaltyAmount: number = 0
 ) => {
   const days = getDurationDays(startDate, endDate);
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0) * days;
   
-  if (!discountType || !discountValue) return subtotal;
-
-  if (discountType === 'fixed') {
-    return Math.max(0, subtotal - discountValue);
-  } else {
-    const discountAmount = (subtotal * discountValue) / 100;
-    return Math.max(0, subtotal - discountAmount);
+  let discountAmount = 0;
+  if (discountType && discountValue) {
+    if (discountType === 'fixed') {
+      discountAmount = discountValue;
+    } else {
+      discountAmount = (subtotal * discountValue) / 100;
+    }
   }
+
+  // Formula: (Rental Subtotal - Discount) + Total Penalties
+  return Math.max(0, subtotal - discountAmount) + penaltyAmount;
 };
 
 export const calculateMetrics = (orders: Order[]): Metrics => {
@@ -157,4 +175,14 @@ export const calculateMetrics = (orders: Order[]): Metrics => {
     onTimeReturnRate,
     avgDuration
   };
+};
+
+export const generateSecureCode = (length = 8) => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Unambiguous characters
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    if (i > 0 && i % 4 === 0) result += '-';
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 };

@@ -46,7 +46,8 @@ export const InventoryTable = ({
   cart,
   showOrderColumn = true
 }: InventoryTableProps) => {
-  const { Plus } = Icons;
+  const { Plus, Search, X } = Icons;
+  const [searchQuery, setSearchQuery] = useState('');
   const [editingCell, setEditingCell] = useState<{ id: number, field: string } | null>(null);
   const [editValue, setEditValue] = useState<string | number | undefined>(undefined);
   const [showDiscardWarning, setShowDiscardWarning] = useState(false);
@@ -55,12 +56,25 @@ export const InventoryTable = ({
   const [deleteMode, setDeleteMode] = useState<'ask' | 'auto'>('ask');
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: keyof InventoryItem; direction: 'asc' | 'desc' } | null>({
-    key: 'name',
+    key: 'sortOrder',
     direction: 'asc'
   });
 
+  const totalCols = 5 + (isAdmin ? 1 : 0) + (showOrderColumn ? 1 : 0) + (isEditMode ? 1 : 0);
+
+  const isManualSort = sortConfig?.key === 'sortOrder' && sortConfig?.direction === 'asc' && !searchQuery;
+
+  const filteredData = useMemo(() => {
+    if (!searchQuery) return data;
+    const q = searchQuery.toLowerCase();
+    return data.filter(item => 
+      item.name.toLowerCase().includes(q) || 
+      item.category.toLowerCase().includes(q)
+    );
+  }, [data, searchQuery]);
+
   const sortedData = useMemo(() => {
-    const sortableItems = [...data];
+    const sortableItems = [...filteredData];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         const aVal = a[sortConfig.key];
@@ -75,14 +89,19 @@ export const InventoryTable = ({
       });
     }
     return sortableItems;
-  }, [data, sortConfig]);
+  }, [filteredData, sortConfig]);
 
   const requestSort = (key: keyof InventoryItem) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+    if (sortConfig && sortConfig.key === key) {
+      if (sortConfig.direction === 'asc') {
+        setSortConfig({ key, direction: 'desc' });
+      } else {
+        // Return to manual sort
+        setSortConfig({ key: 'sortOrder', direction: 'asc' });
+      }
+    } else {
+      setSortConfig({ key, direction: 'asc' });
     }
-    setSortConfig({ key, direction });
   };
 
   const dataRef = useRef(data);
@@ -124,6 +143,25 @@ export const InventoryTable = ({
   const handleAddItem = (index: number) => {
     if (!setInventory || !isEditMode) return;
     
+    // Calculate new sortOrder based on neighbors in sortedData
+    let newSortOrder: number;
+    const prevItem = sortedData[index];
+    const nextItem = sortedData[index + 1];
+
+    if (!prevItem && !nextItem) {
+        // Empty table
+        newSortOrder = 10;
+    } else if (!prevItem) {
+        // Insert at very top
+        newSortOrder = (nextItem?.sortOrder || 10) / 2;
+    } else if (!nextItem) {
+        // Insert at very bottom
+        newSortOrder = prevItem.sortOrder + 10;
+    } else {
+        // Insert between two items
+        newSortOrder = (prevItem.sortOrder + nextItem.sortOrder) / 2;
+    }
+
     setInventory((prev) => {
       const newItem: TableItem = {
         id: Date.now(),
@@ -135,10 +173,18 @@ export const InventoryTable = ({
         image: "📦",
         maintenance: 0,
         color: "text-slate-600",
+        sortOrder: newSortOrder,
         isNew: true
       };
+      
+      // We want to insert it in the right place in the state array too, 
+      // although the sortOrder will handle the visual positioning on next render.
       const newData = [...prev];
-      newData.splice(index + 1, 0, newItem);
+      // Find the index in the original array that matches the visual position
+      const stateIndex = prev.findIndex(item => item.id === (prevItem?.id || nextItem?.id));
+      const finalInsertIndex = !prevItem ? 0 : stateIndex + 1;
+      
+      newData.splice(finalInsertIndex, 0, newItem);
       return newData;
     });
   };
@@ -197,6 +243,29 @@ export const InventoryTable = ({
 
   return (
     <>
+    <div className="p-4 border-b border-border bg-background/50 flex items-center justify-between gap-4">
+        <div className="relative flex-1 max-w-sm group">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
+            <input 
+                type="text" 
+                placeholder="Filter by name or category..." 
+                className="w-full pl-10 pr-10 py-2 bg-surface border border-border rounded-xl text-theme-label outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all shadow-sm"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+                <button 
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-full transition-colors"
+                >
+                    <X className="w-3 h-3 text-muted" />
+                </button>
+            )}
+        </div>
+        <p className="text-theme-caption text-muted font-medium">
+            Showing {filteredData.length} of {data.length} items
+        </p>
+    </div>
     <ScrollableContainer className="mb-8">
       <table className="w-full text-left border-collapse min-w-[1000px]">
         <thead><tr className="bg-background/50 border-b border-border">
@@ -239,14 +308,22 @@ export const InventoryTable = ({
                 <SortIcon column="replacementCost" sortConfig={sortConfig} />
               </div>
             </th>
+            {isAdmin && (
+              <th
+                className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
+                onClick={() => requestSort('stock')}
+              >
+                <div className="flex items-center justify-end gap-2">
+                  Total Stock
+                  <SortIcon column="stock" sortConfig={sortConfig} />
+                </div>
+              </th>
+            )}
             <th
-              className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
-              onClick={() => requestSort('stock')}
+              className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right"
+              title="Real-time availability based on selected dates (or today if none selected)"
             >
-              <div className="flex items-center justify-end gap-2">
-                Stock
-                <SortIcon column="stock" sortConfig={sortConfig} />
-              </div>
+              Available
             </th>
             {showOrderColumn && <th className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right">Order</th>}
             {isEditMode && <th className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-left pr-6">Action</th>}
@@ -272,9 +349,9 @@ export const InventoryTable = ({
                     setActivePickerId={setActivePickerId}
                     handleIconChange={handleIconChange}
                 />
-                {isAdmin && isEditMode && (
+                {isAdmin && isEditMode && isManualSort && (
                   <tr className="group/separator h-0">
-                    <td colSpan={showOrderColumn ? 6 : (isEditMode ? 6 : 5)} className="p-0 relative">
+                    <td colSpan={totalCols} className="p-0 relative">
                       <div 
                         className="absolute -top-3 h-6 w-full flex items-center justify-center z-10 cursor-pointer opacity-0 group-hover/separator:opacity-100 transition-opacity"
                         onClick={() => handleAddItem(index)}
@@ -292,30 +369,18 @@ export const InventoryTable = ({
               </React.Fragment>
           ))}
           
-          {isAdmin && isEditMode && (
+          {isAdmin && isEditMode && isManualSort && (
              <tr 
-                onClick={() => handleAddItem(data.length - 1)}
+                onClick={() => handleAddItem(sortedData.length - 1)}
                 className="group cursor-pointer border-t border-dashed border-border hover:bg-primary/5 transition-all h-[73px]"
              >
-                <td className="p-4 pl-6">
+                <td colSpan={totalCols} className="p-4 pl-6">
                     <div className="flex items-center gap-3 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300">
                         <div className="h-8 w-8 rounded-lg bg-background border border-dashed border-border flex items-center justify-center text-muted group-hover:border-primary group-hover:text-primary group-hover:bg-surface">
                             <Plus className="w-4 h-4" />
                         </div>
                         <span className="text-theme-body font-medium text-muted italic group-hover:text-primary">Click to add new SKU...</span>
                     </div>
-                </td>
-                <td className="p-4">
-                    <div className="h-2 w-full max-w-[100px] bg-background rounded-full opacity-0 group-hover:opacity-50 transition-opacity"></div>
-                </td>
-                <td className="p-4 text-right">
-                    <div className="h-2 w-12 bg-background rounded-full ml-auto opacity-0 group-hover:opacity-50 transition-opacity"></div>
-                </td>
-                <td className="p-4 text-right">
-                    <div className="h-2 w-12 bg-background rounded-full ml-auto opacity-0 group-hover:opacity-50 transition-opacity"></div>
-                </td>
-                <td className="p-4 text-center">
-                    <div className="h-2 w-8 bg-background rounded-full mx-auto opacity-0 group-hover:opacity-50 transition-opacity"></div>
                 </td>
              </tr>
           )}

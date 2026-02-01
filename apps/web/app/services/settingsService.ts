@@ -5,7 +5,7 @@ import { BusinessSettings } from '../context/AppContext';
  * Fetches global business settings (name, contact info, etc.) from the settings table.
  */
 export const fetchSettingsFromSupabase = async (): Promise<Partial<BusinessSettings>> => {
-  const { data, error } = await supabase.from('settings').select('*');
+  const { data, error } = await supabase.from('settings').select('key, value');
   if (error) throw error;
 
   const settings: Record<string, string> = {};

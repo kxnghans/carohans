@@ -1,28 +1,84 @@
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Icons } from '../../lib/icons';
-import { useAppStore } from '../../context/AppContext';
-import { calculateMetrics, formatCurrency, calculateOrderTotal } from '../../utils/helpers';
+import { Order, Client, InventoryItem } from '../../types';
+import { Card } from '../../components/ui/Card';
 import { FilterCard } from '../../components/dashboard/FilterCard';
-import { ClientSelector } from '../../components/modals/ClientSelector';
-import { InventoryTable } from '../../components/inventory/InventoryTable';
+import { SelectSlicer, ComparisonSlicer, SlicerContainer } from '../../components/common/AllFiltersPane';
+import { OrderTable } from '../../components/orders/OrderTable';
+import { useAppStore } from '../../context/AppContext';
+import { calculateMetrics } from '../../utils/helpers';
 import { InvoiceModal } from '../../components/modals/InvoiceModal';
 import { ReturnModal } from '../../components/modals/ReturnModal';
+import { DateRangeModal } from '../../components/modals/DateRangeModal';
+import { ClientSelector } from '../../components/modals/ClientSelector';
 import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
-import { DatePicker } from '../../components/ui/DatePicker';
-import { DynamicIcon } from '../../components/common/DynamicIcon';
-import { Order, Client, InventoryItem, PortalFormData } from '../../types';
-import { updateOrderStatusToSupabase } from '../../services/orderService';
-import { OrderTable } from '../../components/orders/OrderTable';
+import { searchOrders, updateOrderStatusToSupabase } from '../../services/orderService';
+
+interface ExtendedOrder extends Order {
+  cart: (InventoryItem & { qty: number; lostQty?: number; damagedQty?: number })[];
+  client: { firstName: string; lastName: string; email: string; phone: string; };
+}
 
 export default function AdminOverviewPage() {
-  const { Truck, LayoutDashboard, ClipboardList, AlertOctagon, Check, Search, Plus, X, ChevronRight, Loader2, User, CreditCard } = Icons;
-  const { orders, setOrders, clients, showNotification, inventory, loading, submitOrder, latePenaltyPerDay, modifyingOrderId, setModifyingOrderId, cancelModification, setCart, portalFormData, setPortalFormData, cart, createOrderStep, setCreateOrderStep } = useAppStore();
+  const { Truck, LayoutDashboard, ClipboardList, AlertOctagon, Check, Search, Plus, Loader2, Filter, CreditCard } = Icons;
+  const { 
+    orders, setOrders, clients, showNotification, inventory, 
+    latePenaltyPerDay, portalFormData, setPortalFormData, createOrderStep, setCreateOrderStep 
+  } = useAppStore();
   
   const [mounted, setMounted] = useState(false);
-  const [orderFilter, setOrderFilter] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [dashboardOrders, setDashboardOrders] = useState<Order[]>([]);
+  const [showSlicers, setShowSlicers] = useState(false);
+  const [rangeModalType, setRangeModalType] = useState<'pickup' | 'return' | null>(null);
+
+  const statusOptions = [
+    { value: 'All', label: 'ALL' },
+    { value: 'Pending', label: 'PENDING' },
+    { value: 'Approved', label: 'APPROVED' },
+    { value: 'Active', label: 'ACTIVE' },
+    { value: 'Late', label: 'OVERDUE' },
+    { value: 'Settlement', label: 'SETTLEMENT' },
+    { value: 'Completed', label: 'COMPLETED' },
+    { value: 'Rejected', label: 'REJECTED' },
+    { value: 'Canceled', label: 'CANCELED' }
+  ];
+
+  const varianceOptions = [
+    { value: 'All', label: 'ALL' },
+    { value: 'Early', label: 'EARLY' },
+    { value: 'On Time', label: 'ON TIME' },
+    { value: 'Late', label: 'LATE' }
+  ];
+
+  const [filters, setFilters] = useState({
+      status: 'All',
+      return_status: 'All',
+      id: '',
+      pickup_start: '',
+      pickup_end: '',
+      return_start: '',
+      return_end: '',
+      total_operator: 'gt',
+      total_value: ''
+  });
+
+  const isAnyFilterActive = useMemo(() => {
+    return (
+        searchQuery.trim() !== '' ||
+        filters.status !== 'All' ||
+        filters.return_status !== 'All' ||
+        filters.id !== '' ||
+        filters.pickup_start !== '' ||
+        filters.pickup_end !== '' ||
+        filters.return_start !== '' ||
+        filters.return_end !== '' ||
+        filters.total_value !== ''
+    );
+  }, [searchQuery, filters]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -30,135 +86,76 @@ export default function AdminOverviewPage() {
     }, 0);
     return () => clearTimeout(timer);
   }, []);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
-  const [viewingInvoice, setViewingInvoice] = useState<(Order & { cart: (InventoryItem & { qty: number, lostQty?: number, damagedQty?: number })[], client: Partial<Client> }) | null>(null);
-  
-  const [returnOrder, setReturnOrder] = useState<Order | null>(null);
+  useEffect(() => {
+    const fetchOrders = async () => {
+        setIsSearching(true);
+        try {
+            const results = await searchOrders(searchQuery, filters, 25);
+            setDashboardOrders(results);
+        } catch (e) { 
+            const error = e as Error;
+            console.error("Search failed:", error.message); 
+            showNotification(error.message || "Failed to search orders", "error");
+        }
+        finally { setIsSearching(false); }
+    };
 
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({
-    key: 'id',
-    direction: 'desc'
-  });
+    if (mounted) {
+        const handler = setTimeout(fetchOrders, 300);
+        return () => {
+            clearTimeout(handler);
+        };
+    }
+    return undefined;
+  }, [searchQuery, filters, mounted, showNotification]);
 
   const metrics = useMemo(() => calculateMetrics(orders), [orders]);
 
-  const filteredOrders = useMemo(() => {
-    let result = orders;
-    if (orderFilter !== 'All') {
-        result = result.filter(o => o.status === orderFilter);
-    }
-    if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        result = result.filter(o => 
-            o.clientName.toLowerCase().includes(q) || 
-            o.id.toString().includes(q) ||
-            o.email.toLowerCase().includes(q)
-        );
-    }
-    return result;
-  }, [orders, orderFilter, searchQuery]);
+  const [returnOrder, setReturnOrder] = useState<Order | null>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<ExtendedOrder | null>(null);
 
-  const sortedOrders = useMemo(() => {
-    const sortableItems = [...filteredOrders];
-    if (sortConfig !== null) {
-      sortableItems.sort((a, b) => {
-        let aVal = a[sortConfig.key as keyof typeof a];
-        let bVal = b[sortConfig.key as keyof typeof b];
-        if (sortConfig.key === 'startDate') { aVal = new Date(aVal as string).getTime(); bVal = new Date(bVal as string).getTime(); }
-        
-        if (aVal === undefined || aVal === null) return 1;
-        if (bVal === undefined || bVal === null) return -1;
-
-        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
+  const handleUpdateStatus = async (orderId: number, status: string) => {
+    if (status === 'Completed') {
+        const order = orders.find(o => o.id === orderId);
+        if (order) setReturnOrder(order);
+        return;
     }
-    return sortableItems;
-  }, [filteredOrders, sortConfig]);
 
-  const requestSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+    // 1. OPTIMISTIC UPDATE
+    const previousOrders = [...orders];
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+
+    try {
+      // 2. NETWORK REQUEST (Background)
+      await updateOrderStatusToSupabase(orderId, status);
+      showNotification(`Order status updated to ${status.toLowerCase()}`, "success");
+    } catch (e) {
+      console.error("Status update failed:", e);
+      // 3. ROLLBACK on failure
+      setOrders(previousOrders);
+      showNotification("Failed to update status. Reverting change.", "error");
     }
-    setSortConfig({ key, direction });
   };
 
-  const handleOrderInvoice = (order: Order) => {
-    const reconstructedCart = order.items.map((item) => {
-      const inventoryItem = inventory.find(i => i.id === item.inventoryId);
-      return { 
-        ...inventoryItem, 
-        qty: item.qty,
-        lostQty: item.lostQty,
-        damagedQty: item.damagedQty
-      };
-    }) as (InventoryItem & { qty: number, lostQty?: number, damagedQty?: number })[];
-
+  const handleViewInvoice = (order: Order) => {
     setViewingInvoice({
       ...order,
-      endDate: order.closedAt || order.endDate,
-      cart: reconstructedCart,
-      client: { firstName: order.clientName, email: order.email, phone: order.phone }
-    });
-  };
-
-  const updateOrderStatus = async (orderId: number, newStatus: string, closedAt?: string, returnStatus?: string) => {
-    try {
-      if (newStatus === 'Completed' && !closedAt) {
-          const order = orders.find(o => o.id === orderId);
-          if (order) { setReturnOrder(order); return; }
+      cart: order.items.map(item => ({
+        ...inventory.find(i => i.id === item.inventoryId),
+        ...item,
+        inventoryId: item.inventoryId
+      })) as (InventoryItem & { qty: number; lostQty?: number; damagedQty?: number })[],
+      client: {
+        firstName: order.clientName.split(' ')[0] || '',
+        lastName: order.clientName.split(' ').slice(1).join(' ') || '',
+        email: order.email,
+        phone: order.phone
       }
-      await updateOrderStatusToSupabase(orderId, newStatus, closedAt, returnStatus);
-      setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus, closedAt, returnStatus: returnStatus as 'On Time' | 'Early' | 'Late' | undefined } : o));
-      showNotification(`Order #${orderId} marked as ${newStatus}`);
-    } catch (error) {
-      console.error('Error updating status:', error);
-      showNotification("Failed to update status", "error");
-    }
+    } as ExtendedOrder);
   };
 
-  const addToPosCart = (item: InventoryItem, qty: number) => {
-    setCart(prev => {
-      const existing = prev.find(i => i.id === item.id);
-      if (existing) {
-        const newQty = existing.qty + qty;
-        if (newQty <= 0) return prev.filter(i => i.id !== item.id);
-        return prev.map(i => i.id === item.id ? { ...i, qty: newQty } : i);
-      }
-      if (qty > 0) return [...prev, { id: item.id, qty, price: item.price }];
-      return prev;
-    });
-  };
-
-  const submitAdminOrder = async () => {
-    if (!selectedClient) return;
-    const orderData: PortalFormData = {
-        firstName: selectedClient.firstName,
-        lastName: selectedClient.lastName,
-        username: selectedClient.username || '',
-        phone: selectedClient.phone,
-        email: selectedClient.email,
-        address: selectedClient.address,
-        start: portalFormData.start || (new Date().toISOString().split('T')[0] ?? ''),
-        end: portalFormData.end || (new Date().toISOString().split('T')[0] ?? '')
-    };
-    await submitOrder(orderData);
-    setSelectedClient(null); setCreateOrderStep('none');
-    showNotification("Order created successfully!", "success");
-  };
-
-  if (loading) {
-    return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted">
-            <Loader2 className="w-10 h-10 animate-spin" />
-            <p className="font-medium">Loading Dashboard Data...</p>
-        </div>
-    );
-  }
+  if (!mounted) return null;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -174,7 +171,7 @@ export default function AdminOverviewPage() {
               <span className="w-2 h-2 rounded-full bg-warning animate-pulse shadow-[0_0_8px_var(--color-warning)]"></span> Live Operations
             </div>
             <h2 className="text-theme-header mb-2 text-primary-text dark:text-primary font-bold">Today&apos;s Logistics</h2>
-            <p className="text-primary-text/60 dark:text-primary/60 text-theme-body font-medium">Overview of pickup and return schedules for today.</p>
+            <p className="text-primary-text/60 dark:text-primary/60 text-theme-body font-medium">Overview of pickup and return schedules for today.</p>       
           </div>
 
           <div className="grid grid-cols-3 gap-4 md:gap-8 bg-primary-text/5 dark:bg-primary/5 p-6 rounded-2xl border border-primary-text/10 dark:border-primary/10 backdrop-blur-sm w-full md:w-auto">
@@ -194,132 +191,181 @@ export default function AdminOverviewPage() {
         </div>
       </div>
 
-      {/* FILTERABLE STATUS CARDS */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between px-1">
-            <h3 className="text-theme-caption text-muted uppercase tracking-[0.25em]">Operational Filter Engine</h3>
-            <div className="h-px flex-1 bg-border mx-6 hidden sm:block"></div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-6 lg:gap-8">
-          <FilterCard title="Total Orders" count={orders.length} status="All" active={orderFilter === 'All'} onClick={() => setOrderFilter('All')} color="bg-primary" icon={LayoutDashboard} />
-          <FilterCard title="Pending" count={metrics.pendingRequests} status="Pending" active={orderFilter === 'Pending'} onClick={() => setOrderFilter('Pending')} color="bg-primary" icon={ClipboardList} />
-          <FilterCard title="Active" count={metrics.activeRentals} status="Active" active={orderFilter === 'Active'} onClick={() => setOrderFilter('Active')} color="bg-primary" icon={Truck} />
-          <FilterCard title="Overdue" count={metrics.lateRentals} status="Late" active={orderFilter === 'Late'} onClick={() => setOrderFilter('Late')} color="bg-primary" icon={AlertOctagon} />
-          <FilterCard title="Settlement" count={metrics.settlementOrders} status="Settlement" active={orderFilter === 'Settlement'} onClick={() => setOrderFilter('Settlement')} color="bg-primary" icon={CreditCard} />
-          <FilterCard title="Completed" count={metrics.completedRentals} status="Completed" active={orderFilter === 'Completed'} onClick={() => setOrderFilter('Completed')} color="bg-primary" icon={Check} />
-        </div>
-      </div>
-
-      {/* ORDER HISTORY SECTION */}
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-theme-title text-foreground tracking-tight">{orderFilter === 'All' ? 'Recent Orders' : `${orderFilter} Orders`}</h2>
-            <p className="text-theme-caption text-muted mt-1">{filteredOrders.length} records found</p>
-          </div>
-          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto items-center">
-            <div className="relative w-full md:w-72 group">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Search orders, clients..." 
-                className="w-full pl-12 pr-4 py-2.5 bg-surface border border-border rounded-xl text-theme-label outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all shadow-sm"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+      {createOrderStep === 'none' && (
+        <>
+          {/* OPERATIONAL FILTER ENGINE (MIDDLE) */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between px-1">
+                <h3 className="text-theme-caption text-muted uppercase tracking-[0.25em]">Operational Filter Engine</h3>
+                <div className="h-px flex-1 bg-border mx-6 hidden sm:block"></div>
             </div>
-            <Button className="w-full md:w-auto bg-primary text-primary-text hover:opacity-90 shadow-lg shadow-primary/20" onClick={() => setCreateOrderStep('select-client')}>
-              <Plus className="w-4 h-4 mr-2" /> NEW ORDER
-            </Button>
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-6 lg:gap-8">
+              <FilterCard title="Total Orders" count={orders.length} status="All" active={filters.status === 'All'} onClick={() => setFilters({ ...filters, status: 'All' })} color="bg-primary" icon={LayoutDashboard} />
+              <FilterCard title="Pending" count={metrics.pendingRequests} status="Pending" active={filters.status === 'Pending'} onClick={() => setFilters({ ...filters, status: 'Pending' })} color="bg-primary" icon={ClipboardList} />
+              <FilterCard title="Active" count={metrics.activeRentals} status="Active" active={filters.status === 'Active'} onClick={() => setFilters({ ...filters, status: 'Active' })} color="bg-primary" icon={Truck} />
+              <FilterCard title="Overdue" count={metrics.lateRentals} status="Late" active={filters.status === 'Late'} onClick={() => setFilters({ ...filters, status: 'Late' })} color="bg-primary" icon={AlertOctagon} />
+              <FilterCard title="Settlement" count={metrics.settlementOrders} status="Settlement" active={filters.status === 'Settlement'} onClick={() => setFilters({ ...filters, status: 'Settlement' })} color="bg-primary" icon={CreditCard} />
+              <FilterCard title="Completed" count={metrics.completedRentals} status="Completed" active={filters.status === 'Completed'} onClick={() => setFilters({ ...filters, status: 'Completed' })} color="bg-primary" icon={Check} />
+            </div>
           </div>
-        </div>
 
-        <OrderTable 
-            orders={sortedOrders}
-            inventory={inventory}
-            isAdmin={true}
-            onUpdateStatus={updateOrderStatus}
-            onViewInvoice={handleOrderInvoice}
-            sortConfig={sortConfig}
-            requestSort={requestSort}
-        />
-      </div>
+          <div className="space-y-4">
+            {/* ACTION BAR */}
+            <div className="flex justify-between items-end gap-4">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-theme-title text-foreground tracking-tight">
+                  {isAnyFilterActive ? "Order History" : "Recent Orders"}
+                </h2>
+                <p className="text-theme-caption text-muted mt-1">Showing {dashboardOrders.length} records</p>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                 <Button variant="secondary" className={`font-bold h-[44px] transition-all ${showSlicers ? 'bg-foreground text-background border-foreground shadow-inner' : ''}`} onClick={() => setShowSlicers(!showSlicers)}>
+                    <Filter className="w-4 h-4 mr-2" /> {showSlicers ? 'Hide Slicers' : 'All Filters'}
+                 </Button>
+                 <div className="relative group w-80">
+                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
+                   <input 
+                     type="text" 
+                     placeholder="ID or Client Name..." 
+                     className="w-full pl-11 pr-4 py-2.5 h-[44px] bg-surface border border-border rounded-xl text-theme-body font-medium outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all shadow-sm"
+                     value={searchQuery}
+                     onChange={(e) => setSearchQuery(e.target.value)}
+                   />
+                   {isSearching && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary animate-spin" />}
+                 </div>
+                 <Button 
+                   variant="primary" 
+                   className="font-bold h-[44px] shadow-lg shadow-primary/20" 
+                   onClick={() => window.location.href = '/admin/inventory?mode=order'}
+                 >
+                   <Plus className="w-4 h-4 mr-2" /> NEW ORDER
+                 </Button>
+              </div>
+            </div>
 
-      {/* POS MODALS & OVERLAYS */}
+            {showSlicers && (
+                <Card className="p-6 bg-surface border-border/60 shadow-lg animate-in slide-in-from-top-2 duration-300 relative overflow-visible">
+                    <div className="flex flex-wrap items-end gap-5">
+                        <SlicerContainer label="Order IDs" className="flex-1 min-w-[140px]">
+                            <input 
+                                className="w-full h-11 bg-background border border-border rounded-xl px-4 text-theme-body font-mono font-bold outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all placeholder:font-sans placeholder:font-semibold placeholder:text-muted/50 shadow-sm" 
+                                placeholder="ORDER ID" 
+                                value={filters.id} 
+                                onChange={(e) => setFilters({...filters, id: e.target.value})} 
+                            />
+                        </SlicerContainer>
+
+                        <SelectSlicer 
+                            label="Order Status"
+                            value={filters.status}
+                            options={statusOptions}
+                            onChange={(val) => setFilters({...filters, status: val})}
+                            className="flex-1 min-w-[180px]"
+                        />
+
+                        <SelectSlicer 
+                            label="Order Variance"
+                            value={filters.return_status}
+                            options={varianceOptions}
+                            onChange={(val) => setFilters({...filters, return_status: val})}
+                            className="flex-1 min-w-[140px]"
+                        />
+
+                        <SlicerContainer label="Pickup Range" className="flex-1 min-w-[160px]">
+                            <button 
+                                className="w-full h-11 bg-background border border-border rounded-xl px-4 text-left text-theme-body font-bold flex items-center justify-between group hover:border-primary focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none shadow-sm" 
+                                onClick={() => setRangeModalType('pickup')}
+                            >
+                                <span className={`truncate text-[11px] font-semibold uppercase tracking-widest ${filters.pickup_start ? 'text-foreground' : 'text-foreground/70'}`}>
+                                    {filters.pickup_start ? `${filters.pickup_start.split('-').reverse().slice(0,2).join('/')} - ${filters.pickup_end.split('-').reverse().slice(0,2).join('/')}` : 'Select Dates'}
+                                </span>
+                                <Icons.Calendar className="w-4 h-4 text-muted group-hover:text-primary transition-colors shrink-0" />
+                            </button>
+                        </SlicerContainer>
+
+                        <SlicerContainer label="Return Range" className="flex-1 min-w-[160px]">
+                            <button 
+                                className="w-full h-11 bg-background border border-border rounded-xl px-4 text-left text-theme-body font-bold flex items-center justify-between group hover:border-primary focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none shadow-sm" 
+                                onClick={() => setRangeModalType('return')}
+                            >
+                                <span className={`truncate text-[11px] font-semibold uppercase tracking-widest ${filters.return_start ? 'text-foreground' : 'text-foreground/70'}`}>
+                                    {filters.return_start ? `${filters.return_start.split('-').reverse().slice(0,2).join('/')} - ${filters.return_end.split('-').reverse().slice(0,2).join('/')}` : 'Select Dates'}
+                                </span>
+                                <Icons.Calendar className="w-4 h-4 text-muted group-hover:text-primary transition-colors shrink-0" />
+                            </button>
+                        </SlicerContainer>
+
+                        <ComparisonSlicer 
+                            label="Total Value (¢)"
+                            operator={filters.total_operator}
+                            value={filters.total_value}
+                            onOperatorChange={(op) => setFilters({...filters, total_operator: op})}
+                            onValueChange={(val) => setFilters({...filters, total_value: val})}
+                            className="flex-[1.2] min-w-[200px]"
+                        />
+
+                        <div className="flex items-end h-11 ml-auto">
+                            <Button 
+                                variant="primary" 
+                                className="h-11 px-8 text-theme-subtitle uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95" 
+                                onClick={() => { 
+                                    setSearchQuery(''); 
+                                    setFilters({status:'All', return_status:'All', id:'', pickup_start:'', pickup_end:'', return_start:'', return_end:'', total_operator:'gt', total_value:''}); 
+                                }}
+                            >
+                                RESET
+                            </Button>
+                        </div>
+                    </div>
+                </Card>
+            )}
+
+            {dashboardOrders.length === 0 && !isSearching ? (
+                <div className="text-center py-20 bg-surface border border-dashed border-border rounded-3xl animate-in fade-in duration-500">
+                    <div className="w-20 h-20 bg-muted/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Search className="w-10 h-10 text-muted/40" />
+                    </div>
+                    <h3 className="text-theme-subtitle text-foreground font-bold mb-2">No Records Found</h3>
+                    <p className="text-theme-body text-muted max-w-sm mx-auto">We couldn&apos;t find any orders matching your current filters or search query.</p>
+                    <Button 
+                        variant="secondary" 
+                        className="mt-8 font-black uppercase tracking-widest text-[10px]"
+                        onClick={() => {
+                            setSearchQuery('');
+                            setFilters({status:'All', return_status:'All', id:'', pickup_start:'', pickup_end:'', return_start:'', return_end:'', total_operator:'gt', total_value:''});
+                        }}
+                    >
+                        Clear All Filters
+                    </Button>
+                </div>
+            ) : (
+                <OrderTable 
+                  orders={dashboardOrders} 
+                  inventory={inventory} 
+                  isAdmin={true} 
+                  onUpdateStatus={handleUpdateStatus} 
+                  onViewInvoice={handleViewInvoice}
+                  sortConfig={null}
+                  requestSort={() => {}}
+                />
+            )}
+          </div>
+        </>
+      )}
+
       {createOrderStep === 'select-client' && (
-        <ClientSelector clients={clients} onClose={() => setCreateOrderStep('none')} onSelect={(c: Client) => { setSelectedClient(c); setCreateOrderStep('shop'); }} />
-      )}
-
-      {createOrderStep === 'shop' && (
-        <div className="fixed inset-0 bg-background z-50 overflow-y-auto animate-in fade-in duration-300">
-          <div className="bg-surface border-b border-border sticky top-0 z-40 px-6 h-16 flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-4">
-              <Button variant="secondary" size="sm" onClick={() => { setCreateOrderStep('none'); setModifyingOrderId(null); setCart([]); setPortalFormData(prev => ({ ...prev, start: '', end: '' })); }}><X className="w-4 h-4 mr-2" /> Cancel</Button>
-              <div className="h-6 w-px bg-border"></div>
-              <h2 className="text-theme-subtitle text-foreground mr-2 whitespace-nowrap">{modifyingOrderId ? 'Modifying Order #' + modifyingOrderId : 'New Order For'}</h2>
-              <div className="bg-surface py-2 px-3 rounded-2xl border border-border shadow-sm flex items-center gap-3">
-                <div className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center border transition-all ${selectedClient?.color ? selectedClient.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + (selectedClient.color.split('-')[1] || 'slate') + '-200' : 'bg-background border-border'}`}>
-                    <DynamicIcon 
-                        iconString={selectedClient?.image} 
-                        color={selectedClient?.color} 
-                        className="w-5 h-5" 
-                        fallback={<User className={`w-5 h-5 ${selectedClient?.color || 'text-muted'}`} />} 
-                    />
-                </div>
-                <div className="flex flex-col leading-tight pr-1">
-                    <span className="text-theme-body-bold text-foreground text-sm font-black">{selectedClient?.firstName} {selectedClient?.lastName}</span>
-                    <span className="text-[10px] text-muted font-bold">{selectedClient?.phone} • {selectedClient?.email}</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="text-right mr-2 hidden md:block">
-                <p className="text-theme-caption font-bold text-muted uppercase tracking-wider">Estimated Total</p>
-                <p className="text-theme-title text-foreground">{formatCurrency(calculateOrderTotal(cart, portalFormData.start, portalFormData.end))}</p>
-              </div>
-              {modifyingOrderId && (
-                  <Button 
-                    variant="danger" 
-                    size="md" 
-                    className="bg-error text-primary-text border-error hover:bg-error/90 dark:bg-error"
-                    onClick={() => { setCreateOrderStep('none'); cancelModification(); }}
-                  >
-                    <X className="w-4 h-4 mr-2" /> Discard Changes
-                  </Button>
-              )}
-              <Button onClick={() => setCreateOrderStep('review')} disabled={cart.length === 0}>Review Order ({cart.length}) <ChevronRight className="w-4 h-4 ml-2" /></Button>
-            </div>
-          </div>
-          <div className="max-w-7xl mx-auto p-6">
-            <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:max-w-lg">
-                <DatePicker 
-                  label="Pickup Date"
-                  value={portalFormData.start}
-                  onChange={(val) => setPortalFormData(prev => ({ ...prev, start: val }))}
-                />
-                <DatePicker 
-                  label="Planned Return Date"
-                  value={portalFormData.end}
-                  onChange={(val) => setPortalFormData(prev => ({ ...prev, end: val }))}
-                />
-              </div>
-            </div>
-            <Card noPadding><InventoryTable data={inventory} isAdmin={false} onAddToCart={addToPosCart} cart={cart} /></Card>
-          </div>
-        </div>
-      )}
-
-      {createOrderStep === 'review' && (
-        <InvoiceModal 
-            isOpen={true} 
-            onClose={() => setCreateOrderStep('shop')} 
-            cart={cart.map(item => ({ ...inventory.find(i => i.id === item.id), ...item })) as (InventoryItem & { qty: number })[]} 
-            client={selectedClient} 
-            startDate={portalFormData.start} 
-            endDate={portalFormData.end} 
-            onConfirm={submitAdminOrder} 
-        />
+        <ClientSelector clients={clients} onClose={() => setCreateOrderStep('none')} onSelect={(c: Client) => { 
+            setPortalFormData({
+                ...portalFormData,
+                firstName: c.firstName,
+                lastName: c.lastName,
+                email: c.email,
+                phone: c.phone,
+                username: c.username || ''
+            });
+            setCreateOrderStep('shop'); 
+        }} />
       )}
 
       {viewingInvoice && (
@@ -338,11 +384,12 @@ export default function AdminOverviewPage() {
             discountName={viewingInvoice.discountName}
             discountType={viewingInvoice.discountType}
             discountValue={viewingInvoice.discountValue}
+            orderId={viewingInvoice.id}
+            publicId={viewingInvoice.publicId}
             onConfirm={() => setViewingInvoice(null)} 
         />
       )}
 
-      {/* ENHANCED RETURN TRACKING DIALOG */}
       {mounted && returnOrder && (
         <ReturnModal 
           isOpen={true} 
@@ -353,6 +400,17 @@ export default function AdminOverviewPage() {
           showNotification={showNotification}
         />
       )}
+
+      <DateRangeModal 
+        isOpen={!!rangeModalType}
+        onClose={() => setRangeModalType(null)}
+        initialStart={rangeModalType === 'pickup' ? filters.pickup_start : filters.return_start}
+        initialEnd={rangeModalType === 'pickup' ? filters.pickup_end : filters.return_end}
+        onSelect={(start, end) => {
+            if (rangeModalType === 'pickup') setFilters({...filters, pickup_start: start, pickup_end: end});
+            else setFilters({...filters, return_start: start, return_end: end});
+        }}
+      />
     </div>
   );
 }

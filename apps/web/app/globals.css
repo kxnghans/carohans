@@ -258,6 +258,25 @@ input[type='number'] {
     margin: 20mm 5mm; 
   }
 
+  /* Force Light Mode Variables for Print */
+  :root {
+    --background: #ffffff !important;
+    --surface: #ffffff !important;
+    --foreground: #0f172a !important;
+    --primary-text: #ffffff !important;
+    --muted: #64748b !important;
+    --border: #e2e8f0 !important;
+    
+    --primary: #0f172a !important;
+    --secondary: #4f46e5 !important;
+    --accent-primary: #2563eb !important;
+    --accent-secondary: #64748b !important;
+    
+    --success: #10b981 !important;
+    --error: #be123c !important;
+    --warning: #f59e0b !important;
+  }
+
   html,
   body {
     height: auto !important;
@@ -269,6 +288,7 @@ input[type='number'] {
     position: static !important; 
     zoom: 1 !important;
     color: black !important;
+    color-scheme: light !important;
   }
 
   body > *:not(.invoice-modal-overlay) {

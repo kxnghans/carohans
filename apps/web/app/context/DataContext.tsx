@@ -1,15 +1,19 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { InventoryItem, Order, Client, CartItem, PortalFormData, Metrics } from '../types';
+import { InventoryItem, Order, Client, CartItem, PortalFormData, Metrics, Discount } from '../types';
 import { BusinessSettings } from '../types/context';
 import { calculateMetrics } from '../utils/helpers';
 import { submitOrderToSupabase } from '../services/orderService';
 import { fetchInventoryFromSupabase } from '../services/inventoryService';
-import { fetchClientsFromSupabase, updateClientProfile as updateClientProfileService } from '../services/clientService';
+import { updateClientProfile as updateClientProfileService } from '../services/clientService';
 import { fetchSettingsFromSupabase, updateSettingsInSupabase } from '../services/settingsService';
+import { fetchDiscountsWithStats } from '../services/discountService';
+import { getInventoryCached } from '../actions/inventory';
+import { getClients } from '../actions/clients';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { useUI } from './UIContext';
+import { encodeOrderId } from '../utils/idHandler';
 
 export interface DataContextType {
   inventory: InventoryItem[];
@@ -18,18 +22,24 @@ export interface DataContextType {
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   clients: Client[];
   setClients: React.Dispatch<React.SetStateAction<Client[]>>;
+  discounts: Discount[];
+  setDiscounts: React.Dispatch<React.SetStateAction<Discount[]>>;
   cart: CartItem[];
   setCart: React.Dispatch<React.SetStateAction<CartItem[]>>;
   metrics: Metrics;
   portalFormData: PortalFormData;
   setPortalFormData: React.Dispatch<React.SetStateAction<PortalFormData>>;
-  submitOrder: (details: PortalFormData) => Promise<void>;
+  submitOrder: (details: PortalFormData, discountCode?: string) => Promise<void>;
   loading: boolean;
   updateProfile: (details: PortalFormData) => Promise<void>;
+  fetchData: (silent?: boolean) => Promise<void>;
   latePenaltyPerDay: number;
   setLatePenaltyPerDay: React.Dispatch<React.SetStateAction<number>>;
+  taxRate: number;
+  setTaxRate: React.Dispatch<React.SetStateAction<number>>;
   businessSettings: BusinessSettings;
   updateBusinessSettings: (settings: BusinessSettings) => Promise<void>;
+  checkAvailability: (start: string, end: string) => Promise<void>;
   modifyingOrderId: number | null;
   setModifyingOrderId: React.Dispatch<React.SetStateAction<number | null>>;
   cancelModification: () => void;
@@ -46,9 +56,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [latePenaltyPerDay, setLatePenaltyPerDay] = useState(50);
+  const [taxRate, setTaxRate] = useState(0);
   const [modifyingOrderId, setModifyingOrderId] = useState<number | null>(null);
   const [createOrderStep, setCreateOrderStep] = useState<'none' | 'select-client' | 'shop' | 'review'>('none');
   
@@ -67,7 +79,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       phone: '', 
       email: '', 
       start: '', 
-      end: '' 
+      end: '',
+      discountCode: ''
   });
 
   // Load cart from local storage
@@ -91,7 +104,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const { data, error } = await supabase
       .from('orders')
       .select(`
-        *,
+        id, client_name, phone, email, status, start_date, end_date, total_amount, amount_paid, 
+        penalty_amount, deposit_paid, closed_at, return_status, item_integrity, 
+        discount_name, discount_type, discount_value,
         order_items (
           inventory_id,
           quantity,
@@ -115,6 +130,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
         return {
           id: o.id,
+          publicId: encodeOrderId(o.id),
           clientName: o.client_name,
           phone: o.phone,
           email: o.email,
@@ -160,11 +176,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
               business_email: settings.business_email || '',
               business_location: settings.business_location || '',
               maps_link: settings.maps_link || '',
-              late_penalty: settings.late_penalty || ''
+              late_penalty: settings.late_penalty || '',
+              tax_rate: settings.tax_rate || ''
             }));
             
             if (settings.late_penalty) {
                 setLatePenaltyPerDay(Number(settings.late_penalty));
+            }
+            if (settings.tax_rate) {
+                setTaxRate(Number(settings.tax_rate));
             }
         }
       } catch (e) {
@@ -185,7 +205,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           if (profile?.role === 'client') {
               const { data: client } = await supabase
                 .from('clients')
-                .select('*')
+                .select('first_name, last_name, name, username, phone, email, address, image, color')
                 .eq('user_id', user.id)
                 .single();
               
@@ -206,14 +226,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Parallel fetch
-      const [invData, clientData] = await Promise.all([
-          fetchInventoryFromSupabase(),
-          fetchClientsFromSupabase(),
+      const [invData, clientData, discountData] = await Promise.all([
+          getInventoryCached(),
+          getClients(),
+          fetchDiscountsWithStats(),
           fetchOrders() // Updates internal state directly
       ]);
       
       setInventory(invData);
       setClients(clientData);
+      setDiscounts(discountData);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -229,6 +251,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (!user) {
           setOrders([]);
           setClients([]);
+          setDiscounts([]);
           setCart([]);
           setModifyingOrderId(null);
           setPortalFormData({
@@ -238,7 +261,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
               phone: '', 
               email: '', 
               start: '', 
-              end: '' 
+              end: '',
+              discountCode: ''
           });
           localStorage.removeItem('carohans_cart');
       }
@@ -246,9 +270,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const metrics = useMemo(() => calculateMetrics(orders) as Metrics, [orders]);
 
-  const submitOrder = async (details: PortalFormData) => {
+  const submitOrder = async (details: PortalFormData, discountCode?: string) => {
     try {
-      await submitOrderToSupabase(details, cart, inventory, modifyingOrderId);
+      await submitOrderToSupabase(details, cart, inventory, modifyingOrderId, discountCode);
       const wasModifying = !!modifyingOrderId;
       setCart([]);
       setModifyingOrderId(null);
@@ -279,6 +303,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           if (settings.late_penalty) {
             setLatePenaltyPerDay(Number(settings.late_penalty));
           }
+          if (settings.tax_rate) {
+            setTaxRate(Number(settings.tax_rate));
+          }
           showNotification("Business settings updated!");
       } catch (error) {
           console.error('Error updating business settings:', error);
@@ -286,10 +313,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
   };
 
+  const checkAvailability = async (start: string, end: string) => {
+      try {
+          setLoading(true);
+          const data = await fetchInventoryFromSupabase(start, end);
+          setInventory(data);
+      } catch (error) {
+          console.error('Error checking availability:', error);
+          showNotification("Failed to check availability", "error");
+      } finally {
+          setLoading(false);
+      }
+  };
+
   const cancelModification = () => {
       setModifyingOrderId(null);
       setCart([]);
-      setPortalFormData(prev => ({ ...prev, start: '', end: '' }));
+      setPortalFormData(prev => ({ ...prev, start: '', end: '', discountCode: '' }));
       showNotification("Changes discarded", "info");
   };
 
@@ -302,6 +342,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setOrders,
         clients,
         setClients,
+        discounts,
+        setDiscounts,
         cart,
         setCart,
         metrics,
@@ -310,10 +352,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         submitOrder,
         loading,
         updateProfile,
+        fetchData,
         latePenaltyPerDay,
         setLatePenaltyPerDay,
+        taxRate,
+        setTaxRate,
         businessSettings,
         updateBusinessSettings,
+        checkAvailability,
         modifyingOrderId,
         setModifyingOrderId,
         cancelModification,

@@ -4,7 +4,7 @@
 **Business Name:** CaroHans Ventures
 **Location:** Accra, Ghana
 **Currency:** ¢ (Ghana Cedi)
-**Version:** 2.0 (Next.js App Router Refactor + Advanced Features)
+**Version:** 2.1 (Logistics & Financial Hardening)
 
 ---
 
@@ -17,7 +17,7 @@ To provide CaroHans Ventures with a robust web application that manages the full
 *   **Efficiency:** Reduce return processing and fee calculation time to < 5 minutes per order.
 *   **Accuracy:** Eliminate manual calculation errors for late fees and missing item charges via automated billing logic.
 *   **Inventory Control:** Real-time synchronization of stock levels across all routes.
-*   **User Adoption:** 100% of internal staff using the system for inventory edits and order approvals.
+*   **Validation:** Zero overbooking via database-level atomic checks.
 
 ---
 
@@ -25,8 +25,8 @@ To provide CaroHans Ventures with a robust web application that manages the full
 
 *   **Framework:** Next.js 16+ (App Router)
 *   **State Management:** React Context API (`AppProvider`) for global persistent state (Inventory, Orders, Customers).
+*   **Database Truth:** Postgres Triggers for financial rollups and stock validation.
 *   **Styling:** Tailwind CSS 4.0
-*   **Icons:** Material Design Icons (`@mui/icons-material`) via centralized registry.
 *   **Deployment:** Cloudflare (via OpenNext)
 
 ---
@@ -47,8 +47,23 @@ To provide CaroHans Ventures with a robust web application that manages the full
 *   **Order Status Management:** Filterable view of all orders (Pending, Approved, Active, Overdue, Completed).
 *   **Status Transitions:** Admin can manually move orders through the lifecycle (e.g., Dispatch, Process Return).
 
+#### 4.1.1 Advanced Order Management (Dashboard)
+*   **Default View:** "Recent Orders" (Last 5-10 active/pending items).
+*   **Smart Search:** 
+    *   **Input:** Accepts numeric (Order ID) or string (Client Name) queries.
+    *   **Behavior:** Numeric search returns exact Order match; String search returns all historical orders for that Client.
+*   **Slicers (Advanced Filter):**
+    *   **Visibility:** Toggled via an "All Filters" button (default: Hidden).
+    *   **Layout:** Horizontal row of dropdowns/inputs matching Order columns.
+    *   **Responsiveness:** Stacked on mobile, row on desktop.
+*   **Data Cap & Pagination:**
+    *   **Limit:** Query results are capped at 200 rows to preserve browser performance.
+    *   **Feedback:** Display "Results capped at 200" warning only if the return count equals the limit.
+    *   **Expansion:** "View More" button appends data to the table up to the 200 limit.
+
 ### 4.2 Inventory Management (`/admin/inventory`)
 *   **Edit Mode:** A toggleable mode that enables inline editing of names, categories, and prices.
+*   **Search Filtering:** A dedicated text input field to filter the inventory list by Item Name or Category instantly.
 *   **Add SKU:** Dedicated "Click to add new SKU" row at the bottom of the table.
 *   **Draft Validation:** New items must have a valid Name, Category, Price, and Replacement Cost. Click-away validation triggers a "Discard or Keep Editing" prompt.
 *   **Visual Customization:** Integrated **Icon & Color Picker** for every item. Supports Material Icons and Emojis with custom Tailwind text colors.
@@ -97,7 +112,37 @@ To provide CaroHans Ventures with a robust web application that manages the full
 ### 6.1 Automated Billing
 *   **Late Fees:** Calculated as `Daily Rate * Days Late * Quantity`.
 *   **Replacement Fees:** Triggered by damage flags or missing item counts during return processing.
+*   **Financial Guardrails:**
+    *   **Capped Discounts:** Fixed discounts cannot exceed the rental subtotal (Total floor is $0 before penalties).
+    *   **Self-Healing Totals:** Database triggers recalculate `total_amount` on every item or date change, ensuring 100% audit accuracy.
+
+### 6.2 Logistics & Inventory
+*   **Atomic Order Placement:** The database performs a blocking availability check during the `submit_order` transaction.
+*   **Dynamic Availability:** Catalog "Available" counts are calculated in real-time based on existing orders for the selected dates.
 *   **Unified Presentation:** Admin "Due" amounts are calculated dynamically but hidden from primary order lists to maintain clean accounting views.
+
+---
+
+## 8. Performance & Free Tier Constraints
+
+### 8.1 Connection Policy
+All production runtime traffic **MUST** use Port 6543 (Transaction Pooler). Port 5432 is reserved for migrations only. This prevents connection exhaustion on the free tier.
+
+### 8.2 Caching Strategy
+*   **Inventory Catalog:** Wrap the inventory fetch logic in `unstable_cache` (or fetch with `next: { tags: ['inventory-public'] }`).
+    *   **Cache Strategy:** 1 Hour TTL.
+    *   **Revalidation:** Trigger `revalidateTag('inventory-public')` only when an Admin adds, edits, or deletes an item.
+    *   **Goal:** Serve the client portal catalog entirely from the Next.js CDN/Cache, hitting the Supabase database 0 times for read-only traffic.
+*   **Orders:** No caching (Real-time required).
+
+### 8.3 Optimistic Mutations & UX Standard
+To resolve the "page reset" issue:
+*   **State Update Pattern:** When an Admin clicks "Approve":
+    1.  Immediately update the local orders state in the React Context.
+    2.  Display the new status UI instantly.
+    3.  Send the request to Supabase in the background.
+    4.  Rollback the UI change and show a `NotificationToast` only if the request fails.
+*   **Forbidden:** usage of `window.location.reload()` or full `router.refresh()` for single-row updates is **Strictly Prohibited**. Use React State or Context for localized updates.
 
 ---
 
