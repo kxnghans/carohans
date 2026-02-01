@@ -87,8 +87,19 @@ This document outlines the verification steps required to ensure the application
 ---
 
 ## 8. Error Handling & Edge Cases
+- [ ] **Overbooking Protection:** 
+    - [ ] Identify an item with 2 units available for a specific date.
+    - [ ] Attempt to place an order for 3 units for that same date.
+    - [ ] **Expectation:** Database rejects the order; UI displays "Insufficient stock" error.
+- [ ] **Automated Financial Rollup:**
+    - [ ] Manually change an order's `penalty_amount` or a line item's `unit_price` in the database.
+    - [ ] **Expectation:** The `total_amount` column in the `orders` table updates automatically without manual intervention.
+- [ ] **Discount Capping:**
+    - [ ] Create an order with a subtotal of ¢100.
+    - [ ] Apply a fixed discount of ¢500.
+    - [ ] **Expectation:** Grand Total is ¢0 (not -¢400). Penalties added after this should still increase the total from ¢0.
+- [ ] **One-Time Code Enforcement:**
+    - [ ] Use a 'One-Time' discount code for an order and complete it.
+    - [ ] Attempt to use the same code for a second order with the same email.
+    - [ ] **Expectation:** Validation blocks the code with "You have already used this discount."
 - [ ] **Module Resolution:** Ensure no "Module Not Found" errors appear in the console (verifies central icon registry).
-- [ ] **Empty States:** Filter orders by a status that has zero records; verify the "No orders found" illustration appears.
-- [ ] **Unified Order UI:** Verify that the "Total" column in Admin Order list shows the total billable amount, while detailed breakdowns (Late Fees, Damage Penalties) are managed within the standalone `ReturnModal`.
-- [ ] **Return Audit Extraction:** Verify that the `ReturnModal` handles all item inspections (Good/Lost/Damaged) and correctly updates the `order_items` table and inventory stock levels.
-- [ ] **Validation Race Conditions:** Rapidly clicking "Discard" and "Keep Editing" on the draft row validation.

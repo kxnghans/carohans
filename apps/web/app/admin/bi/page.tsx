@@ -256,8 +256,8 @@ const FilterDropdown = ({ label, options, selected, onToggle }: {
 };
 
 export default function AdminBIPage() {
-  const { clients, orders, inventory } = useAppStore();
-  const { Users, Cash, BarChart: BarIcon, Package, Calendar, ChevronRight } = Icons;
+  const { clients, orders, inventory, discounts } = useAppStore();
+  const { Users, Cash, BarChart: BarIcon, Package, Calendar, ChevronRight, Tag, TrendingDown } = Icons;
 
   // Filters State
   const [timeRange, setTimeRange] = useState('All Time');
@@ -339,6 +339,10 @@ export default function AdminBIPage() {
 
   // 3. Re-calculate metrics for StatCards
   const localMetrics = useMemo(() => calculateMetrics(categoryFilteredData), [categoryFilteredData]);
+
+  const promoYield = useMemo(() => {
+      return discounts.reduce((sum, d) => sum + (d.totalImpact || 0), 0);
+  }, [discounts]);
 
   // 4. Monthly Trends
   const financialTrends = useMemo(() => {
@@ -436,6 +440,21 @@ export default function AdminBIPage() {
         .sort((a, b) => b.value - a.value)
         .slice(0, 10);
   }, [categoryFilteredData, inventory]);
+
+  // 8. Discount Performance
+  const discountUsageData = useMemo(() => {
+      return discounts
+        .map(d => ({ name: d.code, value: d.usageCount || 0 }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
+  }, [discounts]);
+
+  const discountImpactData = useMemo(() => {
+      return discounts
+        .map(d => ({ name: d.name, value: d.totalImpact || 0 }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
+  }, [discounts]);
 
   const filteredTrends = useMemo(() => {
     const data = financialTrends.length > 0 ? financialTrends : [];
@@ -553,8 +572,30 @@ export default function AdminBIPage() {
           });
       }
 
+      const topDiscount = [...discounts].sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0))[0];
+      if (topDiscount && (topDiscount.usageCount || 0) > 0) {
+          insights.push({
+              title: "Promo Lead",
+              desc: `"${topDiscount.code}" is your most used discount with ${topDiscount.usageCount} redemptions.`,
+              icon: Icons.Tag,
+              color: "text-secondary",
+              bg: "bg-secondary/10"
+          });
+      }
+
+      const highImpactDiscount = [...discounts].sort((a, b) => (b.totalImpact || 0) - (a.totalImpact || 0))[0];
+      if (highImpactDiscount && (highImpactDiscount.totalImpact || 0) > 500) {
+          insights.push({
+              title: "Budget Audit",
+              desc: `"${highImpactDiscount.name}" has the highest financial impact, accounting for ${formatCurrency(highImpactDiscount.totalImpact || 0)} in discounts.`,
+              icon: Icons.TrendingDown,
+              color: "text-error",
+              bg: "bg-error/10"
+          });
+      }
+
       return insights;
-  }, [financialTrends, inventoryPerformanceData, categoryFilter, localMetrics, categoryFilteredData, orders]);
+  }, [financialTrends, inventoryPerformanceData, categoryFilter, localMetrics, categoryFilteredData, orders, discounts]);
 
   useEffect(() => {
     const shuffle = () => {
@@ -644,7 +685,7 @@ export default function AdminBIPage() {
           color="primary" 
           icon={Cash} 
         />
-        <StatCard title="Avg. Ticket" value={formatCurrency(Math.floor(localMetrics.avgOrderValue))} subtext="Value per booking" color="secondary" icon={Icons.CreditCard} />
+        <StatCard title="Promo Yield" value={formatCurrency(promoYield)} subtext="Total concessions" color="secondary" icon={Tag} />
         <StatCard title="Total Clients" value={clients.length.toString()} subtext="Registered accounts" color="primary" icon={Users} />
         <StatCard title="Avg. Duration" value={`${Math.round(localMetrics.avgDuration || 0)} Days`} subtext="Per rental contract" color="success" icon={Calendar} />
       </div>
@@ -841,6 +882,102 @@ export default function AdminBIPage() {
                     </div>
                 )) : <div className="text-center py-12 text-muted italic text-theme-body">No significant data patterns found for this segment.</div>}
             </div>
+        </Card>
+      </div>
+
+      {/* PROMOTION PERFORMANCE VISUALS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <Card className="border-border bg-surface flex flex-col">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+                <h3 className="text-theme-title font-bold text-foreground mb-1">Promotion Adoption</h3>
+                <p className="text-theme-body text-muted">Redemptions by discount code</p>
+            </div>
+            <div className="p-2 bg-secondary/10 border border-secondary/20 rounded-xl text-secondary shadow-sm">
+                <Tag className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="h-[260px] w-full relative min-h-[260px] outline-none" style={{ width: '100%', height: 260 }}>
+            {isMounted ? (
+            <ResponsiveContainer width="100%" height="100%">
+                <BarChart layout="vertical" data={discountUsageData} margin={{ left: 30, right: 30 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--color-border)" />
+                    <XAxis type="number" hide />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      width={100} 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: 'var(--color-muted)', fontSize: 12, fontWeight: 500 }} 
+                    />
+                    <RechartsTooltip 
+                        content={<CustomTooltip />} 
+                        cursor={{ fill: 'var(--color-secondary)', fillOpacity: 0.05 }} 
+                    />
+                    <Bar 
+                        dataKey="value" 
+                        fill="var(--color-secondary)" 
+                        radius={[0, 4, 4, 0]} 
+                        barSize={22}
+                        activeBar={<Rectangle stroke="var(--color-secondary)" strokeWidth={1} fillOpacity={0.8} />}
+                    >
+                        <LabelList dataKey="value" position="right" className="text-theme-body font-medium fill-muted" offset={10} />
+                    </Bar>
+                </BarChart>
+            </ResponsiveContainer>
+            ) : <div className="w-full h-full bg-background animate-pulse rounded-xl"></div>}
+          </div>
+        </Card>
+
+        <Card className="border-border bg-surface flex flex-col">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+                <h3 className="text-theme-title font-bold text-foreground mb-1">Revenue Forgone</h3>
+                <p className="text-theme-body text-muted">Financial impact of active promotions</p>
+            </div>
+            <div className="p-2 bg-error/10 border border-error/20 rounded-xl text-error shadow-sm">
+                <TrendingDown className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="h-[260px] w-full relative min-h-[260px] outline-none" style={{ width: '100%', height: 260 }}>
+            {isMounted ? (
+            <ResponsiveContainer width="100%" height="100%">
+                <BarChart layout="vertical" data={discountImpactData} margin={{ left: 30, right: 30 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--color-border)" />
+                    <XAxis type="number" hide />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      width={100} 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: 'var(--color-muted)', fontSize: 12, fontWeight: 500 }} 
+                    />
+                    <RechartsTooltip 
+                        content={<CustomTooltip />} 
+                        cursor={{ fill: 'var(--color-error)', fillOpacity: 0.05 }} 
+                    />
+                    <Bar 
+                        dataKey="value" 
+                        fill="var(--color-error)" 
+                        radius={[0, 4, 4, 0]} 
+                        barSize={22}
+                        activeBar={<Rectangle stroke="var(--color-error)" strokeWidth={1} fillOpacity={0.8} />}
+                    >
+                        <LabelList dataKey="value" position="right" content={(props) => {
+                            const { x, y, value, width } = props as { x: number; y: number; value: number; width: number };
+                            return (
+                                <text x={x + width + 10} y={y + 15} fill="var(--color-muted)" className="text-[11px] font-bold">
+                                    {formatCurrency(value)}
+                                </text>
+                            );
+                        }} />
+                    </Bar>
+                </BarChart>
+            </ResponsiveContainer>
+            ) : <div className="w-full h-full bg-background animate-pulse rounded-xl"></div>}
+          </div>
         </Card>
       </div>
     </div>

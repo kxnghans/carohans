@@ -3,15 +3,16 @@ import { Card } from '../ui/Card';
 
 interface StatCardProps {
   title: string;
-  value: string;
-  subtext: string;
+  value: string | number;
+  subtext?: string;
   trend?: number;
   trendLabel?: string;
   icon: React.ComponentType<{ className?: string }>;
+  iconClassName?: string;
   color: 'primary' | 'secondary' | 'success' | 'warning' | 'accent';
 }
 
-export const StatCard = ({ title, value, subtext, trend, trendLabel, icon: Icon, color }: StatCardProps) => {
+export const StatCard = ({ title, value, subtext, trend, trendLabel, icon: Icon, iconClassName, color }: StatCardProps) => {
   const { TrendingUp, TrendingDown } = Icons;
   
   const colorMap = {
@@ -42,13 +43,13 @@ export const StatCard = ({ title, value, subtext, trend, trendLabel, icon: Icon,
     <Card noPadding className={`relative overflow-hidden group hover:shadow-xl dark:hover:shadow-none transition-all duration-500 border-none shadow-sm ring-1 ring-border min-h-[160px] sm:min-h-[185px] w-full ${gradientMap[color]}`}>
       {/* Decorative Ghost Icon */}
       <div className={`absolute -right-2 -top-2 p-4 opacity-[0.05] group-hover:opacity-[0.12] transition-all duration-700 group-hover:scale-110 transform rotate-12 text-foreground`}>
-        <Icon className="w-16 h-16 sm:w-24 sm:h-24" />
+        <Icon className={`w-16 h-16 sm:w-24 sm:h-24 ${iconClassName || ''}`} />
       </div>
 
       <div className="relative z-10 p-4 sm:p-6 pb-6 sm:pb-8">
         <div className="flex items-center justify-between mb-4 sm:mb-5">
           <div className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl ${colorMap[color]} transition-all duration-500 group-hover:scale-110`}>
-            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+            <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${iconClassName || ''}`} />
           </div>
         {trend !== undefined && (
           <div className="flex flex-col items-center gap-1">
@@ -76,7 +77,7 @@ export const StatCard = ({ title, value, subtext, trend, trendLabel, icon: Icon,
           <div className="flex items-baseline gap-2">
             <span className="text-lg sm:text-theme-header text-foreground tracking-tight font-bold truncate">{value}</span>
           </div>
-          <p className="mt-1 sm:mt-2 text-muted text-[11px] sm:text-theme-label font-medium leading-tight line-clamp-2">{subtext}</p>
+          {subtext && <p className="mt-1 sm:mt-2 text-muted text-[11px] sm:text-theme-label font-medium leading-tight line-clamp-2">{subtext}</p>}
         </div>
       </div>
       

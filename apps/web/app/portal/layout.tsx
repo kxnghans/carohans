@@ -39,8 +39,9 @@ export default function PortalLayout({
     else setTheme('system');
   };
 
-  // Determine if checkout is allowed (dates selected + items in cart)
-  const canCheckout = portalFormData.start && portalFormData.end && cart.length > 0;
+  // Determine if checkout is allowed (dates selected + items in cart + valid range)
+  const isDateRangeValid = portalFormData.start && portalFormData.end && new Date(portalFormData.end) >= new Date(portalFormData.start);
+  const canCheckout = isDateRangeValid && cart.length > 0;
 
   const isCatalogPage = pathname === '/portal/inventory';
   const hasItems = cart.length > 0;
@@ -70,15 +71,29 @@ export default function PortalLayout({
     } else {
       const missing: string[] = [];
       if (!portalFormData.start) missing.push("start date");
-      if (!portalFormData.end) missing.push("end date");
-      showNotification(`Please provide: ${missing.join(', ')}`, 'error');
+      else if (!portalFormData.end) missing.push("end date");
+      else if (new Date(portalFormData.end) < new Date(portalFormData.start)) {
+          showNotification("Planned return date cannot be earlier than the pickup date.", "error");
+          return;
+      }
+      
+      if (missing.length > 0) {
+          showNotification(`Please provide: ${missing.join(', ')}`, 'error');
+      } else if (cart.length === 0) {
+          showNotification("Your cart is empty.", "error");
+      }
     }
   };
 
   const handleConfirmOrder = async () => {
-    await submitOrder(portalFormData);
-    setShowInvoice(false);
-    showNotification("Order placed successfully!", "success");
+    try {
+        await submitOrder(portalFormData, portalFormData.discountCode);
+        setShowInvoice(false);
+        showNotification(modifyingOrderId ? "Order updated successfully!" : "Order placed successfully!", "success");
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to process order";
+        showNotification(message, "error");
+    }
   };
 
   const navItems = [
@@ -224,6 +239,7 @@ export default function PortalLayout({
                   w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-2.5 rounded-xl text-theme-body transition-all shadow-lg border border-transparent
                   bg-primary text-primary-text hover:opacity-90 active:scale-[0.98]
                   shadow-primary/20 dark:shadow-none font-bold uppercase tracking-widest
+                  ${(hasItems && !canCheckout) ? 'opacity-50 cursor-not-allowed grayscale-[0.5]' : ''}
                 `}
               >
                 <ShoppingCart className="w-4 h-4" />
@@ -285,6 +301,7 @@ export default function PortalLayout({
           onConfirm={handleConfirmOrder}
           startDate={portalFormData.start}
           endDate={portalFormData.end}
+          orderId={modifyingOrderId || undefined}
         />
       </div>
     );

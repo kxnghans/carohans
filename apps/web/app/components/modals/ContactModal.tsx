@@ -129,6 +129,28 @@ export const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
                   onChange={e => setFormData({ ...formData, maps_link: e.target.value })}
                 />
               </div>
+              <div className="flex gap-4">
+                <div className="space-y-1 flex-1">
+                    <label className="text-theme-caption text-muted ml-1">Late Penalty (¢)</label>
+                    <input 
+                    type="number"
+                    className="w-full p-3 bg-background border border-border rounded-xl text-theme-body-bold text-foreground outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all"
+                    value={formData.late_penalty || ''}
+                    onChange={e => setFormData({ ...formData, late_penalty: e.target.value })}
+                    placeholder="50"
+                    />
+                </div>
+                <div className="space-y-1 flex-1">
+                    <label className="text-theme-caption text-muted ml-1">Tax Rate (%)</label>
+                    <input 
+                    type="number"
+                    className="w-full p-3 bg-background border border-border rounded-xl text-theme-body-bold text-foreground outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all"
+                    value={formData.tax_rate || ''}
+                    onChange={e => setFormData({ ...formData, tax_rate: e.target.value })}
+                    placeholder="0"
+                    />
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-6">

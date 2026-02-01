@@ -6,7 +6,7 @@ import { useAppStore } from '../../context/AppContext';
 import { formatCurrency } from '../../utils/helpers';
 
 export default function PortalHelpPage() {
-    const { ShoppingBag, Calendar, Shield, User } = Icons;
+    const { ShoppingBag, Calendar, Shield, User, Tag } = Icons;
     const { latePenaltyPerDay } = useAppStore();
 
     const sections = [
@@ -17,16 +17,32 @@ export default function PortalHelpPage() {
             bg: "bg-accent-primary/10",
             items: [
                 {
-                    label: "Browsing Equipment",
-                    content: "Explore gear in the 'Catalog'. Click '+' to add items to your cart and specify quantity."
+                    label: "Live Availability",
+                    content: "Selecting your Pickup and Return dates first ensures the catalog shows exactly what is available for your event period."
                 },
                 {
                     label: "Checkout Process",
-                    content: "When items are added, click 'Review Order'. Provide your pickup and return dates to see the total cost."
+                    content: "When items are added, click 'Review Order'. provide your details to generate a digital invoice and lock in your request."
                 },
                 {
                     label: "Rental Duration",
-                    content: "Pricing is duration-based. The system calculates the total based on the days between your dates."
+                    content: "Pricing is calculated daily. The system automatically adjusts the total based on your selected rental window."
+                }
+            ]
+        },
+        {
+            title: "Promotions & Codes",
+            icon: Tag,
+            color: "text-secondary",
+            bg: "bg-secondary/10",
+            items: [
+                {
+                    label: "Applying Discounts",
+                    content: "Enter your code in the 'Code' field. The system validates codes in real-time before you reach checkout."
+                },
+                {
+                    label: "One-Time Use",
+                    content: "Special 'One-Time' codes are linked to your email address and can only be used for a single successful order."
                 }
             ]
         },

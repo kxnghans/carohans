@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
-import { formatCurrency, formatDate, getDurationDays } from '../../utils/helpers';
+import { formatCurrency, formatDate, getDurationDays, calculateOrderTotal } from '../../utils/helpers';
 import { useData } from '../../context/DataContext';
 import { InventoryItem, Client } from '../../types';
 import { useScrollLock } from '../../hooks/useScrollLock';
@@ -23,9 +23,11 @@ interface InvoiceModalProps {
   closedAt?: string;
   amountPaid?: number;
   totalAmount?: number;
-  discountName?: string;
-  discountType?: 'fixed' | 'percentage';
-  discountValue?: number;
+  discountName?: string | null;
+  discountType?: string | null;
+  discountValue?: number | null;
+  orderId?: number;
+  publicId?: string;
 }
 
 export const InvoiceModal = ({
@@ -44,11 +46,12 @@ export const InvoiceModal = ({
   totalAmount: totalAmountProp,
   discountName,
   discountType,
-  discountValue
+  discountValue,
+  orderId,
+  publicId
 }: InvoiceModalProps) => {
   const { Printer, X, Check, AlertCircle, Sparkles } = Icons;
   const { businessSettings } = useData();
-  const [invoiceId, setInvoiceId] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useScrollLock(isOpen);
@@ -64,9 +67,6 @@ export const InvoiceModal = ({
   useEffect(() => {
     const timer = setTimeout(() => {
         setMounted(true);
-        if (isOpen) {
-            setInvoiceId(Math.floor(Math.random() * 10000));
-        }
     }, 0);
     return () => {
         clearTimeout(timer);
@@ -74,18 +74,9 @@ export const InvoiceModal = ({
   }, [isOpen]);
 
   const duration = getDurationDays(startDate, endDate);
-  const calculatedSubtotal = cart.reduce((sum: number, item: InventoryItem & { qty: number }) => sum + (item.price * item.qty * duration), 0);
+  const rentalItems = cart.map(i => ({ price: i.price, qty: i.qty }));
+  const calculatedSubtotal = calculateOrderTotal(rentalItems, startDate, endDate);
   
-  // Discount Calculation
-  let discountAmount = 0;
-  if (discountType && discountValue) {
-    if (discountType === 'fixed') {
-        discountAmount = discountValue;
-    } else {
-        discountAmount = (calculatedSubtotal * discountValue) / 100;
-    }
-  }
-
   // Calculate specific Loss & Damage total from items
   const lossDamageTotal = cart.reduce((sum: number, item: InventoryItem & { lostQty?: number, damagedQty?: number }) => {
     return sum + (((item.lostQty ?? 0) + (item.damagedQty ?? 0)) * (item.replacementCost ?? 0));
@@ -93,9 +84,29 @@ export const InvoiceModal = ({
 
   // Late fees are the remainder of the penaltyAmount
   const lateFees = Math.max(0, penaltyAmount - lossDamageTotal);
-  const calculatedTotal = calculatedSubtotal - discountAmount + lateFees + lossDamageTotal;
-  const finalTotal = totalAmountProp !== undefined ? totalAmountProp : Math.max(0, calculatedTotal);
+  
+  // Use standardized helper for Grand Total
+  const calculatedTotal = calculateOrderTotal(
+    rentalItems, 
+    startDate, 
+    endDate, 
+    (discountType as 'fixed' | 'percentage') || undefined, 
+    discountValue || undefined, 
+    penaltyAmount
+  );
+
+  const finalTotal = totalAmountProp !== undefined ? totalAmountProp : calculatedTotal;
   const isFullyPaid = amountPaid >= finalTotal;
+
+  // Actual discount amount for display - CAPPED at subtotal
+  let discountDisplayAmount = 0;
+  if (discountType && discountValue) {
+    if (discountType === 'fixed') {
+        discountDisplayAmount = Math.min(calculatedSubtotal, discountValue);
+    } else {
+        discountDisplayAmount = (calculatedSubtotal * discountValue) / 100;
+    }
+  }
 
   const handlePrint = () => {
     setTimeout(() => {
@@ -147,8 +158,8 @@ export const InvoiceModal = ({
                   <p className="text-muted text-theme-body">{client?.email}</p>
                   <p className="text-muted text-theme-body">{client?.phone}</p>
                 </div>                <div className="text-right">
-                  <h3 className="font-semibold text-muted text-theme-caption uppercase tracking-wider mb-2">Invoice Details</h3>
-                  <p className="text-theme-body-bold text-foreground">INV-#{invoiceId}</p>
+                  <h3 className="font-semibold text-muted text-theme-caption uppercase tracking-wider mb-2">Order Details</h3>
+                  <p className="text-theme-body-bold text-foreground">{publicId || (orderId ? `#${orderId}` : 'New Order')}</p>
                   <p className="text-muted text-theme-caption font-bold mt-1 uppercase tracking-tighter">Date: {formatDate(new Date().toISOString())}</p>
                   
                   <div className="mt-6 flex flex-wrap justify-end gap-6 text-[10px] uppercase font-bold text-muted tracking-widest">
@@ -199,18 +210,19 @@ export const InvoiceModal = ({
                       </td>
                     </tr>
                   ))}
-                  {discountAmount > 0 && (
-                    <tr className="bg-secondary/10 dark:bg-indigo-900/10 break-inside-avoid">
+                  {discountDisplayAmount > 0 && (
+                    <tr className="break-inside-avoid">
                       <td className="py-4" colSpan={3}>
                         <div className="flex items-center gap-2">
                             <Sparkles className="w-3.5 h-3.5 text-secondary" />
                             <p className="font-bold text-secondary dark:text-indigo-400 text-theme-body">Discount: {discountName}</p>
                         </div>
                         <p className="text-theme-caption text-secondary/60 uppercase font-bold tracking-tight">
-                          {discountType === 'percentage' ? `${discountValue}% off subtotal` : 'Fixed monetary reduction'}
+                          {discountType === 'percentage' ? `${discountValue}% off subtotal` : 
+                           (discountValue || 0) > calculatedSubtotal ? `Fixed reduction (Capped at subtotal)` : 'Fixed monetary reduction'}
                         </p>
                       </td>
-                      <td className="py-4 text-right font-black text-secondary dark:text-indigo-400 text-theme-body">-{formatCurrency(discountAmount)}</td>
+                      <td className="py-4 text-right font-black text-secondary dark:text-indigo-400 text-theme-body">-{formatCurrency(discountDisplayAmount)}</td>
                     </tr>
                   )}
                   {lateFees > 0 && (
@@ -299,15 +311,15 @@ export const InvoiceModal = ({
                     <span>Rental Subtotal</span>
                     <span>{formatCurrency(calculatedSubtotal)}</span>
                   </div>
-                  {discountAmount > 0 && (
+                  {discountDisplayAmount > 0 && (
                     <div className="flex justify-between text-secondary dark:text-indigo-400 text-theme-body font-medium">
                       <span>Discount ({discountName})</span>
-                      <span>-{formatCurrency(discountAmount)}</span>
+                      <span>-{formatCurrency(discountDisplayAmount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-muted text-theme-body font-medium">
                     <span>Tax (0%)</span>
-                    <span>¢0.00</span>
+                    <span>{formatCurrency(0)}</span>
                   </div>
                   {lateFees > 0 && (
                     <div className="flex justify-between text-error dark:text-rose-400 text-theme-body font-medium">
@@ -322,9 +334,21 @@ export const InvoiceModal = ({
                     </div>
                   )}
                   <div className="flex justify-between text-theme-title font-bold text-foreground pt-4 border-t-2 border-foreground">
-                    <span>Grand Total</span>
+                    <span>Total Order Amount</span>
                     <span>{formatCurrency(finalTotal)}</span>
                   </div>
+                  {amountPaid > 0 && (
+                     <div className="flex justify-between text-success text-theme-body font-medium">
+                        <span>Amount Paid to Date</span>
+                        <span>-{formatCurrency(amountPaid)}</span>
+                     </div>
+                  )}
+                   <div className="flex justify-between text-theme-subtitle font-black pt-2 border-t border-border mt-2">
+                      <span className="uppercase tracking-tight text-foreground">Balance Remaining</span>
+                      <span className={`${Math.max(0, finalTotal - amountPaid) > 0 ? 'text-error' : 'text-success'}`}>
+                         {formatCurrency(Math.max(0, finalTotal - amountPaid))}
+                      </span>
+                   </div>
                 </div>
               </div>
 

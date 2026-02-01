@@ -77,7 +77,9 @@ import {
   Info,
   HelpOutline,
   Settings,
-  ShoppingBag
+  ShoppingBag,
+  LocalOffer,
+  FileDownload
 } from '@mui/icons-material';
 
 // --- SYSTEM ICONS (Replacements for Lucide) ---
@@ -144,7 +146,9 @@ export const Icons = {
   Info: Info,
   HelpCircle: HelpOutline,
   Settings: Settings,
-  ShoppingBag: ShoppingBag
+  ShoppingBag: ShoppingBag,
+  Tag: LocalOffer,
+  Download: FileDownload
 };
 
 import React from 'react';

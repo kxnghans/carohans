@@ -58,6 +58,7 @@ Run these commands from the **root directory**:
 
 *   **Global Theme Adherence:** Prioritize using globally defined color themes and fonts (defined in `globals.css` and the Tailwind theme) without any modifications. Avoid hardcoding colors or font sizes.
 *   **Documentation Hygiene:** Every time changes are made to the system's logic or UI, evaluate and implement necessary updates to the help documentation (found in `apps/web/app/admin/help/page.tsx` and `apps/web/app/portal/help/page.tsx`) to ensure the Knowledge Base remains live and accurate.
+*   **Modal Standardization:** All overlay modals must be implemented using **React Portals** (`createPortal(..., document.body)`) to strictly enforce z-index stacking contexts. Modals must include a `mounted` check to prevent SSR hydration errors and continue using the `useScrollLock` hook.
 *   **Middleware Compatibility:** Next.js 16 deprecates the `middleware.ts` convention in favor of `proxy.ts`. However, to maintain compatibility with the Cloudflare adapter (`@opennextjs/cloudflare`), we **must** continue using `middleware.ts` with `export const runtime = 'experimental-edge'`. Ignore build warnings regarding this deprecation.
 *   **Styling:** Uses **Tailwind CSS 4**. configuration is minimal (`@import "tailwindcss";` in `globals.css`).
 *   **Theme:** Custom CSS variables (`--background`, `--foreground`) are defined in `globals.css` and exposed via `@theme inline`.
