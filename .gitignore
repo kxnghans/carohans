@@ -53,7 +53,8 @@ build
 # Project Specific
 .gemini/
 .next/
-.open-next
+.open-next/
+.wrangler/
 *.pem
 *.key
 secrets.json
