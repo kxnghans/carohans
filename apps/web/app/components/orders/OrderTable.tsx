@@ -389,79 +389,110 @@ export const OrderTable = ({
                                                                 })}
                                                                 
                                                                 {/* PENALTY SECTION */}
-                                                                {(() => {
-                                                                    if ((order.penaltyAmount ?? 0) <= 0) return null;
-                                                                    
-                                                                    const activeItems = (order.items.length > 0 ? order.items : (lazyOrderItems[order.id] || []));
-                                                                    let assetPenalty = 0;
-                                                                    const brokenItems: { invItem: InventoryItem | undefined; type: string; qty: number; cost: number }[] = [];
+                                                                {(order.penaltyAmount ?? 0) > 0 && (
+                                                                    <tr className="bg-error/5 dark:bg-rose-900/10 border-t border-border">
+                                                                        <td colSpan={7} className="p-0">
+                                                                            <div className="p-6 flex flex-col gap-4">
+                                                                                <div className="flex justify-between items-center border-b border-error/10 pb-2">
+                                                                                    <span className="text-theme-caption font-black text-error dark:text-rose-400 uppercase tracking-widest">Penalty Breakdown</span>
+                                                                                    <span className="text-theme-body-bold text-error dark:text-rose-400">+{formatCurrency(order.penaltyAmount)}</span>
+                                                                                </div>
+                                                                                
+                                                                                {(() => {
+                                                                                    const activeItems = (order.items.length > 0 ? order.items : (lazyOrderItems[order.id] || []));
+                                                                                    let assetPenalty = 0;
+                                                                                    // Capture full inventory item for rendering icon
+                                                                                    const brokenItems: { invItem: InventoryItem | undefined; type: string; qty: number; cost: number }[] = [];
 
-                                                                    activeItems.forEach(item => {
-                                                                        const invItem = inventory.find(i => i.id === item.inventoryId);
-                                                                        const replacementCost = invItem?.replacementCost || 0;
-                                                                        if ((item.lostQty || 0) > 0) {
-                                                                            const cost = (item.lostQty || 0) * replacementCost;
-                                                                            assetPenalty += cost;
-                                                                            brokenItems.push({ invItem, type: 'Lost', qty: item.lostQty || 0, cost });
-                                                                        }
-                                                                        if ((item.damagedQty || 0) > 0) {
-                                                                            const cost = (item.damagedQty || 0) * replacementCost;
-                                                                            assetPenalty += cost;
-                                                                            brokenItems.push({ invItem, type: 'Damaged', qty: item.damagedQty || 0, cost });
-                                                                        }
-                                                                    });
+                                                                                    activeItems.forEach(item => {
+                                                                                        const invItem = inventory.find(i => i.id === item.inventoryId);
+                                                                                        const replacementCost = invItem?.replacementCost || 0;
+                                                                                        if ((item.lostQty || 0) > 0) {
+                                                                                            const cost = (item.lostQty || 0) * replacementCost;
+                                                                                            assetPenalty += cost;
+                                                                                            brokenItems.push({ invItem, type: 'Lost', qty: item.lostQty || 0, cost });
+                                                                                        }
+                                                                                        if ((item.damagedQty || 0) > 0) {
+                                                                                            const cost = (item.damagedQty || 0) * replacementCost;
+                                                                                            assetPenalty += cost;
+                                                                                            brokenItems.push({ invItem, type: 'Damaged', qty: item.damagedQty || 0, cost });
+                                                                                        }
+                                                                                    });
 
-                                                                    const lateFee = Math.max(0, (order.penaltyAmount || 0) - assetPenalty);
-                                                                    const actualReturn = order.closedAt ? new Date(order.closedAt) : new Date();
-                                                                    const plannedReturn = new Date(order.endDate);
-                                                                    actualReturn.setHours(0,0,0,0);
-                                                                    plannedReturn.setHours(0,0,0,0);
-                                                                    const diffTime = actualReturn.getTime() - plannedReturn.getTime();
-                                                                    const daysLate = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                                                                                    const lateFee = Math.max(0, (order.penaltyAmount || 0) - assetPenalty);
+                                                                                    
+                                                                                    // Calculate days late
+                                                                                    const actualReturn = order.closedAt ? new Date(order.closedAt) : new Date();
+                                                                                    const plannedReturn = new Date(order.endDate);
+                                                                                    // Set to midnight for fair day comparison
+                                                                                    actualReturn.setHours(0,0,0,0);
+                                                                                    plannedReturn.setHours(0,0,0,0);
+                                                                                    const diffTime = actualReturn.getTime() - plannedReturn.getTime();
+                                                                                    const daysLate = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
 
-                                                                    return (
-                                                                        <>
-                                                                            {lateFee > 0 && (
-                                                                                <tr className="bg-error/5 dark:bg-rose-900/10 border-t border-border">
-                                                                                    <td className="p-3 pl-6">
-                                                                                        <div className="flex items-center gap-3">
-                                                                                            <Icons.Clock className="w-5 h-5 text-error" />
-                                                                                            <span className="text-theme-body-bold text-error uppercase tracking-widest text-[10px]">Late Fees</span>
+                                                                                    return (
+                                                                                        <div className="space-y-4">
+                                                                                            {lateFee > 0 && (
+                                                                                                <div className="flex justify-between items-center text-sm bg-error/5 p-3 rounded-xl border border-error/10">
+                                                                                                    <div className="flex items-center gap-2">
+                                                                                                        <span className="text-theme-body font-bold text-muted">Late Fees</span>
+                                                                                                        <span className="text-xs px-2 py-0.5 rounded-md bg-error/10 text-error font-black uppercase tracking-wide">
+                                                                                                            {daysLate} {daysLate === 1 ? 'day' : 'days'} overdue
+                                                                                                        </span>
+                                                                                                    </div>
+                                                                                                    <span className="text-theme-body font-bold text-error dark:text-rose-400">+{formatCurrency(lateFee)}</span>
+                                                                                                </div>
+                                                                                            )}
+
+                                                                                            {brokenItems.length > 0 && (
+                                                                                                <div className="space-y-2">
+                                                                                                    <div className="flex justify-between items-center text-sm px-1">
+                                                                                                        <span className="text-[10px] font-black text-muted uppercase tracking-widest">Asset Integrity Details</span>
+                                                                                                        <span className="text-theme-body font-bold text-error dark:text-rose-400">+{formatCurrency(assetPenalty)}</span>
+                                                                                                    </div>
+                                                                                                    
+                                                                                                    <div className="border border-error/10 rounded-xl overflow-hidden">
+                                                                                                        <table className="w-full text-left text-sm">
+                                                                                                            <thead>
+                                                                                                                <tr className="bg-error/5 text-muted text-[10px] uppercase tracking-wider border-b border-error/10">
+                                                                                                                    <th className="py-2 px-4 font-bold">Item</th>
+                                                                                                                    <th className="py-2 px-4 font-bold">Status</th>
+                                                                                                                    <th className="py-2 px-4 text-right font-bold">Qty</th>
+                                                                                                                    <th className="py-2 px-4 text-right font-bold">Unit Cost</th>
+                                                                                                                    <th className="py-2 px-4 text-right font-bold">Line Total</th>
+                                                                                                                </tr>
+                                                                                                            </thead>
+                                                                                                            <tbody className="divide-y divide-error/5 bg-background/50">
+                                                                                                                {brokenItems.map((row, i) => (
+                                                                                                                    <tr key={i} className="hover:bg-error/5 transition-colors">
+                                                                                                                        <td className="py-2 px-4">
+                                                                                                                            <div className="flex items-center gap-3">
+                                                                                                                                <DynamicIcon iconString={row.invItem?.image} color={row.invItem?.color} className="w-4 h-4" fallback={<span>📦</span>} />
+                                                                                                                                <span className="text-theme-body font-medium">{row.invItem?.name || 'Unknown Item'}</span>
+                                                                                                                            </div>
+                                                                                                                        </td>
+                                                                                                                        <td className="py-2 px-4">
+                                                                                                                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${row.type === 'Lost' ? 'bg-error/10 text-error' : 'bg-warning/10 text-warning'}`}>
+                                                                                                                                {row.type}
+                                                                                                                            </span>
+                                                                                                                        </td>
+                                                                                                                        <td className="py-2 px-4 text-right font-bold text-theme-body">{row.qty}</td>
+                                                                                                                        <td className="py-2 px-4 text-right text-muted text-theme-body">{formatCurrency(row.invItem?.replacementCost)}</td>
+                                                                                                                        <td className="py-2 px-4 text-right font-bold text-error text-theme-body">+{formatCurrency(row.cost)}</td>
+                                                                                                                    </tr>
+                                                                                                                ))}
+                                                                                                            </tbody>
+                                                                                                        </table>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
                                                                                         </div>
-                                                                                    </td>
-                                                                                    <td className="p-3 text-theme-body text-muted italic">Overdue Return</td>
-                                                                                    <td className="p-3 text-right text-theme-body text-muted">—</td>
-                                                                                    <td className="p-3 text-right text-theme-body-bold text-error">{daysLate} {daysLate === 1 ? 'day' : 'days'}</td>
-                                                                                    <td className="p-3 text-right text-theme-body text-muted">{formatCurrency(latePenaltyPerDay)}</td>
-                                                                                    <td className="p-3 text-right text-theme-body text-muted">{daysLate} {daysLate === 1 ? 'day' : 'days'}</td>
-                                                                                    <td className="p-3 text-right pr-6 text-theme-body-bold text-error">+{formatCurrency(lateFee)}</td>
-                                                                                </tr>
-                                                                            )}
-
-                                                                            {brokenItems.map((row, i) => (
-                                                                                <tr key={`broken-${i}`} className="bg-error/5 dark:bg-rose-900/10 border-t border-border/50">
-                                                                                    <td className="p-3 pl-6">
-                                                                                        <div className="flex items-center gap-3">
-                                                                                            <DynamicIcon iconString={row.invItem?.image} color={row.invItem?.color} className="w-5 h-5" fallback={<span>📦</span>} />
-                                                                                            <div className="flex flex-col">
-                                                                                                <span className="text-theme-body-bold text-error">{row.invItem?.name || 'Unknown Item'}</span>
-                                                                                                <span className={`text-[9px] font-black uppercase tracking-wider ${row.type === 'Lost' ? 'text-error' : 'text-warning'}`}>
-                                                                                                    {row.type}
-                                                                                                </span>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </td>
-                                                                                    <td className="p-3 text-theme-body text-muted">{row.invItem?.category || 'N/A'}</td>
-                                                                                    <td className="p-3 text-right text-theme-body text-error">{formatCurrency(row.invItem?.replacementCost || 0)}</td>
-                                                                                    <td className="p-3 text-right text-theme-body-bold text-error">{row.qty}</td>
-                                                                                    <td className="p-3 text-right text-theme-body text-muted">{formatCurrency(row.invItem?.replacementCost || 0)}</td>
-                                                                                    <td className="p-3 text-right text-theme-body text-muted">replacement</td>
-                                                                                    <td className="p-3 text-right pr-6 text-theme-body-bold text-error">+{formatCurrency(row.cost)}</td>
-                                                                                </tr>
-                                                                            ))}
-                                                                        </>
-                                                                    );
-                                                                })()}
+                                                                                    );
+                                                                                })()}
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                )}
 
                                                                 {/* DISCOUNT SECTION */}
                                                                 <tr className="border-t border-border">
