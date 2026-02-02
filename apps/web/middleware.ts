@@ -73,6 +73,21 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Helper to get role from profile or metadata
+  const getUserRole = async (userId: string, metadata: Record<string, unknown> | null) => {
+    // 1. Try metadata first (fastest, reflects recent changes if metadata update was used)
+    if (metadata?.role) return metadata.role;
+
+    // 2. Fallback to profiles table
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single()
+    
+    return profile?.role;
+  }
+
   // 1. Protect Admin Routes
   if (request.nextUrl.pathname.startsWith('/admin')) {
     if (!user) {
@@ -81,14 +96,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl)
     }
 
-    // Check role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+    const role = await getUserRole(user.id, user.user_metadata);
 
-    if (profile?.role !== 'admin') {
+    if (role !== 'admin') {
       // Redirect unauthorized users to portal or home
       return NextResponse.redirect(new URL('/portal/inventory', request.url))
     }
@@ -112,13 +122,9 @@ export async function middleware(request: NextRequest) {
   if (['/login', '/signup'].includes(request.nextUrl.pathname)) {
       if (user) {
            // Redirect to appropriate dashboard based on role
-           const { data: profile } = await supabase
-             .from('profiles')
-             .select('role')
-             .eq('id', user.id)
-             .single()
+           const role = await getUserRole(user.id, user.user_metadata);
 
-           if (profile?.role === 'admin') {
+           if (role === 'admin') {
                return NextResponse.redirect(new URL('/admin/overview', request.url))
            } else {
                return NextResponse.redirect(new URL('/portal/inventory', request.url))
