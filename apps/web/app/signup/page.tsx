@@ -16,7 +16,7 @@ function SignupContent() {
   const searchParams = useSearchParams();
   const isTypeAdmin = searchParams.get('type') === 'admin';
   const { showNotification } = useAppStore();
-  const { User, Lock, Mail, Phone, ChevronRight, ChevronLeft, Eye, EyeOff, Shield } = Icons;
+  const { User, Lock, Mail, Phone, ChevronRight, ChevronLeft, Check, Eye, EyeOff, Shield } = Icons;
   
   // Signup Access State
   const [accessToken, setAccessToken] = useState('');
