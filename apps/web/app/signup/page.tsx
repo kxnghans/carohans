@@ -71,67 +71,41 @@ function SignupContent() {
     setError(null);
 
     try {
-      // 1. Sign up auth user
+      // 1. Sign up auth user with metadata
+      // The handle_new_user trigger will automatically create the correct record (profile or client)
       const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            role: isTypeAdmin ? 'admin' : 'client',
+            username: username.toLowerCase(),
+            first_name: firstName,
+            last_name: lastName,
+            phone: phone
+          }
+        }
       });
 
       if (authError) throw authError;
 
       if (data.user) {
-        if (isTypeAdmin) {
-          // --- ADMIN WORKFLOW ---
-          // 1. Create Admin Profile (System Access)
-          // Admins live in 'profiles' and allow system management.
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: data.user.id,
-              role: 'admin',
-              username: username.toLowerCase(),
-              email: email
-            });
-
-          if (profileError) throw profileError;
-
-        } else {
-          // --- CLIENT WORKFLOW ---
-          // 1. Create Client Record (CRM Data)
-          // Clients live in 'clients' table for order history.
-          const { error: clientError } = await supabase
-            .from('clients')
-            .insert({
-              user_id: data.user.id,
-              first_name: firstName,
-              last_name: lastName,
-              username: username.toLowerCase(),
-              phone,
-              email,
-              total_orders: 0,
-              total_spent: 0,
-              image: 'icon:User',
-              color: 'text-primary'
-            });
-
-          if (clientError) throw clientError;
-        }
-
+        // No manual insert needed - the database trigger handles it
         if (!data.session) {
           showNotification("Account created! Please check your email to confirm your account.", "success");
           setIsSuccess(true);
         } else {
           showNotification("Account created successfully!", "success");
-          if (isTypeAdmin) {
-            router.push('/admin/overview');
-          } else {
-            router.push('/portal/orders');
-          }
+          // Redirect to home page for role selection
+          router.push('/');
         }
       }
     } catch (err: unknown) {
+      console.error("Signup error:", err);
       if (err instanceof Error) {
         setError(err.message);
+      } else if (typeof err === 'object' && err !== null) {
+        setError((err as { message?: string }).message || JSON.stringify(err));
       } else {
         setError(String(err));
       }
@@ -195,8 +169,8 @@ function SignupContent() {
                 We&apos;ve sent a confirmation link to <br /><span className="text-secondary dark:text-warning font-normal">{email}</span>. <br />
                 Please confirm your account to continue.
               </p>
-              <Button onClick={() => router.push('/login')} className="w-full py-4.5 uppercase tracking-widest bg-primary dark:bg-primary text-primary-text dark:text-primary-text shadow-xl shadow-slate-900/10 dark:shadow-none rounded-2xl transform transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] font-normal" size="lg">
-                Continue to Login
+              <Button onClick={() => router.push('/')} className="w-full py-4.5 uppercase tracking-widest bg-primary dark:bg-primary text-primary-text dark:text-primary-text shadow-xl shadow-slate-900/10 dark:shadow-none rounded-2xl transform transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] font-normal" size="lg">
+                Continue to Home
               </Button>
             </div>
           </div>
