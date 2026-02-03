@@ -9,7 +9,7 @@ import { formatCurrency, formatDate, getStatusColor } from '../../utils/helpers'
 import { supabase } from '../../lib/supabase';
 import { useScrollLock } from '../../hooks/useScrollLock';
 import { ScrollableContainer } from '../common/ScrollableContainer';
-import { deleteOrders } from '../../services/orderService';
+import { deleteUser } from '../../actions/admin';
 import { encodeOrderId } from '../../utils/idHandler';
 
 interface UserCleanupModalProps {
@@ -107,35 +107,22 @@ export const UserCleanupModal = ({
     const handleExecuteDeletion = async (mode: 'full' | 'unlink') => {
         setProcessing(true);
         try {
-            if (mode === 'full' && selectedOrderIds.length > 0) {
-                await deleteOrders(selectedOrderIds);
+            const result = await deleteUser(userId, selectedOrderIds, mode);
+
+            if (result.success) {
+                showNotification(
+                    mode === 'full' 
+                        ? `Access revoked and ${selectedOrderIds.length} orders removed.` 
+                        : "Access revoked. Records preserved.", 
+                    "success"
+                );
+                
+                onSuccess();
+                onClose();
+            } else {
+                console.error("Cleanup failed", result.error);
+                showNotification(`Operation failed: ${result.error}`, "error");
             }
-
-            // 1. Unlink client record (Preserves data but removes portal connection)
-            const { error: unlinkError } = await supabase
-                .from('clients')
-                .update({ user_id: null })
-                .eq('user_id', userId);
-            
-            if (unlinkError) throw unlinkError;
-
-            // 2. Delete Auth Profile (public.profiles)
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .delete()
-                .eq('id', userId);
-            
-            if (profileError) throw profileError;
-
-            showNotification(
-                mode === 'full' 
-                    ? `Access revoked and ${selectedOrderIds.length} orders removed.` 
-                    : "Access revoked. Records preserved.", 
-                "success"
-            );
-            
-            onSuccess();
-            onClose();
         } catch (e) {
             console.error("Cleanup failed", e);
             showNotification("Operation failed. Please try again.", "error");
@@ -150,14 +137,14 @@ export const UserCleanupModal = ({
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
             <div className="bg-surface rounded-[2.5rem] shadow-2xl w-full max-w-3xl overflow-hidden animate-in zoom-in-95 duration-200 border border-border flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                 {/* Header */}
-                <div className="p-8 bg-error text-white flex justify-between items-center shrink-0">
+                <div className="bg-primary dark:bg-primary-text text-primary-text dark:text-primary p-8 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-white/20 rounded-2xl">
+                        <div className="p-3 bg-white/10 rounded-2xl text-primary-text dark:text-primary">
                             <Ban className="w-6 h-6" />
                         </div>
                         <div>
                             <h2 className="text-2xl font-bold tracking-tight">Revoke System Access</h2>
-                            <p className="text-white/70 font-medium">{clientName} • {clientEmail}</p>
+                            <p className="opacity-70 font-medium">{clientName} • {clientEmail}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
@@ -197,12 +184,12 @@ export const UserCleanupModal = ({
                             <ScrollableContainer className="flex-1">
                                 <table className="w-full text-left border-collapse">
                                     <thead className="sticky top-0 bg-surface z-10">
-                                        <tr className="border-b border-border text-[9px] font-black text-muted uppercase tracking-widest">
-                                            <th className="p-4 w-12 text-center"></th>
-                                            <th className="p-4">Order ID</th>
-                                            <th className="p-4">Status</th>
-                                            <th className="p-4">Date</th>
-                                            <th className="p-4 text-right pr-6">Total</th>
+                                        <tr className="border-b-2 border-border">
+                                            <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest text-center w-12"></th>
+                                            <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest">Order ID</th>
+                                            <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest">Status</th>
+                                            <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest">Date</th>
+                                            <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest text-right pr-6">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border">
@@ -259,25 +246,29 @@ export const UserCleanupModal = ({
                         >
                             <Ban className="w-4 h-4 mr-2" /> Revoke Only
                         </Button>
-                        <p className="text-[9px] text-muted text-center font-bold uppercase tracking-widest">Keep all business records</p>
+                        <p className="text-theme-caption text-muted text-center font-medium uppercase tracking-wide">
+                            {orders.length > 0 ? 'Keep all business records' : 'Revoke login only'}
+                        </p>
                     </div>
                     <div className="flex flex-col gap-2">
                         <Button 
                             variant="danger" 
-                            className={`w-full font-bold py-4 rounded-2xl shadow-lg shadow-error/20 border-none ${selectedOrderIds.length > 0 ? 'bg-error text-white' : 'opacity-50 grayscale cursor-not-allowed'}`}
-                            onClick={() => selectedOrderIds.length > 0 && handleExecuteDeletion('full')}
-                            disabled={processing || selectedOrderIds.length === 0}
+                            className={`w-full font-bold py-4 rounded-2xl shadow-lg shadow-error/20 border-none ${orders.length === 0 || selectedOrderIds.length > 0 ? 'bg-error text-white' : 'opacity-50 grayscale cursor-not-allowed'}`}
+                            onClick={() => (orders.length === 0 || selectedOrderIds.length > 0) && handleExecuteDeletion('full')}
+                            disabled={processing || (orders.length > 0 && selectedOrderIds.length === 0)}
                         >
                             {processing ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
-                                <><Trash2 className="w-4 h-4 mr-2" /> Cleanup & Delete</>
+                                <><Trash2 className="w-4 h-4 mr-2" /> {orders.length === 0 ? 'Delete Account' : 'Cleanup & Delete'}</>
                             )}
                         </Button>
-                        <p className="text-[9px] text-error text-center font-bold uppercase tracking-widest">
-                            {selectedOrderIds.length > 0 
-                                ? `Delete ${selectedOrderIds.length} orders + revoke` 
-                                : 'Select orders to delete'}
+                        <p className="text-theme-caption text-error text-center font-bold uppercase tracking-wide">
+                            {orders.length === 0 
+                                ? 'Permanent Account Deletion'
+                                : selectedOrderIds.length > 0 
+                                    ? `Delete ${selectedOrderIds.length} orders + revoke` 
+                                    : 'Select orders to delete'}
                         </p>
                     </div>
                 </div>

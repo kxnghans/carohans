@@ -31,18 +31,31 @@ To provide CaroHans Ventures with a robust web application that manages the full
 
 ---
 
-## 3. User Personas
+## 3. User Personas & Access Control
 
-| Persona | Role | Primary Interface |
-| :--- | :--- | :--- |
-| **Admin** | Owner/Manager | `/admin/*` (Laptop/Desktop) |
-| **Client** | Customer | `/portal/*` (Mobile-First) |
+| Persona | Role | Primary Interface | Access Level |
+| :--- | :--- | :--- | :--- |
+| **Admin** | Owner/Manager | `/admin/*` | Global management, financial control, and user promotion/revocation. |
+| **Client** | Customer | `/portal/*` | Inventory browsing, order history, and profile management. |
+
+### 3.1 Security & Authentication Lifecycle
+*   **Enforced Verification:** Users **must** confirm their email address before accessing either interface. Unverified logins are automatically terminated.
+*   **Token-Gated Admin Signup:** Admin-level registration requires a valid security token, configurable via the Admin Dashboard.
+*   **Automated Re-linking:** The system automatically re-associates returning users with their existing "Offline Client" records based on email matching, restoring access to historical orders.
+*   **Role Management:** Admins can promote clients to the Admin role or demote them to standard Client access through the System Access dashboard.
 
 ---
 
 ## 4. Admin Dashboard Requirements (`/admin`)
 
-### 4.1 Overview & Logistics
+### 4.1 System Access & User Management
+*   **User List:** Centralized view of all Admins, Registered Clients, and "Offline Clients" (revoked users with preserved records).
+*   **Revocation Workflow:**
+    *   **Revoke Only:** Deletes login access but unlinks the client record to preserve historical order context.
+    *   **Cleanup & Delete:** Permanently removes account and clears selected historical business data.
+*   **Order-Aware Deletion:** System scans and displays associated orders before account removal to ensure data integrity.
+
+### 4.2 Overview & Logistics
 *   **Live Operations:** Dashboard showing today's pickups, returns, and overdue items.
 *   **Order Status Management:** Filterable view of all orders (Pending, Approved, Active, Overdue, Completed).
 *   **Status Transitions:** Admin can manually move orders through the lifecycle (e.g., Dispatch, Process Return).

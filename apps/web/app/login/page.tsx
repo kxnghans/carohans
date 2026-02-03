@@ -50,17 +50,27 @@ function LoginContent() {
           if (!rpcError && resolvedEmail) {
               emailToUse = resolvedEmail;
           } else {
-              // 2. Fallback: Query clients table directly
+              // 2. Fallback: Query tables directly (First clients, then profiles)
               const { data: client } = await supabase
                   .from('clients')
                   .select('email')
                   .eq('username', loginInput.toLowerCase())
-                  .single();
+                  .maybeSingle();
               
-              if (client && client.email) {
+              if (client?.email) {
                   emailToUse = client.email;
               } else {
-                  throw new Error('Invalid username or email.');
+                  const { data: profile } = await supabase
+                      .from('profiles')
+                      .select('email')
+                      .eq('username', loginInput.toLowerCase())
+                      .maybeSingle();
+                  
+                  if (profile?.email) {
+                      emailToUse = profile.email;
+                  } else {
+                      throw new Error('Invalid username or email.');
+                  }
               }
           }
       }
@@ -73,6 +83,12 @@ function LoginContent() {
       if (error) throw error;
 
       if (data.user) {
+        // Enforce email confirmation
+        if (!data.user.email_confirmed_at) {
+          await supabase.auth.signOut();
+          throw new Error("Please verify your email address before logging in.");
+        }
+
         showNotification("Welcome!", "success");
         
         // Fetch profile to determine role-based redirect

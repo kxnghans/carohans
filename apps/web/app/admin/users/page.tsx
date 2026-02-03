@@ -10,6 +10,7 @@ import { useAppStore } from '../../context/AppContext';
 import { DynamicIcon } from '../../components/common/DynamicIcon';
 import { Discount } from '../../types';
 import { fetchDiscountsWithStats, createDiscount, deleteDiscount } from '../../services/discountService';
+import { getAdminUsersList, updateUserRole } from '../../actions/admin';
 import { formatDate, formatCurrency } from '../../utils/helpers';
 import { DiscountCreationModal } from '../../components/modals/DiscountCreationModal';
 import { RedemptionLedgerModal } from '../../components/modals/RedemptionLedgerModal';
@@ -24,22 +25,6 @@ interface UserProfile {
     username?: string;
     image?: string;
     color?: string;
-}
-
-interface ClientRow {
-    user_id: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-    username: string;
-    image: string;
-    color: string;
-}
-
-interface ProfileRow {
-    id: string;
-    role: string;
-    created_at: string;
 }
 
 export default function AdminUsersPage() {
@@ -96,40 +81,14 @@ export default function AdminUsersPage() {
     const [cleanupTarget, setCleanupTarget] = useState<UserProfile | null>(null);
 
     const fetchUsers = useCallback(async () => {
-        const { data: profiles, error: profileError } = await supabase
-            .from('profiles')
-            .select('id, role, created_at');
-
-        if (profileError) {
-            console.error('Error fetching profiles', profileError);
-            return;
+        try {
+            const data = await getAdminUsersList();
+            setUsers(data);
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            showNotification("Failed to fetch user list", "error");
         }
-
-        const { data: clientsData, error: clientError } = await supabase
-            .from('clients')
-            .select('user_id, first_name, last_name, email, username, image, color');
-            
-        if (clientError) console.error('Error fetching clients', clientError);
-
-        const typedProfiles = (profiles || []) as ProfileRow[];
-        const typedClients = (clientsData || []) as ClientRow[];
-
-        const mappedUsers: UserProfile[] = typedProfiles.map((p) => {
-            const client = typedClients.find((c) => c.user_id === p.id);
-            return {
-                id: p.id,
-                email: client?.email || 'N/A',
-                role: p.role as 'admin' | 'client',
-                clientName: client ? `${client.first_name} ${client.last_name}` : 'Unknown Client',
-                clientEmail: client?.email,
-                username: client?.username,
-                image: client?.image,
-                color: client?.color
-            };
-        });
-
-        setUsers(mappedUsers);
-    }, []);
+    }, [showNotification]);
 
     const fetchDiscounts = useCallback(async () => {
         try {
@@ -199,11 +158,17 @@ export default function AdminUsersPage() {
     };
 
     const executeRoleUpdate = async (userId: string, newRole: string) => {
-        const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
-        if (!error) {
-            showNotification(`User role updated to ${newRole}`);
-            fetchUsers();
-        } else showNotification("Failed to update role", "error");
+        try {
+            const result = await updateUserRole(userId, newRole as 'admin' | 'client');
+            if (result.success) {
+                showNotification(`User role updated to ${newRole}`);
+                fetchUsers();
+            } else {
+                showNotification(`Failed to update role: ${result.error}`, "error");
+            }
+        } catch {
+            showNotification("Failed to update role", "error");
+        }
     };
 
     // User Table Component
@@ -224,19 +189,57 @@ export default function AdminUsersPage() {
                         <thead><tr className="border-b border-border text-theme-caption font-bold text-muted uppercase tracking-wider"><th className="p-4 pl-6">User / Email</th><th className="p-4">Username</th><th className="p-4 text-center">Role</th><th className="p-4 text-right">Access Level</th><th className="p-4 text-right pr-6">Action</th></tr></thead>
                         <tbody className="divide-y divide-border">{data.map(user => (
                             <tr key={user.id} className="hover:bg-background/40 transition-colors">
-                                <td className="p-4 pl-6"><div className="flex items-center gap-3"><div className={`w-7 h-7 rounded-lg flex items-center justify-center border transition-all ${user.color ? user.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + (user.color.split('-')[1] || 'slate') + '-200 dark:bg-primary/10 dark:border-primary/20' : 'bg-background border-border'}`}><DynamicIcon iconString={user.image} color={user.color} className="w-3.5 h-3.5" fallback={<User className={`w-3.5 h-3.5 ${user.color || 'text-muted'}`} />} /></div><div><div className="text-theme-title text-foreground leading-tight font-normal">{user.clientName}</div><div className="text-theme-caption text-muted">{user.clientEmail}</div></div></div></td>
+                                <td className="p-4 pl-6"><div className="flex items-center gap-3"><div className={`w-7 h-7 rounded-lg flex items-center justify-center border transition-all overflow-hidden ${user.color ? user.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + (user.color.split('-')[1] || 'slate') + '-200 dark:bg-primary/10 dark:border-primary/20' : 'bg-background border-border'}`}><DynamicIcon iconString={user.image} color={user.color} className="w-3.5 h-3.5" fallback={<User className={`w-3.5 h-3.5 ${user.color || 'text-muted'}`} />} /></div><div><div className="text-theme-title text-foreground leading-tight font-normal">{user.clientName}</div><div className="text-theme-caption text-muted">{user.clientEmail || user.email}</div></div></div></td>
                                 <td className="p-4 text-theme-label font-mono text-muted">{user.username}</td>
-                                <td className="p-4 text-center"><span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-tight border ${user.role === 'admin' ? 'bg-status-settlement-bg text-status-settlement border-status-settlement/20' : 'bg-status-completed-bg text-status-completed border-status-completed/20'}`}>{user.role === 'admin' ? <Shield className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}{user.role}</span></td>
-                                <td className="p-4"><div className="flex justify-end">{user.role === 'client' ? (<button onClick={() => executeRoleUpdate(user.id, 'admin')} className="flex items-center gap-1.5 px-3 py-1.5 bg-status-active-bg text-status-active border border-status-active/20 rounded-xl text-theme-caption font-semibold uppercase tracking-tight hover:bg-status-active/20 transition-all shadow-sm group/btn"><TrendingUp className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />Promote</button>) : (<button onClick={() => { if (alwaysApproveDemote) executeRoleUpdate(user.id, 'client'); else setDemoteTarget(user); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-status-rejected-bg text-status-rejected border border-status-rejected/20 rounded-xl text-theme-caption font-semibold uppercase tracking-tight hover:bg-status-rejected/20 transition-all shadow-sm group/btn"><TrendingDown className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />Demote</button>)}</div></td>
+                                <td className="p-4 text-center">
+                                    <div className="flex flex-col items-center gap-1">
+                                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-tight border ${user.role === 'admin' ? 'bg-status-settlement-bg text-status-settlement border-status-settlement/20' : 'bg-status-completed-bg text-status-completed border-status-completed/20'}`}>
+                                            {user.role === 'admin' ? <Shield className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
+                                            {user.role}
+                                        </span>
+                                        {user.id.startsWith('offline-') && (
+                                            <span className="text-[8px] font-black text-muted opacity-50 uppercase tracking-widest">Offline</span>
+                                        )}
+                                    </div>
+                                </td>
+                                <td className="p-4">
+                                    <div className="flex justify-end">
+                                        {user.id.startsWith('offline-') ? (
+                                            <div className="px-3 py-1.5 bg-muted/5 text-muted/40 border border-muted/10 rounded-xl text-[9px] font-bold uppercase tracking-wider cursor-not-allowed italic" title="Cannot promote offline client without account">
+                                                Awaiting Signup
+                                            </div>
+                                        ) : user.role === 'client' ? (
+                                            <button onClick={() => executeRoleUpdate(user.id, 'admin')} className="flex items-center gap-1.5 px-3 py-1.5 bg-status-active-bg text-status-active border border-status-active/20 rounded-xl text-theme-caption font-semibold uppercase tracking-tight hover:bg-status-active/20 transition-all shadow-sm group/btn">
+                                                <TrendingUp className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                                                Promote
+                                            </button>
+                                        ) : (
+                                            <button onClick={() => { if (alwaysApproveDemote) executeRoleUpdate(user.id, 'client'); else setDemoteTarget(user); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-status-rejected-bg text-status-rejected border border-status-rejected/20 rounded-xl text-theme-caption font-semibold uppercase tracking-tight hover:bg-status-rejected/20 transition-all shadow-sm group/btn">
+                                                <TrendingDown className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                                                Demote
+                                            </button>
+                                        )}
+                                    </div>
+                                </td>
                                 <td className="p-4 pr-6">
                                     <div className="flex justify-end">
-                                        <button 
-                                            onClick={() => setCleanupTarget(user)}
-                                            className="p-2 bg-error text-white dark:text-background hover:opacity-90 rounded-xl transition-all shadow-lg shadow-error/20 active:scale-90"
-                                            title="Revoke Access"
-                                        >
-                                            <Trash2 className="w-4.5 h-4.5" />
-                                        </button>
+                                        {user.id.startsWith('offline-') ? (
+                                            <button 
+                                                disabled
+                                                className="p-2 bg-muted/20 text-muted/40 rounded-xl cursor-not-allowed grayscale opacity-50"
+                                                title="Revoke only available for accounts"
+                                            >
+                                                <Trash2 className="w-4.5 h-4.5" />
+                                            </button>
+                                        ) : (
+                                            <button 
+                                                onClick={() => setCleanupTarget(user)}
+                                                className="p-2 bg-error text-white dark:text-background hover:opacity-90 rounded-xl transition-all shadow-lg shadow-error/20 active:scale-90"
+                                                title="Revoke Access"
+                                            >
+                                                <Trash2 className="w-4.5 h-4.5" />
+                                            </button>
+                                        )}
                                     </div>
                                 </td>
                             </tr>
@@ -256,7 +259,7 @@ export default function AdminUsersPage() {
                     <span className="flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full bg-secondary text-white dark:text-background text-theme-subtitle shadow-lg shadow-secondary/20 font-normal">{discounts.length}</span>
                 </h3>
                 <div className="flex items-center gap-4">
-                    <Button size="sm" className="bg-secondary text-white dark:text-background hover:opacity-90 shadow-lg shadow-secondary/20 uppercase text-theme-body font-semibold font-sans" onClick={(e) => { e.stopPropagation(); setShowDiscountDialog(true); } }>
+                    <Button size="sm" className="bg-secondary text-white dark:text-background hover:opacity-90 shadow-lg shadow-secondary/20 uppercase text-theme-body font-semibold font-sans" onClick={(event) => { event.stopPropagation(); setShowDiscountDialog(true); } }>
                         <Plus className="w-3.5 h-3.5 mr-1.5" /> Create New
                     </Button>
                     <ChevronRight className={`w-5 h-5 transition-all duration-200 ${sections.discounts ? 'rotate-90 text-secondary dark:text-warning' : 'text-muted'}`} />

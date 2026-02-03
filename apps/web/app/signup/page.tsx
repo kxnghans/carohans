@@ -77,6 +77,7 @@ function SignupContent() {
         email,
         password,
         options: {
+          emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/` : undefined,
           data: {
             role: isTypeAdmin ? 'admin' : 'client',
             username: username.toLowerCase(),

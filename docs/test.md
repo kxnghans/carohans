@@ -4,7 +4,23 @@ This document outlines the verification steps required to ensure the application
 
 ---
 
-## 1. Core Navigation & Architecture
+## 1. Security & Authentication Lifecycle
+- [ ] **Enforced Verification:**
+    - [ ] Sign up as a new user.
+    - [ ] Attempt to log in **without** confirming the email.
+    - [ ] **Expectation:** Login fails with "Please verify your email address" error.
+- [ ] **Admin Token Protection:**
+    - [ ] Attempt to sign up as an admin with an incorrect token.
+    - [ ] **Expectation:** Access is denied.
+- [ ] **Access Revocation:**
+    - [ ] Select a client with orders and perform "Revoke Only".
+    - [ ] **Expectation:** User can no longer log in, but orders remain visible in the Admin Dashboard.
+- [ ] **Automated Re-linking:**
+    - [ ] Delete a user but keep their orders (Revoke).
+    - [ ] Sign up again with the **same email**.
+    - [ ] **Expectation:** New account automatically sees the previous order history.
+
+## 2. Core Navigation & Architecture
 - [ ] **Role Selection:** Landing page (`/`) correctly routes to `/portal/inventory` and `/admin/overview`.
 - [ ] **State Persistence:** Adding an item to the cart in `/portal/inventory`, navigating to `/portal/profile`, and returning to `/portal/inventory` should retain the cart count.
 - [ ] **Sign Out:** "Sign Out" button in layouts correctly redirects back to the landing page.
