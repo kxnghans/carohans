@@ -54,12 +54,7 @@ function SignupContent() {
       }
     } catch (err) {
       console.error("Token verification failed", err);
-      // Fallback to 4614 if DB check fails
-      if (accessToken === '4614') {
-        setIsAccessGranted(true);
-      } else {
-        showNotification("Access verification unavailable", "error");
-      }
+      showNotification("Access verification unavailable", "error");
     } finally {
       setCheckingToken(false);
     }
@@ -73,6 +68,7 @@ function SignupContent() {
     try {
       // 1. Sign up auth user with metadata
       // The handle_new_user trigger will automatically create the correct record (profile or client)
+      // We pass the signup_token in metadata so the trigger can verify it
       const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -83,7 +79,8 @@ function SignupContent() {
             username: username.toLowerCase(),
             first_name: firstName,
             last_name: lastName,
-            phone: phone
+            phone: phone,
+            signup_token: accessToken // Pass the token for trigger validation
           }
         }
       });

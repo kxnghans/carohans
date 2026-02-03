@@ -49,6 +49,9 @@ export interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+const CART_VERSION = '1.1';
+const CART_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const { user, setUserRole } = useAuth();
   const { showNotification } = useUI();
@@ -83,25 +86,44 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       discountCode: ''
   });
 
-  // Load cart from local storage
+  // Load cart from local storage with versioning and expiry
   useEffect(() => {
-      const savedCart = localStorage.getItem('carohans_cart');
-      if (savedCart) {
+      const savedCartStr = localStorage.getItem('carohans_cart');
+      if (savedCartStr) {
           try {
-              setCart(JSON.parse(savedCart));
+              const savedCart = JSON.parse(savedCartStr);
+              const now = Date.now();
+              
+              // Validate version and expiration
+              if (
+                savedCart.version === CART_VERSION && 
+                savedCart.timestamp && 
+                (now - savedCart.timestamp) < CART_EXPIRY_MS
+              ) {
+                  setCart(savedCart.items || []);
+              } else {
+                  console.log("Stale or old version cart invalidated");
+                  localStorage.removeItem('carohans_cart');
+              }
           } catch (e) {
               console.error("Failed to load cart", e);
+              localStorage.removeItem('carohans_cart');
           }
       }
   }, []);
 
-  // Save cart to local storage
+  // Save cart to local storage with metadata
   useEffect(() => {
-      localStorage.setItem('carohans_cart', JSON.stringify(cart));
+      const cartToSave = {
+          version: CART_VERSION,
+          timestamp: Date.now(),
+          items: cart
+      };
+      localStorage.setItem('carohans_cart', JSON.stringify(cartToSave));
   }, [cart]);
 
-  const fetchOrders = useCallback(async () => {
-    const { data, error } = await supabase
+  const fetchOrders = useCallback(async (role?: 'admin' | 'client', email?: string) => {
+    let query = supabase
       .from('orders')
       .select(`
         id, client_name, phone, email, status, start_date, end_date, total_amount, amount_paid, 
@@ -117,6 +139,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         )
       `)
       .order('created_at', { ascending: false });
+
+    if (role === 'client' && email) {
+      query = query.eq('email', email);
+    }
+
+    const { data, error } = await query;
 
     if (!error) {
       const today = new Date().toISOString().split('T')[0] ?? '';
@@ -191,6 +219,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         console.error("Failed to fetch settings", e);
       }
 
+      let currentRole: 'admin' | 'client' | undefined = undefined;
+
       if (user) {
           // Fetch Role
           const { data: profile } = await supabase
@@ -199,21 +229,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             .eq('id', user.id)
             .single();
           
-          setUserRole(profile?.role as 'admin' | 'client');
+          currentRole = profile?.role as 'admin' | 'client';
+          setUserRole(currentRole);
 
           // If client, pre-fill portal form data
           if (profile?.role === 'client') {
               const { data: client } = await supabase
                 .from('clients')
-                .select('first_name, last_name, name, username, phone, email, address, image, color')
+                .select('first_name, last_name, username, phone, email, address, image, color')
                 .eq('user_id', user.id)
                 .single();
               
               if (client) {
                   setPortalFormData(prev => ({
                       ...prev,
-                      firstName: client.first_name || client.name?.split(' ')[0] || '',
-                      lastName: client.last_name || client.name?.split(' ').slice(1).join(' ') || '',
+                      firstName: client.first_name || '',
+                      lastName: client.last_name || '',
                       username: client.username || '',
                       phone: client.phone || '',
                       email: client.email || '',
@@ -230,7 +261,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           getInventoryCached(),
           getClients(),
           fetchDiscountsWithStats(),
-          fetchOrders() // Updates internal state directly
+          fetchOrders(currentRole, user?.email) // Updates internal state directly
       ]);
       
       setInventory(invData);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { useAppStore } from '../context/AppContext';
@@ -8,7 +8,7 @@ import { NotificationToast } from '../components/common/NotificationToast';
 import { Icons } from '../lib/icons';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { resolveUserEmail } from '../actions/auth';
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -43,36 +43,13 @@ function LoginContent() {
       const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginInput);
       
       if (!isEmail) {
-          // 1. Try RPC first
-          const { data: resolvedEmail, error: rpcError } = await supabase
-            .rpc('get_email_for_login', { login_input: loginInput.toLowerCase() });
-
-          if (!rpcError && resolvedEmail) {
-              emailToUse = resolvedEmail;
-          } else {
-              // 2. Fallback: Query tables directly (First clients, then profiles)
-              const { data: client } = await supabase
-                  .from('clients')
-                  .select('email')
-                  .eq('username', loginInput.toLowerCase())
-                  .maybeSingle();
-              
-              if (client?.email) {
-                  emailToUse = client.email;
-              } else {
-                  const { data: profile } = await supabase
-                      .from('profiles')
-                      .select('email')
-                      .eq('username', loginInput.toLowerCase())
-                      .maybeSingle();
-                  
-                  if (profile?.email) {
-                      emailToUse = profile.email;
-                  } else {
-                      throw new Error('Invalid username or email.');
-                  }
-              }
+          // Resolve username to email using server action (Service Role)
+          const { email, error: resolveError } = await resolveUserEmail(loginInput.toLowerCase());
+          
+          if (resolveError || !email) {
+              throw new Error('Invalid username or email.');
           }
+          emailToUse = email;
       }
 
       const { data, error } = await supabase.auth.signInWithPassword({

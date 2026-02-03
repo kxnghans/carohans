@@ -1,4 +1,10 @@
 ﻿import { createServerClient, type CookieOptions } from '@supabase/ssr'
+/**
+ * NOTE: Next.js 16 deprecates the middleware.ts convention in favor of proxy.ts.
+ * However, to maintain compatibility with the Cloudflare adapter (@opennextjs/cloudflare),
+ * we MUST continue using middleware.ts with 'experimental-edge' runtime.
+ * Do not refactor this to proxy.ts as it will break the production deployment.
+ */
 import { NextResponse, type NextRequest } from 'next/server'
 
 export const runtime = 'experimental-edge'

@@ -91,6 +91,14 @@ The system uses Postgres triggers to ensure the `total_amount` column is always 
 *   **Logic:** Whenever an item is changed or order dates/discounts are updated, the `calculate_expected_order_total` function runs.
 *   **Guardrails:** Fixed discounts are capped at the rental subtotal to prevent negative totals.
 
+### 2.2 User Creation Triggers
+The system automates profile and client record creation during the signup flow.
+*   **Trigger:** `on_auth_user_created` (linked to `handle_new_user` function).
+*   **Logic:** 
+    1.  Upon a new user record in `auth.users`, the function automatically inserts a record into the `profiles` table with the assigned `role` (from metadata).
+    2.  If the role is `client`, it also creates a record in the `clients` table, mapping metadata fields (`first_name`, `last_name`, `phone`, etc.) to the respective columns.
+    3.  This ensures data integrity and atomic onboarding without requiring multiple client-side API calls.
+
 ---
 
 ## 3. Security Hardening
@@ -101,19 +109,24 @@ All critical RPCs and triggers use `SECURITY DEFINER` with a fixed `search_path`
 *   **Impact:** Prevents malicious search path manipulation from hijacking system-level operations.
 
 ### 3.2 Row Level Security (RLS)
+Policies are optimized to use `InitPlan` sub-selects for `auth.uid()` to ensure O(1) evaluation complexity.
 
-### 2.1 Inventory
-*   **SELECT**: Anonymous access (Public) to allow catalog browsing without login.
-*   **ALL**: Restricted to `role = 'admin'` via `profiles` lookup.
+#### 3.2.1 Profiles
+*   **SELECT**: Enable read access for all authenticated users (`true`).
+*   **INSERT/UPDATE**: Restricted to the owner using `(SELECT auth.uid()) = id`.
 
-### 2.2 Clients
-*   **SELECT/UPDATE**: Restricted to the owner (`user_id = auth.uid()`) or any `admin`.
+#### 3.2.2 Clients
+*   **SELECT/UPDATE**: Restricted to the owner (`user_id = (SELECT auth.uid())`) or any `admin`.
 *   **INSERT**: Allowed for authenticated users during onboarding.
 
-### 2.3 Orders
-*   **SELECT**: Owner (`client_id` lookup via `email` match to `auth.jwt()`) or `admin`.
+#### 3.2.3 Orders
+*   **SELECT**: Owner (lookup via `email` match to `auth.jwt()`) or `admin`.
 *   **INSERT**: Authenticated users only.
 *   **UPDATE**: Restricted to `admin` for status transitions.
+
+#### 3.2.4 Discounts & Redemptions
+*   **SELECT**: Consolidated policy allowing access if a coupon is `active` OR the user is an `admin`.
+*   **ALL**: Restricted to `admin` role.
 
 ---
 
@@ -135,10 +148,10 @@ Performs a dual-lookup search to minimize network round-trips.
 *   **Column Selection:** Strict adherence to `select('id, name, status')` rather than `select('*')` for list views to reduce payload size.
 
 ### 5.2 Indexing Strategy
-To prevent slow queries from locking connections, the following indexes are applied:
+To prevent slow queries from locking connections, the following indexes are prioritized:
 *   **Client Filtering:** `CREATE INDEX idx_orders_client_id ON orders(client_id);`
-*   **Status Filtering:** `CREATE INDEX idx_orders_status ON orders(status);`
 *   **Date Range Lookups:** `CREATE INDEX idx_orders_date_range ON orders(start_date, end_date);`
+*   **Unused Indexes:** `idx_orders_status` and `idx_order_items_inventory_id` have been removed to optimize write performance.
 
 ---
 
