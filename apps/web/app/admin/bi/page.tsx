@@ -442,20 +442,6 @@ export default function AdminBIPage() {
   }, [categoryFilteredData, inventory]);
 
   // 8. Discount Performance
-  const discountUsageData = useMemo(() => {
-      return discounts
-        .map(d => ({ name: d.code, value: d.usageCount || 0 }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 10);
-  }, [discounts]);
-
-  const discountImpactData = useMemo(() => {
-      return discounts
-        .map(d => ({ name: d.name, value: d.totalImpact || 0 }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 10);
-  }, [discounts]);
-
   const discountCountsByCategory = useMemo(() => {
     const map: Record<string, number> = { 'One-Time': 0, 'Periodic': 0, 'Unlimited': 0 };
     discounts.forEach(d => {
