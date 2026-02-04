@@ -139,7 +139,34 @@ export const calculateMetrics = (orders: Order[]): Metrics => {
   const activeRentals = orders.filter(o => o.status === 'Active' && o.endDate >= today).length;
 
   const avgOrderValue = totalRevenue / (orders.length || 1);
-  const revenueGrowth = 12.5;
+
+  // Calculate Revenue Growth (Dynamic: Last 30d vs Previous 30d)
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+  const sixtyDaysAgo = new Date(now.getTime() - (60 * 24 * 60 * 60 * 1000));
+
+  const currentPeriodRevenue = orders.reduce((sum, o) => {
+    const orderDate = new Date(o.startDate);
+    if (orderDate >= thirtyDaysAgo && orderDate <= now) {
+      return sum + (o.totalAmount || 0);
+    }
+    return sum;
+  }, 0);
+
+  const previousPeriodRevenue = orders.reduce((sum, o) => {
+    const orderDate = new Date(o.startDate);
+    if (orderDate >= sixtyDaysAgo && orderDate < thirtyDaysAgo) {
+      return sum + (o.totalAmount || 0);
+    }
+    return sum;
+  }, 0);
+
+  let revenueGrowth = 0;
+  if (previousPeriodRevenue > 0) {
+    revenueGrowth = ((currentPeriodRevenue - previousPeriodRevenue) / previousPeriodRevenue) * 100;
+  } else if (currentPeriodRevenue > 0) {
+    revenueGrowth = 100; 
+  }
 
   // Calculate Average Duration
   const totalDuration = orders.reduce((sum, o) => {
