@@ -9,15 +9,27 @@ import { Icons } from '../lib/icons';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { resolveUserEmail } from '../actions/auth';
+import { getUserFriendlyErrorMessage } from '../utils/errorMapping';
+
+import { authenticateClient } from '../actions/client-auth';
 
 function LoginContent() {
   const searchParams = useSearchParams();
   const isAdminIntent = searchParams.get('redirect')?.includes('/admin');
   const { showNotification } = useAppStore();
-  const { User, Lock, ChevronRight, ChevronLeft, Eye, EyeOff } = Icons;
+  const { User, Lock, ChevronRight, ChevronLeft, Eye, EyeOff, Phone, Shield } = Icons;
+  
+  // Directly set based on intent, no manual toggle
+  const isInternalAdmin = isAdminIntent;
+
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+  
   const [loginInput, setLoginInput] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,62 +51,52 @@ function LoginContent() {
     setError(null);
 
     try {
-      let emailToUse = loginInput;
-      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginInput);
-      
-      if (!isEmail) {
-          // Resolve username to email using server action (Service Role)
-          const { email, error: resolveError } = await resolveUserEmail(loginInput.toLowerCase());
+      if (isInternalAdmin) {
+          // ADMIN LOGIN (Supabase Auth)
+          let emailToUse = loginInput;
+          const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginInput);
           
-          if (resolveError || !email) {
-              throw new Error('Invalid username or email.');
+          if (!isEmail) {
+              const { email, error: resolveError } = await resolveUserEmail(loginInput.toLowerCase());
+              if (resolveError || !email) throw new Error('Invalid username or email.');
+              emailToUse = email;
           }
-          emailToUse = email;
-      }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: emailToUse,
-        password,
-      });
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: emailToUse,
+            password,
+          });
 
-      if (error) throw error;
+          if (error) throw error;
+          
+          if (data.user) {
+             if (!data.user.email_confirmed_at) {
+                await supabase.auth.signOut();
+                throw new Error("Please verify your email address.");
+             }
+             
+             const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
+             if (profile?.role === 'admin') {
+                 showNotification("Welcome Admin", "success");
+                 window.location.href = '/admin/overview';
+             } else {
+                 showNotification("Access Denied: Admins Only", "error");
+                 await supabase.auth.signOut();
+             }
+          }
 
-      if (data.user) {
-        // Enforce email confirmation
-        if (!data.user.email_confirmed_at) {
-          await supabase.auth.signOut();
-          throw new Error("Please verify your email address before logging in.");
-        }
+      } else {
+          // CLIENT LOGIN (Custom Auth)
+          const result = await authenticateClient(firstName, lastName, phone);
+          if (!result.success) throw new Error(result.error || 'Authentication failed');
 
-        showNotification("Welcome!", "success");
-        
-        // Fetch profile to determine role-based redirect
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
-
-        // Use window.location.href for a robust redirect that ensures 
-        // middleware and session state are correctly synced in production.
-        if (profileError || !profile) {
-            window.location.href = '/portal/orders';
-            return;
-        }
-
-        if (profile.role === 'admin') {
-          window.location.href = '/admin/overview';
-        } else {
+          showNotification("Welcome back!", "success");
           window.location.href = '/portal/inventory';
-        }
       }
+      
     } catch (err: unknown) {
       console.error('Login flow error:', err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError(String(err));
-      }
+      setError(getUserFriendlyErrorMessage(err, "Login"));
     } finally {
       setLoading(false);
     }
@@ -146,7 +148,6 @@ function LoginContent() {
           
           <div className="bg-surface/60 dark:bg-surface/80 backdrop-blur-2xl p-6 md:p-12 rounded-[2rem] md:rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-border dark:border-border/50 relative overflow-hidden group">
             
-            {/* Exclusive Creative Background for Login Card */}
             <div className="bg-flow pointer-events-none">
               <div className="flow-shape w-[300px] h-[300px] md:w-[400px] md:h-[400px] bg-primary/[0.08] dark:bg-primary/5 rounded-full top-[-20%] left-[-20%] animate-[float-slow_20s_infinite_ease-in-out]"></div>
               <div className="flow-shape w-[350px] h-[350px] md:w-[450px] md:h-[450px] bg-secondary/10 rounded-full bottom-[-20%] right-[-20%] animate-[float-reverse_25s_infinite_ease-in-out]"></div>
@@ -165,8 +166,10 @@ function LoginContent() {
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 md:w-32 md:h-32 bg-primary/20 blur-2xl rounded-full -z-10 animate-[pulse-glow_4s_infinite]"></div>
                     </div>
                     
-                    <h1 className="text-theme-header text-foreground tracking-tight text-center font-normal">Welcome</h1>
-                    <p className="text-muted text-theme-body text-center mt-2 font-normal opacity-80">Sign in to your workspace</p>
+                    <h1 className="text-theme-header text-foreground tracking-tight text-center font-normal">{isInternalAdmin ? 'Admin Access' : 'Client Portal'}</h1>
+                    <p className="text-muted text-theme-body text-center mt-2 font-normal opacity-80">
+                        {isInternalAdmin ? 'Sign in to management dashboard' : 'Access your orders & profile'}
+                    </p>
                 </div>
 
                 {error && (
@@ -177,46 +180,107 @@ function LoginContent() {
                 )}
 
                 <form onSubmit={handleLogin} className="space-y-5">
-                <div className="space-y-2">
-                    <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">Email or Username</label>
-                    <div className="relative group/input">
-                    <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
-                        <User className="w-4 h-4" />
-                    </div>
-                                        <input
-                                            type="text"
-                                            required
-                                            className="w-full pl-20 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
-                                            value={loginInput}
-                                            onChange={(e) => setLoginInput(e.target.value)}
-                                            placeholder="Enter email or username..."
-                                        />
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between ml-1 mb-1">
-                                        <label className="block text-theme-body font-normal text-muted uppercase tracking-widest">Password</label>
-                                        </div>
-                                        <div className="relative group/input">
-                                        <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
-                                            <Lock className="w-4 h-4" />
-                                        </div>
-                                                                                                    <input
-                                                                                                        type={showPassword ? "text" : "password"}
-                                                                                                        required
-                                                                                                        className="w-full pl-20 pr-12 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
-                                                                                                        value={password}
-                                                                                                        onChange={(e) => setPassword(e.target.value)}
-                                                                                                        placeholder="Enter password.."
-                                                                                                    />                                                            <button 
-                                                                type="button"
-                                                                onClick={() => setShowPassword(!showPassword)}
-                                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-primary transition-colors z-10 p-1"
-                                                            >
-                                                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                                            </button>                    </div>
-                </div>
+                
+                {!isInternalAdmin ? (
+                    // CLIENT FORM
+                    <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                              <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">First Name</label>
+                              <div className="relative group/input">
+                              <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
+                                  <User className="w-4 h-4" />
+                              </div>
+                                                  <input
+                                                      type="text"
+                                                      required
+                                                      className="w-full pl-20 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
+                                                      value={firstName}
+                                                      onChange={(e) => setFirstName(e.target.value)}
+                                                      placeholder="First Name"
+                                                  />
+                                                </div>
+                          </div>
+                          <div className="space-y-2">
+                              <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">Last Name</label>
+                              <div className="relative group/input">
+                              <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
+                                  <User className="w-4 h-4" />
+                              </div>
+                                                  <input
+                                                      type="text"
+                                                      required
+                                                      className="w-full pl-20 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
+                                                      value={lastName}
+                                                      onChange={(e) => setLastName(e.target.value)}
+                                                      placeholder="Last Name"
+                                                  />
+                                                </div>
+                          </div>
+                        </div>
+                                            
+                        <div className="space-y-2">
+                            <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">Phone Number</label>
+                            <div className="relative group/input">
+                            <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
+                                <Phone className="w-4 h-4" />
+                            </div>
+                                                        <input
+                                                            type="tel"
+                                                            required
+                                                            className="w-full pl-20 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
+                                                            value={phone}
+                                                            onChange={(e) => setPhone(e.target.value)}
+                                                            placeholder="024-000-0000"
+                                                        />
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    // ADMIN FORM
+                    <>
+                        <div className="space-y-2">
+                            <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">Email or Username</label>
+                            <div className="relative group/input">
+                                <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
+                                    <Shield className="w-4 h-4" />
+                                </div>
+                                <input
+                                    type="text"
+                                    required
+                                    className="w-full pl-20 pr-4 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
+                                    value={loginInput}
+                                    onChange={(e) => setLoginInput(e.target.value)}
+                                    placeholder="admin@carohans.com"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                            <label className="block text-theme-body font-normal text-muted uppercase tracking-widest ml-1 mb-1">Password</label>
+                            <div className="relative group/input">
+                                <div className="absolute left-7 top-1/2 -translate-y-1/2 text-muted group-focus-within/input:text-primary transition-colors z-10">
+                                    <Lock className="w-4 h-4" />
+                                </div>
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    required
+                                    className="w-full pl-20 pr-12 py-4 bg-background/40 dark:bg-background/20 border border-border dark:border-border/50 hover:bg-background/60 dark:hover:bg-background/30 focus:bg-background dark:focus:bg-background/40 focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 text-foreground text-theme-label rounded-2xl outline-none transition-all duration-300 placeholder:text-muted/30 font-normal placeholder:font-normal"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Enter password.."
+                                />
+                                <button 
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-primary transition-colors z-10 p-1"
+                                >
+                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                )}
 
                 <div className="pt-4">
                     <Button 
@@ -225,7 +289,7 @@ function LoginContent() {
                     size="lg"
                     >
                     <span className="flex items-center justify-center gap-3">
-                        {loading ? 'Authenticating...' : 'Sign In'}
+                        {loading ? 'Authenticating...' : (isInternalAdmin ? 'Admin Login' : 'Enter Portal')}
                         {!loading && <ChevronRight className="w-4 h-4" />}
                     </span>
                     </Button>
@@ -234,7 +298,7 @@ function LoginContent() {
 
                 <div className="mt-8 text-center pt-8 border-t border-border dark:border-slate-800">
                 <p className="text-theme-body text-muted font-normal">
-                    Don&apos;t have an account? <Link href={isAdminIntent ? "/signup?type=admin" : "/signup"} className="text-secondary dark:text-warning hover:underline decoration-2 underline-offset-4 transition-colors text-theme-subtitle">Sign Up</Link>
+                    Don&apos;t have an account? <Link href={isInternalAdmin ? "/signup?type=admin" : "/signup"} className="text-secondary dark:text-warning hover:underline decoration-2 underline-offset-4 transition-colors text-theme-subtitle">Sign Up</Link>
                 </p>
                 </div>
             </div>

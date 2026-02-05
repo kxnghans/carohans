@@ -36,7 +36,7 @@ export const updateClientProfile = async (userId: string, details: PortalFormDat
     .update({
         first_name: details.firstName,
         last_name: details.lastName,
-        username: details.username.toLowerCase(),
+        username: details.username?.toLowerCase() || '',
         phone: details.phone,
         email: details.email,
         address: details.address,

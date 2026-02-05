@@ -99,14 +99,24 @@ export const submitOrderToSupabase = async (
         totalAmount = Math.max(0, totalAmount - actualDiscountAmount);
     }
 
-    // 3. Find Client ID by Email
-    const { data: client, error: clientError } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('email', details.email)
-        .single();
+    // 3. Find Client ID
+    let clientLookup = supabase.from('clients').select('id');
+    
+    if (details.email) {
+        clientLookup = clientLookup.eq('email', details.email);
+    } else {
+        clientLookup = clientLookup
+            .ilike('first_name', details.firstName.trim())
+            .ilike('last_name', details.lastName.trim())
+            .eq('phone', details.phone.trim());
+    }
 
-    if (clientError) throw new Error("Client not found. Please contact support.");
+    const { data: client, error: clientError } = await clientLookup.maybeSingle();
+
+    if (clientError || !client) {
+        console.error("Client lookup failed:", clientError);
+        throw new Error("Client record not found. Please ensure you are logged in correctly.");
+    }
 
     // 4. Call the atomic RPC
     const { data: orderId, error: rpcError } = await supabase.rpc('submit_order', {

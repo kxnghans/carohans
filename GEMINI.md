@@ -65,7 +65,23 @@ Run these commands from the **root directory**:
 *   **Responsive Design:** Implements a global `zoom` strategy in `globals.css` to handle responsiveness across different device sizes (Mobile: 0.7, Tablet: 0.8, Desktop: 1).
 *   **State Management:** `AppProvider` (in `apps/web/app/context/AppContext.tsx`) wraps the application in `layout.tsx`.
 *   **Fonts:** Uses `Geist` and `Geist_Mono` from `next/font/google`.
-*   **Icons:** Primarily uses `lucide-react` and `@mui/icons-material`.
+*   **Icons:** Primarily uses `@mui/icons-material` wrapped in a custom `DynamicIcon` component. `lucide-react` is used sparingly for specific system actions.
+
+## Icon & Visual Standards
+
+### DynamicIcon Component
+All entity markers (Inventory Items, Client Avatars, etc.) must use the `DynamicIcon` component. It provides centralized control over sizing and scaling.
+
+### Sizing & Scaling (The 85-90% Rule)
+To maintain visual impact while ensuring professional "breathing room," icons and emojis within their containers are scaled to **87.5%** of the container size.
+*   **Tables:** `w-8 h-8` container.
+*   **Modals:** `w-12 h-12` container.
+*   **Profiles:** `w-14 h-14` container.
+
+### Background & Border Management
+Every icon style is managed via the `getIconStyle` helper in `helpers.ts`. 
+*   **Accounts/Staff:** Usually feature a light background tint (`bg-primary/10`) and a subtle border.
+*   **Inventory Items:** These are strictly **borderless** and **background-free** in table rows to ensure the focus remains on the asset symbol. Use `getIconStyle(color, { noBorder: true, noBackground: true })`.
 
 ## Deployment
 

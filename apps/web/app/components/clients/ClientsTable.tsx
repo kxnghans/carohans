@@ -2,11 +2,12 @@
 
 import { useState, useMemo, Fragment } from 'react';
 import { Card } from '../ui/Card';
-import { formatCurrency } from '../../utils/helpers';
+import { formatCurrency, getIconStyle } from '../../utils/helpers';
 import { Client, PortalFormData } from '../../types';
-import { Icons, InventoryIcons } from '../../lib/icons';
+import { Icons } from '../../lib/icons';
 import { ClientProfileForm } from './ClientProfileForm';
 import { ScrollableContainer } from '../common/ScrollableContainer';
+import { DynamicIcon } from '../common/DynamicIcon';
 
 const SortIcon = ({ 
     column, 
@@ -68,15 +69,15 @@ export const ClientsTable = ({ data }: { data: Client[] }) => {
     };
 
     const RenderClientIcon = ({ client }: { client: Client }) => {
-        if (client.image?.startsWith('icon:')) {
-            const iconKey = client.image.replace('icon:', '');
-            const IconComp = InventoryIcons[iconKey];
-            return IconComp ? <IconComp className={`w-4 h-4 ${client.color || 'text-primary'}`} /> : <span>📦</span>;
-        }
-        if (client.image) {
-             return <span>{client.image}</span>;
-        }
-        return <div className="font-bold text-xs">{client.firstName.substring(0, 1).toUpperCase()}{client.lastName.substring(0, 1).toUpperCase()}</div>;
+        return (
+            <DynamicIcon 
+                iconString={client.image}
+                color={client.color}
+                variant="table"
+                forceUpdate={client}
+                fallback={<div className="font-bold text-xs">{client.firstName.substring(0, 1).toUpperCase()}{client.lastName.substring(0, 1).toUpperCase()}</div>}
+            />
+        );
     };
 
     return (
@@ -111,7 +112,7 @@ export const ClientsTable = ({ data }: { data: Client[] }) => {
                                         <tr className="hover:bg-background/50 transition-colors group cursor-pointer" onClick={() => toggleExpand(client.id)}>
                                             <td className="p-4 pl-6">
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${client.color ? client.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + client.color.split('-')[1] + '-200 dark:bg-primary/10 dark:border-primary/20' : 'bg-primary/10 dark:bg-primary/10 text-primary border-indigo-100 dark:border-primary/20'}`}>
+                                                    <div className={`rounded-lg flex items-center justify-center border transition-all ${getIconStyle(client.color).container}`}>
                                                         <RenderClientIcon client={client} />
                                                     </div>
                                                     <div>

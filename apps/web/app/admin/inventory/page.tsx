@@ -12,6 +12,7 @@ import { getDurationDays } from '../../utils/helpers';
 import { ClientSelector } from '../../components/modals/ClientSelector';
 import { InvoiceModal } from '../../components/modals/InvoiceModal';
 import { DiscountManager } from '../../components/common/DiscountManager';
+import { getUserFriendlyErrorMessage } from '../../utils/errorMapping';
 
 function InventoryPageContent() {
   const { Plus, Check, X, Pencil, Loader2, Calendar } = Icons;
@@ -48,6 +49,18 @@ function InventoryPageContent() {
       setIsEditMode(false);
       setCart([]);
     }
+  };
+
+  const { checkAvailability } = useAppStore();
+
+  const handleDateChange = (field: 'start' | 'end', value: string) => {
+      const newDates = { ...orderDates, [field]: value };
+      setOrderDates(newDates);
+      setPortalFormData(prev => ({ ...prev, [field]: value }));
+      
+      if (newDates.start && newDates.end) {
+          checkAvailability(newDates.start, newDates.end);
+      }
   };
 
   const toggleEditMode = async () => {
@@ -118,8 +131,8 @@ function InventoryPageContent() {
         setCart([]);
         setShowReview(false);
     } catch (e) {
-        const error = e as Error;
-        showNotification(error.message || "Failed to process order", "error");
+        console.error("Order submission failed:", e);
+        showNotification(getUserFriendlyErrorMessage(e, "Order"), "error");
     }
   };
 
@@ -145,14 +158,17 @@ function InventoryPageContent() {
     showNotification("Item deleted from catalog.");
   };
 
-  const addToCart = (item: InventoryItem, qty: number) => {
+  const addToCart = (item: InventoryItem, delta: number) => {
     const existing = cart.find(c => c.id === item.id);
-    if (qty <= 0) {
+    const currentQty = existing?.qty || 0;
+    const newQty = currentQty + delta;
+
+    if (newQty <= 0) {
       setCart(cart.filter(c => c.id !== item.id));
     } else if (existing) {
-      setCart(cart.map(c => c.id === item.id ? { ...c, qty } : c));
+      setCart(cart.map(c => c.id === item.id ? { ...c, qty: newQty } : c));
     } else {
-      setCart([...cart, { id: item.id, qty, price: item.price }]);
+      setCart([...cart, { id: item.id, qty: newQty, price: item.price }]);
     }
   };
 
@@ -255,7 +271,7 @@ function InventoryPageContent() {
                         type="date" 
                         className="w-full pl-12 pr-4 py-4 bg-background border border-border rounded-2xl text-theme-body font-bold outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all dark:[color-scheme:dark]" 
                         value={orderDates.start} 
-                        onChange={(e) => { setOrderDates({...orderDates, start: e.target.value}); setPortalFormData({...portalFormData, start: e.target.value}); }} 
+                        onChange={(e) => handleDateChange('start', e.target.value)} 
                       />
                     </div>
                   </div>
@@ -268,7 +284,7 @@ function InventoryPageContent() {
                         type="date" 
                         className="w-full pl-12 pr-4 py-4 bg-background border border-border rounded-2xl text-theme-body font-bold outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all dark:[color-scheme:dark]" 
                         value={orderDates.end} 
-                        onChange={(e) => { setOrderDates({...orderDates, end: e.target.value}); setPortalFormData({...portalFormData, end: e.target.value}); }} 
+                        onChange={(e) => handleDateChange('end', e.target.value)} 
                       />
                     </div>
                   </div>

@@ -11,6 +11,7 @@ import { ContactModal } from '../components/modals/ContactModal';
 import { NotificationToast } from '../components/common/NotificationToast';
 import { ScrollableContainer } from '../components/common/ScrollableContainer';
 import { MobileNav } from '../components/layout/MobileNav';
+import { getUserFriendlyErrorMessage } from '../utils/errorMapping';
 
 const ThemeIcon = ({ theme }: { theme: 'light' | 'dark' | 'system' }) => {
   const { Sun, Moon, Laptop } = Icons;
@@ -99,8 +100,8 @@ export default function PortalLayout({
         setShowInvoice(false);
         showNotification(modifyingOrderId ? "Order updated successfully!" : "Order placed successfully!", "success");
     } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to process order";
-        showNotification(message, "error");
+        console.error("Order submission failed:", error);
+        showNotification(getUserFriendlyErrorMessage(error, "Order"), "error");
     }
   };
 

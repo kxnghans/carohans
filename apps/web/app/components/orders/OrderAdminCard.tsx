@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
-import { getStatusColor, getStatusDescription } from '../../utils/helpers';
+import { getStatusColor, getStatusDescription, getIconStyle } from '../../utils/helpers';
 import { Order, InventoryItem, OrderItem } from '../../types';
+import { DynamicIcon } from '../common/DynamicIcon';
 
 interface OrderAdminCardProps {
   order: Order;
@@ -53,11 +54,21 @@ export const OrderAdminCard = ({ order, updateStatus, onInvoice, inventory }: Or
               <h5 className="font-bold text-xs uppercase tracking-wider text-muted mb-3">Order Items</h5>
               <div className="space-y-2 mb-6">
                 {order.items.map((item: OrderItem, idx: number) => {
-                  // Start of rudimentary item lookup - ideally pass inventory
-                  const itemName = inventory.find(i => i.id === item.inventoryId)?.name || 'Unknown Item';
+                  const invItem = inventory.find(i => i.id === item.inventoryId);
+                  const itemName = invItem?.name || 'Unknown Item';
                   return (
-                    <div key={idx} className="flex justify-between text-sm bg-white p-2 rounded border border-border">
-                      <span className="font-medium text-slate-700">{itemName}</span>
+                    <div key={idx} className="flex items-center justify-between text-sm bg-white p-2 rounded border border-border group/item">
+                      <div className="flex items-center gap-2">
+                        <div className={`rounded flex items-center justify-center border-none transition-all ${getIconStyle(invItem?.color, { noBorder: true, noBackground: true }).container}`}>
+                            <DynamicIcon 
+                                iconString={invItem?.image} 
+                                color={invItem?.color} 
+                                variant="table" 
+                                forceUpdate={invItem}
+                            />
+                        </div>
+                        <span className="font-medium text-slate-700">{itemName}</span>
+                      </div>
                       <span className="font-mono text-muted">x{item.qty}</span>
                     </div>
                   );

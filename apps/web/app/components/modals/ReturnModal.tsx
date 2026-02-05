@@ -6,10 +6,11 @@ import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
 import { DatePicker } from '../ui/DatePicker';
 import { DiscountManager } from '../common/DiscountManager';
-import { formatCurrency, getReturnStatusColor, getItemIntegrityColor, calculateOrderTotal } from '../../utils/helpers';
+import { formatCurrency, getReturnStatusColor, getItemIntegrityColor, calculateOrderTotal, getIconStyle } from '../../utils/helpers';
 import { Order, InventoryItem } from '../../types';
 import { processOrderReturn, getOrderDetails } from '../../services/orderService';
 import { useData } from '../../context/DataContext';
+import { DynamicIcon } from '../common/DynamicIcon';
 
 interface ReturnModalProps {
   isOpen: boolean;
@@ -383,27 +384,35 @@ export const ReturnModal = ({
                 </div>
 
                 {/* Item Audit List */}
-                <div>
-                    <div className="flex items-center gap-2 mb-4 ml-1">
+                <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-2 ml-1">
                         <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
                         <label className="text-[10px] font-black text-muted uppercase tracking-widest">Item Inspection</label>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                         {activeOrder.items.map(item => {
                             const invItem = inventory.find(i => i.id === item.inventoryId);
                             const qtys = returnItemQuantities[item.inventoryId] || { returned: item.qty, lost: 0, damaged: 0 };
                             
                             return (
-                                <div key={item.inventoryId} className="bg-background border border-border rounded-2xl p-4 shadow-sm group hover:border-primary/20 hover:shadow-md transition-all">
-                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-12 h-12 bg-surface rounded-xl flex items-center justify-center font-bold text-xl text-muted group-hover:scale-110 transition-transform">{invItem?.image || '📦'}</div>
+                                <div key={item.inventoryId} className="bg-background border border-border rounded-2xl p-5 shadow-sm group hover:border-primary/20 hover:shadow-md transition-all">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`rounded-xl flex items-center justify-center border-none transition-all ${getIconStyle(invItem?.color, { noBorder: true, noBackground: true }).container} group-hover:scale-110`}>
+                                                <DynamicIcon 
+                                                    iconString={invItem?.image} 
+                                                    color={invItem?.color} 
+                                                    variant="modal" 
+                                                    forceUpdate={invItem}
+                                                    fallback={<span>📦</span>} 
+                                                />
+                                            </div>
                                             <div>
-                                                <p className="text-theme-body-bold text-foreground">{invItem?.name}</p>
-                                                <p className="text-theme-caption text-muted font-bold uppercase tracking-tight">Original Qty: {item.qty}</p>
+                                                <p className="text-theme-body-bold text-foreground text-lg">{invItem?.name}</p>
+                                                <p className="text-theme-caption text-muted font-bold uppercase tracking-tight mt-0.5">Original Qty: {item.qty}</p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-4 bg-surface/50 p-2 rounded-xl border border-border/50">
+                                        <div className="flex items-center gap-4 bg-surface/50 p-3 rounded-xl border border-border/50">
                                             <div className="flex flex-col items-center">
                                                 <span className="text-[9px] font-black text-muted uppercase mb-1">Good</span>
                                                 <div 
@@ -454,26 +463,26 @@ export const ReturnModal = ({
                 </div>
 
                 {/* Financial Summary & Payment */}
-                <div className="bg-background rounded-3xl p-6 border border-border grid grid-cols-1 md:grid-cols-2 gap-8 shadow-inner relative overflow-hidden">
-                    <div className="space-y-2.5">
-                        <h4 className="text-theme-caption font-black text-muted uppercase tracking-widest mb-4">Financial Summary</h4>
-                        <div className="flex justify-between text-theme-body">
+                <div className="bg-background rounded-3xl p-8 border border-border grid grid-cols-1 md:grid-cols-2 gap-10 shadow-inner relative overflow-hidden">
+                    <div className="space-y-4">
+                        <h4 className="text-theme-caption font-black text-muted uppercase tracking-widest mb-6">Financial Summary</h4>
+                        <div className="flex justify-between text-theme-body py-1">
                             <span className="text-muted">Rental Subtotal</span>
                             <span className="text-foreground font-bold">{formatCurrency(returnTotals.subtotal)}</span>
                         </div>
                         {returnTotals.discount > 0 && (
-                            <div className="flex justify-between text-theme-body">
+                            <div className="flex justify-between text-theme-body py-1">
                                 <span className="text-secondary font-medium">Discount Applied</span>
                                 <span className="text-secondary font-bold">-{formatCurrency(returnTotals.discount)}</span>
                             </div>
                         )}
-                        <div className="flex justify-between text-theme-body">
+                        <div className="flex justify-between text-theme-body py-1">
                             <span className="text-muted font-bold">Net Rental Cost</span>
                             <span className="text-foreground font-bold">{formatCurrency(returnTotals.netRental)}</span>
                         </div>
                         
                         {(returnTotals.lateFee > 0 || returnTotals.lossFee > 0 || returnTotals.damageFee > 0) && (
-                            <div className="pt-2 border-t border-border mt-2 space-y-1">
+                            <div className="pt-4 border-t border-border mt-4 space-y-2">
                                 {returnTotals.lateFee > 0 && (
                                     <div className="flex justify-between text-theme-body text-xs">
                                         <span className="text-muted">Late Fees</span>
@@ -489,7 +498,7 @@ export const ReturnModal = ({
                             </div>
                         )}
                         
-                        <div className="flex justify-between text-theme-body pt-2 border-t border-border">
+                        <div className="flex justify-between text-theme-body pt-4 border-t border-border">
                             <span className="text-muted">Total Order Value</span>
                             <span className="text-theme-body-bold text-foreground">{formatCurrency(returnTotals.total)}</span>
                         </div>
@@ -497,14 +506,14 @@ export const ReturnModal = ({
                             <span className="text-muted">Previous Payments</span>
                             <span className="text-success font-bold">-{formatCurrency(activeOrder.amountPaid)}</span>
                         </div>
-                        <div className="flex justify-between text-theme-subtitle font-black pt-3 border-t-2 border-foreground mt-2 dark:border-white">
+                        <div className="flex justify-between text-theme-subtitle font-black pt-5 border-t-2 border-foreground mt-4 dark:border-white">
                             <span className="text-foreground uppercase tracking-tighter">Net Balance Due</span>
                             <span className="text-error text-theme-header">{formatCurrency(Math.max(0, returnTotals.total - activeOrder.amountPaid))}</span>
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        <h4 className="text-theme-caption font-black text-muted uppercase tracking-widest mb-4">Process Payment</h4>
+                    <div className="space-y-6">
+                        <h4 className="text-theme-caption font-black text-muted uppercase tracking-widest mb-6">Process Payment</h4>
                         <div className="relative group">
                             <div className={`absolute left-6 top-1/2 -translate-y-1/2 font-black text-theme-header transition-colors ${submitAttempted && (!paymentAmount || paymentAmount <= 0) ? 'text-error' : 'text-muted group-focus-within:text-primary dark:group-focus-within:text-warning'}`}>¢</div>
                             <input 

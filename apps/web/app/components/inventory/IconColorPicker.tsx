@@ -1,9 +1,10 @@
 "use client";
 
-import { InventoryIcons, Icons } from '../../lib/icons';
+import { InventoryIcons, AccountIcons, Icons } from '../../lib/icons';
+import { getIconStyle } from '../../utils/helpers';
 
 const COLORS = [
-  { name: 'Gray', class: 'text-muted', bg: 'bg-background0' },
+  { name: 'Gray', class: 'text-muted', bg: 'bg-slate-500' },
   { name: 'Indigo', class: 'text-primary', bg: 'bg-primary' },
   { name: 'Red', class: 'text-error', bg: 'bg-error' },
   { name: 'Green', class: 'text-success', bg: 'bg-success' },
@@ -20,12 +21,16 @@ const EMOJIS = ['🪑', '⚪', '🍴', '🍷', '🌸', '🎪', '💃', '📽️'
 interface IconColorPickerProps {
   currentIcon: string;
   currentColor: string;
+  type?: 'inventory' | 'account';
   onChange: (data: { image: string, color: string }) => void;
   onClose: () => void;
 }
 
-export const IconColorPicker = ({ currentIcon, currentColor, onChange, onClose }: IconColorPickerProps) => {
+export const IconColorPicker = ({ currentIcon, currentColor, type = 'inventory', onChange, onClose }: IconColorPickerProps) => {
   const { X } = Icons;
+
+  const IconsToShow = type === 'account' ? AccountIcons : InventoryIcons;
+  const activeStyle = getIconStyle(currentColor);
 
   const handleIconSelect = (iconKey: string) => {
     onChange({ image: `icon:${iconKey}`, color: currentColor });
@@ -57,7 +62,7 @@ export const IconColorPicker = ({ currentIcon, currentColor, onChange, onClose }
               <button
                 key={color.name}
                 onClick={() => handleColorSelect(color.class)}
-                className={`w-7 h-7 rounded-full ${color.bg} transition-all hover:scale-110 active:scale-90 shadow-sm ${currentColor === color.class ? 'ring-2 ring-offset-2 ring-primary scale-110' : ''}`}
+                className={`w-7 h-7 rounded-full ${color.bg} transition-all hover:scale-110 active:scale-90 shadow-sm ${currentColor === color.class ? 'ring-2 ring-offset-2 ring-offset-background ring-secondary scale-110' : ''}`}
                 title={color.name}
               />
             ))}
@@ -68,19 +73,25 @@ export const IconColorPicker = ({ currentIcon, currentColor, onChange, onClose }
 
         {/* ICON GRID */}
         <div>
-          <label className="text-theme-body font-semibold text-muted uppercase mb-3 block tracking-widest">Available Icons</label>
+          <label className="text-theme-body font-semibold text-muted uppercase mb-3 block tracking-widest">
+            {type === 'account' ? 'Account Icons' : 'Available Icons'}
+          </label>
           <div className="grid grid-cols-5 gap-3">
-            {Object.keys(InventoryIcons).map((key) => {
-              const IconComp = InventoryIcons[key];
+            {Object.keys(IconsToShow).map((key) => {
+              const IconComp = IconsToShow[key];
               if (!IconComp) return null;
               const isSelected = currentIcon === `icon:${key}`;
               return (
                 <button
                   key={key}
                   onClick={() => handleIconSelect(key)}
-                  className={`aspect-square flex items-center justify-center rounded-xl transition-all ${isSelected ? 'bg-background text-primary dark:text-white ring-2 ring-primary dark:ring-white/80 shadow-lg scale-105' : 'bg-background hover:bg-background/80 text-muted hover:text-foreground'}`}
+                  className={`aspect-square flex items-center justify-center rounded-xl transition-all ${
+                    isSelected 
+                      ? `${activeStyle.container} ring-2 ring-current shadow-lg scale-105` 
+                      : 'bg-background hover:bg-background/80 text-muted hover:text-foreground'
+                  }`}
                 >
-                  <IconComp className={`w-6 h-6`} />
+                  <IconComp className="w-6 h-6" />
                 </button>
               );
             })}
@@ -97,7 +108,11 @@ export const IconColorPicker = ({ currentIcon, currentColor, onChange, onClose }
                 <button
                   key={emoji}
                   onClick={() => handleEmojiSelect(emoji)}
-                  className={`aspect-square flex items-center justify-center rounded-xl text-xl transition-all ${isSelected ? 'bg-background ring-2 ring-primary dark:ring-white/80 shadow-lg scale-105' : 'bg-background hover:bg-background/80'}`}
+                  className={`aspect-square flex items-center justify-center rounded-xl text-xl transition-all ${
+                    isSelected 
+                      ? `${activeStyle.container} ring-2 ring-current shadow-lg scale-105` 
+                      : 'bg-background hover:bg-background/80'
+                  }`}
                 >
                   {emoji}
                 </button>

@@ -37,8 +37,8 @@ This document outlines the verification steps required to ensure the application
 - [ ] **Icon & Color Picker:**
     - [ ] Enter "Edit Mode".
     - [ ] Click an item icon.
-    - [ ] Select a new color (e.g., Green) and a new icon (e.g., Star).
-    - [ ] **Expectation:** The table row icon updates immediately with the correct color.
+    - [ ] Select a new color (e.g., Red) and a new icon (e.g., Cutlery).
+    - [ ] **Expectation:** The table row icon updates immediately. The icon should fill ~87.5% of its borderless container.
 - [ ] **Deletion Logic:**
     - [ ] Click the red trash icon.
     - [ ] Confirm deletion.
@@ -68,6 +68,11 @@ This document outlines the verification steps required to ensure the application
 
 ## 5. Client Portal & Identity (`/portal/*`)
 - [ ] **Rental Catalog:** Items display with correct pricing and availability.
+    - [ ] **Availability Styling (Portal):** 
+        - [ ] Find an item with partial availability.
+        - [ ] **Expectation:** Indicator is Green (no yellow warning for clients).
+        - [ ] Find an item with 0 availability.
+        - [ ] **Expectation:** Indicator is Red.
 - [ ] **Smart Date Picker:** Selecting a range that includes a blocked date should be prevented or flagged.
 - [ ] **Atomic Identity:**
     - [ ] Navigate to `/portal/profile`.
@@ -75,8 +80,8 @@ This document outlines the verification steps required to ensure the application
     - [ ] Update "First Name" and verify the combined name updates in the header/layout greeting.
 - [ ] **Profile Customization:**
     - [ ] Click the profile picture (hover should show Pencil icon).
-    - [ ] Select a new Icon/Color.
-    - [ ] **Expectation:** The circular profile badge updates immediately with the selection.
+    - [ ] Select a new Icon/Color from the **Account Icons** library.
+    - [ ] **Expectation:** The circular profile badge updates immediately. The icon should have a light background tint and fill ~87.5% of the circle.
 - [ ] **Form Validation:**
     - [ ] Remove the email address and attempt to click "Update Profile".
     - [ ] **Expectation:** Field turns red, and the update is blocked.

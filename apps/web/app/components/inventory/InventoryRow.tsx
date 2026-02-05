@@ -1,5 +1,5 @@
 import { Icons } from '../../lib/icons';
-import { formatCurrency } from '../../utils/helpers';
+import { formatCurrency, getIconStyle } from '../../utils/helpers';
 import { InventoryItem, CartItem } from '../../types';
 import { IconColorPicker } from './IconColorPicker';
 import { DynamicIcon } from '../common/DynamicIcon';
@@ -63,9 +63,15 @@ export const InventoryRow = ({
                     <div className="w-12 shrink-0 flex justify-start relative">
                         <div 
                             onClick={() => isEditMode && setActivePickerId(activePickerId === item.id ? null : item.id)}
-                            className={`${isEditMode ? 'cursor-pointer hover:scale-110 active:scale-95 transition-transform' : ''}`}
+                            className={`rounded-lg flex items-center justify-center border-none transition-all ${getIconStyle(item.color, { noBorder: true, noBackground: true }).container} ${isEditMode ? 'cursor-pointer hover:scale-110 active:scale-95 transition-transform' : ''}`}
                         >
-                            <DynamicIcon iconString={item.image} color={item.color} className="w-10 h-10" fallback={<span>📦</span>} />
+                            <DynamicIcon 
+                                iconString={item.image} 
+                                color={item.color} 
+                                variant="table" 
+                                forceUpdate={item}
+                                fallback={<span>📦</span>} 
+                            />
                         </div>
                         {activePickerId === item.id && (
                             <IconColorPicker 
@@ -192,9 +198,11 @@ export const InventoryRow = ({
                     className={`inline-block px-2.5 py-1 rounded-full text-theme-label font-semibold border ${
                         (item.availableStock ?? item.stock) <= 0 
                         ? 'bg-error/10 text-error border-error/20' 
-                        : (item.availableStock ?? item.stock) < item.stock 
-                            ? 'bg-warning/10 text-warning border-warning/20'
-                            : 'bg-success/10 text-success border-success/20'
+                        : (!isAdmin && (item.availableStock ?? item.stock) > 0)
+                            ? 'bg-success/10 text-success border-success/20'
+                            : (item.availableStock ?? item.stock) < item.stock 
+                                ? 'bg-warning/10 text-warning border-warning/20'
+                                : 'bg-success/10 text-success border-success/20'
                     }`}
                 >
                     {item.availableStock ?? item.stock}

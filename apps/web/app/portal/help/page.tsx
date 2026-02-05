@@ -18,7 +18,7 @@ export default function PortalHelpPage() {
             items: [
                 {
                     label: "Live Availability",
-                    content: "Selecting your Pickup and Return dates first ensures the catalog shows exactly what is available for your event period."
+                    content: "Selecting your dates first ensures the catalog shows exactly what is available. Green indicators mean stock is ready; Red means items are sold out for that period."
                 },
                 {
                     label: "Checkout Process",
@@ -74,7 +74,7 @@ export default function PortalHelpPage() {
             items: [
                 {
                     label: "Profile Personalization",
-                    content: "Customize your account with a unique avatar and color scheme using the icon picker."
+                    content: "Customize your account with a unique avatar and color scheme. The picker features dedicated account and persona icons for a professional touch."
                 },
                 {
                     label: "Contact Details",
@@ -90,7 +90,7 @@ export default function PortalHelpPage() {
             items: [
                 {
                     label: "Equipment Care",
-                    content: "Clients are responsible for equipment integrity. Replacement costs apply for loss or damage."
+                    content: "Clients are responsible for equipment integrity. Standard Replacement Costs apply for any items lost or damaged during the rental."
                 },
                 {
                     label: "Timely Returns",

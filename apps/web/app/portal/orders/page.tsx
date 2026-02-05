@@ -12,7 +12,7 @@ import { DateRangeModal } from '../../components/modals/DateRangeModal';
 import { Order, InventoryItem, Client, OrderItem } from '../../types';
 
 export default function PortalOrdersPage() {
-  const { orders, user, userRole, portalFormData, loading, inventory } = useAppStore();
+  const { orders, loading, inventory } = useAppStore();
   const { Search, Filter, ChevronDown, Calendar } = Icons;
   
   const [viewingInvoice, setViewingInvoice] = useState<(Order & { cart: (InventoryItem & { qty: number, lostQty?: number, damagedQty?: number })[], client: Partial<Client> }) | null>(null);
@@ -57,15 +57,9 @@ export default function PortalOrdersPage() {
     total_value: ''
   });
 
-  // Filter orders for the current user email (or impersonated client if admin)
-  const myOrdersRaw = useMemo(() => {
-    const targetEmail = userRole === 'admin' ? portalFormData.email : user?.email;
-    if (!targetEmail) return [];
-    return orders.filter(o => o.email === targetEmail);
-  }, [orders, user, userRole, portalFormData.email]);
-
+  // DataContext already filters the global 'orders' array based on the logged-in client
   const filteredOrders = useMemo(() => {
-    let result = [...myOrdersRaw];
+    let result = [...orders];
 
     if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -114,7 +108,7 @@ export default function PortalOrdersPage() {
     }
 
     return result;
-  }, [myOrdersRaw, searchQuery, filters]);
+  }, [orders, searchQuery, filters]);
 
   const isAnyFilterActive = useMemo(() => {
     return (
@@ -221,7 +215,7 @@ export default function PortalOrdersPage() {
               <input 
                 type="text" 
                 placeholder="ID Search..." 
-                className="w-full pl-12 pr-4 py-2.5 bg-surface border border-border rounded-xl text-theme-label outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all shadow-sm placeholder:text-muted/60"
+                className="w-full pl-12 pr-12 py-2.5 bg-surface border border-border rounded-xl text-theme-label outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all shadow-sm placeholder:text-muted/60 text-center"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />

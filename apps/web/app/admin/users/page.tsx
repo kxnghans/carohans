@@ -11,10 +11,11 @@ import { DynamicIcon } from '../../components/common/DynamicIcon';
 import { Discount } from '../../types';
 import { fetchDiscountsWithStats, createDiscount, deleteDiscount } from '../../services/discountService';
 import { getAdminUsersList, updateUserRole } from '../../actions/admin';
-import { formatDate, formatCurrency } from '../../utils/helpers';
+import { formatDate, formatCurrency, getIconStyle } from '../../utils/helpers';
 import { DiscountCreationModal } from '../../components/modals/DiscountCreationModal';
 import { RedemptionLedgerModal } from '../../components/modals/RedemptionLedgerModal';
 import { UserCleanupModal } from '../../components/modals/UserCleanupModal';
+import { getUserFriendlyErrorMessage } from '../../utils/errorMapping';
 
 interface UserProfile {
     id: string;
@@ -143,9 +144,7 @@ export default function AdminUsersPage() {
             setShowDiscountDialog(false);
             fetchDiscounts();
         } catch (e) {
-            const err = e as { code?: string; message?: string };
-            if (err.code === '23505') showNotification(`A discount with code "${data.code}" already exists`, "error");
-            else showNotification("Failed to create discount. Please check all fields.", "error");
+            showNotification(getUserFriendlyErrorMessage(e, "Discount code"), "error");
         } finally { setIsCreatingDiscount(false); }
     };
 
@@ -189,8 +188,17 @@ export default function AdminUsersPage() {
                         <thead><tr className="border-b border-border text-theme-caption font-bold text-muted uppercase tracking-wider"><th className="p-4 pl-6">User / Email</th><th className="p-4">Username</th><th className="p-4 text-center">Role</th><th className="p-4 text-right">Access Level</th><th className="p-4 text-right pr-6">Action</th></tr></thead>
                         <tbody className="divide-y divide-border">{data.map(user => (
                             <tr key={user.id} className="hover:bg-background/40 transition-colors">
-                                <td className="p-4 pl-6"><div className="flex items-center gap-3"><div className={`w-7 h-7 rounded-lg flex items-center justify-center border transition-all overflow-hidden ${user.color ? user.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + (user.color.split('-')[1] || 'slate') + '-200 dark:bg-primary/10 dark:border-primary/20' : 'bg-background border-border'}`}><DynamicIcon iconString={user.image} color={user.color} className="w-3.5 h-3.5" fallback={<User className={`w-3.5 h-3.5 ${user.color || 'text-muted'}`} />} /></div><div><div className="text-theme-title text-foreground leading-tight font-normal">{user.clientName}</div><div className="text-theme-caption text-muted">{user.clientEmail || user.email}</div></div></div></td>
-                                <td className="p-4 text-theme-label font-mono text-muted">{user.username}</td>
+                                                                                                                <td className="p-4 pl-6">
+                                                                                                                                                                                                        <div className="flex items-center gap-3">
+                                                                                                                                                                                                            <div className={`rounded-lg flex items-center justify-center border transition-all overflow-hidden ${getIconStyle(user.color).container}`}>
+                                                                                                                                                                                                                <DynamicIcon 
+                                                                                                                                                                                                                    iconString={user.image} 
+                                                                                                                                                                                                                    color={user.color} 
+                                                                                                                                                                                                                    variant="table" 
+                                                                                                                                                                                                                    forceUpdate={user}
+                                                                                                                                                                                                                    fallback={<User className={`w-3.5 h-3.5 ${user.color || 'text-muted'}`} />} 
+                                                                                                                                                                                                                />
+                                                                                                                                                                                                            </div><div><div className="text-theme-title text-foreground leading-tight font-normal">{user.clientName}</div><div className="text-theme-caption text-muted">{user.clientEmail || user.email}</div></div></div></td>                                <td className="p-4 text-theme-label font-mono text-muted">{user.username}</td>
                                 <td className="p-4 text-center">
                                     <div className="flex flex-col items-center gap-1">
                                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-tight border ${user.role === 'admin' ? 'bg-status-settlement-bg text-status-settlement border-status-settlement/20' : 'bg-status-completed-bg text-status-completed border-status-completed/20'}`}>

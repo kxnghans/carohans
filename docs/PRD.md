@@ -67,8 +67,8 @@ To provide CaroHans Ventures with a robust web application that manages the full
     *   **Behavior:** Numeric search returns exact Order match; String search returns all historical orders for that Client.
 *   **Slicers (Advanced Filter):**
     *   **Visibility:** Toggled via an "All Filters" button (default: Hidden).
-    *   **Layout:** Horizontal row of dropdowns/inputs matching Order columns.
-    *   **Responsiveness:** Stacked on mobile, row on desktop.
+    *   **Layout:** Responsive grid matching Order columns.
+    *   **Responsiveness:** 2-column grid on mobile, 1-row layout on desktop (`xl:grid-cols-7`).
 *   **Data Cap & Pagination:**
     *   **Limit:** Query results are capped at 200 rows to preserve browser performance.
     *   **Feedback:** Display "Results capped at 200" warning only if the return count equals the limit.
@@ -124,7 +124,7 @@ To provide CaroHans Ventures with a robust web application that manages the full
 
 ### 6.1 Automated Billing
 *   **Late Fees:** Calculated as `Daily Rate * Days Late * Quantity`.
-*   **Replacement Fees:** Triggered by damage flags or missing item counts during return processing.
+*   **Replacement Cost Fees:** Triggered by damage flags or missing item counts during return processing.
 *   **Financial Guardrails:**
     *   **Capped Discounts:** Fixed discounts cannot exceed the rental subtotal (Total floor is $0 before penalties).
     *   **Self-Healing Totals:** Database triggers recalculate `total_amount` on every item or date change, ensuring 100% audit accuracy.
@@ -132,6 +132,9 @@ To provide CaroHans Ventures with a robust web application that manages the full
 ### 6.2 Logistics & Inventory
 *   **Atomic Order Placement:** The database performs a blocking availability check during the `submit_order` transaction.
 *   **Dynamic Availability:** Catalog "Available" counts are calculated in real-time based on existing orders for the selected dates.
+*   **Context-Aware Styling:** 
+    *   **Client View:** Binary styling (Green for any available stock, Red for 0). Hides yellow warning states to simplify the browsing experience.
+    *   **Admin View:** Triple-state styling (Green for full stock, Yellow for partial bookings, Red for 0).
 *   **Unified Presentation:** Admin "Due" amounts are calculated dynamically but hidden from primary order lists to maintain clean accounting views.
 
 ---

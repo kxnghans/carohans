@@ -11,7 +11,6 @@ import type { ComponentType } from 'react';
 import { useAppStore } from '../../context/AppContext';
 import { StatCard } from '../../components/dashboard/StatCard';
 import { Card } from '../../components/ui/Card';
-import { ScrollableContainer } from '../../components/common/ScrollableContainer';
 import { formatCurrency, calculateMetrics } from '../../utils/helpers';
 
 const Pie = RechartsPie as unknown as ComponentType<{
@@ -633,12 +632,11 @@ export default function AdminBIPage() {
       {/* STRATEGIC SLICERS */}
       <Card className="bg-surface border-border p-5 shadow-sm overflow-visible relative">
         <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>
-        <ScrollableContainer innerClassName="lg:overflow-visible" className="lg:overflow-visible">
-          <div className="flex items-end gap-3 sm:gap-6 min-w-max lg:min-w-0 lg:flex-nowrap w-full">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-x-5 gap-y-8 items-end w-full">
             
             {/* Time Range */}
-            <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
-             <span className="text-theme-body text-muted uppercase tracking-widest ml-1">Time Range</span>
+            <div className="flex flex-col gap-2.5 col-span-2 md:col-span-1">
+             <span className="text-theme-body text-muted uppercase tracking-widest ml-1 font-semibold">Time Range</span>
              <div className="flex p-1 bg-background rounded-xl h-[38px] items-center w-full">
                {['7D', '30D', '90D', '1Y', 'All'].map(range => (
                  <button key={range} onClick={() => setTimeRange(range === 'All' ? 'All Time' : range)} className={`flex-1 h-full rounded-lg text-theme-body transition-all ${timeRange === (range === 'All' ? 'All Time' : range) ? 'bg-surface text-primary shadow-sm' : 'text-muted hover:text-foreground'}`}>{range}</button>
@@ -668,17 +666,16 @@ export default function AdminBIPage() {
           />
 
           {/* Reset Action */}
-          <div className="flex-none">
+          <div className="col-span-2 md:col-span-3 xl:col-span-1 flex justify-center xl:justify-end mt-2">
             <button 
               onClick={resetFilters}
-              className="h-[38px] px-6 bg-primary dark:bg-primary text-primary-text rounded-xl text-theme-body font-black uppercase tracking-widest hover:bg-primary dark:hover:bg-primary/90 transition-all shadow-lg shadow-primary/10 dark:shadow-none active:scale-[0.98] whitespace-nowrap"
+              className="h-[38px] px-6 bg-primary dark:bg-primary text-primary-text rounded-xl text-theme-body font-black uppercase tracking-widest hover:bg-primary dark:hover:bg-primary/90 transition-all shadow-lg shadow-primary/10 dark:shadow-none active:scale-[0.98] whitespace-nowrap w-full sm:w-fit"
             >
               Reset Filters
             </button>
           </div>
         </div>
-      </ScrollableContainer>
-    </Card>
+      </Card>
 
       {/* KPI CARDS */}
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">

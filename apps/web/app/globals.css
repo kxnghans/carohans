@@ -179,7 +179,7 @@
 
 @media screen and (min-width: 769px) and (max-width: 1024px) {
   html {
-    zoom: 0.8;
+    zoom: 0.85;
   }
   html.home-page {
     zoom: 0.9;

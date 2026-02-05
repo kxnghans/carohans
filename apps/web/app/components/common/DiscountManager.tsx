@@ -99,7 +99,7 @@ export const DiscountManager = ({
                     <div className="p-3 bg-secondary/10 dark:bg-secondary/20 rounded-2xl text-secondary"><Sparkles className="w-6 h-6" /></div>
                     <div>
                         <span className="text-[11px] font-black uppercase tracking-[0.25em] text-secondary">Operational Incentives</span>
-                        <p className="text-theme-body text-muted font-medium">Apply special rates or promotional discounts to this order.</p>
+                        <p className="text-theme-body text-muted font-medium">Apply special daily rates or promotional discounts to this order.</p>
                     </div>
                 </div>
                 <Button 
@@ -184,7 +184,7 @@ export const DiscountManager = ({
 
                     <div className="flex items-center gap-6">
                         <div className="flex flex-col items-end">
-                            <span className="text-[10px] font-black text-muted uppercase tracking-widest mb-0.5">Rate Applied</span>
+                            <span className="text-[10px] font-black text-muted uppercase tracking-widest mb-0.5">Applied Discount</span>
                             <span className="text-theme-header text-secondary font-black">
                                 {discountForm.type === 'percentage' ? `${discountPercentage}%` : formatCurrency(discountForm.value)}
                             </span>
@@ -199,7 +199,7 @@ export const DiscountManager = ({
                             <button 
                                 onClick={() => setIsDiscountConfirmed(false)} 
                                 className="w-12 h-12 flex items-center justify-center bg-background border border-border text-muted hover:text-secondary hover:border-secondary/30 rounded-xl transition-all shadow-sm active:scale-90"
-                                title="Modify Rate"
+                                title="Modify Discount"
                             >
                                 <Pencil className="w-5 h-5" />
                             </button>

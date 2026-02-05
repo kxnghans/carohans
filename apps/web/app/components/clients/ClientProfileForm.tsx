@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { IconColorPicker } from '../../components/inventory/IconColorPicker';
 import { PortalFormData } from '../../types';
 import { DynamicIcon } from '../common/DynamicIcon';
+import { getIconStyle } from '../../utils/helpers';
 
 interface ClientProfileFormProps {
     initialData: PortalFormData;
@@ -49,17 +50,18 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
     };
 
     return (
-        <div className={compact ? "space-y-4" : "space-y-6"}>
-            <div className={`flex items-center gap-6 ${compact ? "mb-4" : "mb-8"}`}>
+        <div className={compact ? "space-y-6" : "space-y-8"}>
+            <div className={`flex items-center gap-6 ${compact ? "mb-6" : "mb-10"}`}>
                 <div className="relative group">
                     <button 
                         onClick={() => setShowIconPicker(!showIconPicker)}
-                        className={`${compact ? "h-16 w-16" : "h-24 w-24"} rounded-full flex items-center justify-center border-2 transition-all shadow-md overflow-hidden relative ${formData.color ? formData.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100') + ' border-' + (formData.color.split('-')[1] || 'slate') + '-200' : 'bg-background border-border'}`}
+                        className={`rounded-full flex items-center justify-center border-2 transition-all shadow-md overflow-hidden relative ${getIconStyle(formData.color).container}`}
                     >
                         <DynamicIcon 
                             iconString={formData.image} 
                             color={formData.color} 
-                            className={compact ? "w-8 h-8" : "w-10 h-10"} 
+                            variant="form"
+                            forceUpdate={formData}
                             fallback={<User className={`${compact ? "w-8 h-8" : "w-10 h-10"} ${formData.color || 'text-muted'}`} />} 
                         />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -74,6 +76,7 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
                             <IconColorPicker 
                                 currentIcon={formData.image || ''}
                                 currentColor={formData.color || ''}
+                                type="account"
                                 onChange={(val) => {
                                     setFormData(prev => ({ ...prev, ...val }));
                                     setShowIconPicker(false);
@@ -89,8 +92,8 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+            <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
                     <label className="text-theme-caption font-semibold text-muted uppercase tracking-wider">First Name <span className="text-error">*</span></label>
                     <div className="relative">
                         <User className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-7 text-muted`} />
@@ -102,7 +105,7 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
                         />
                     </div>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                     <label className="text-theme-caption font-semibold text-muted uppercase tracking-wider">Last Name <span className="text-error">*</span></label>
                     <div className="relative">
                         <User className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-7 text-muted`} />
@@ -116,20 +119,7 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
                 </div>
             </div>
 
-            <div className="space-y-1.5">
-                <label className="text-theme-caption font-semibold text-muted uppercase tracking-wider">Username</label>
-                <div className="relative">
-                    <User className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-7 text-muted`} />
-                    <input 
-                        className={`w-full pl-20 ${compact ? "p-2 text-theme-label" : "p-3"} border-2 border-border bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all font-medium placeholder:font-normal`} 
-                        value={formData.username}
-                        placeholder="johndoe123"
-                        onChange={e => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                    />
-                </div>
-            </div>
-            
-            <div className="space-y-1.5">
+            <div className="space-y-2">
                 <label className="text-theme-caption font-semibold text-muted uppercase tracking-wider">Contact Number <span className="text-error">*</span></label>
                 <div className="relative">
                     <Phone className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-7 text-muted`} />
@@ -141,7 +131,7 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
                                             />                </div>
             </div>
             
-            <div className="space-y-1.5">
+            <div className="space-y-2">
                 <label className="text-theme-caption font-semibold text-muted uppercase tracking-wider">Email Address <span className="text-error">*</span></label>
                 <div className="relative">
                     <Mail className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-7 text-muted`} />
@@ -153,22 +143,22 @@ export const ClientProfileForm = ({ initialData, onSubmit, onCancel, submitLabel
                                             />                </div>
             </div>
             
-            <div className="space-y-1.5">
+            <div className="space-y-2">
                 <label className="text-theme-caption font-semibold text-muted uppercase tracking-wider">Default Delivery Address</label>
                 <div className="relative">
-                    <MapPin className={`${compact ? "w-3.5 h-3.5 top-3" : "w-4 h-4 top-4"} absolute left-7 text-muted`} />
+                    <MapPin className={`${compact ? "w-3.5 h-3.5 top-4" : "w-4 h-4 top-5"} absolute left-7 text-muted`} />
                                             <textarea 
-                                                className={`w-full pl-20 ${compact ? "p-2 text-theme-label h-16" : "p-3 h-24"} border-2 border-border bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all resize-none font-medium placeholder:font-normal`} 
+                                                className={`w-full pl-20 ${compact ? "p-3 text-theme-label h-24" : "p-4 h-32"} border-2 border-border bg-surface text-foreground rounded-xl outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition-all resize-none font-medium placeholder:font-normal`} 
                                                 value={formData.address || ''}
                                                 placeholder="Enter your street address..."
                                                 onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))}
                                             />                </div>
-                {!compact && <p className="text-theme-caption text-muted font-semibold uppercase tracking-tight ml-1">Optional - used for automatic delivery calculations</p>}
+                {!compact && <p className="text-theme-caption text-muted font-semibold uppercase tracking-tight ml-1 mt-1">Optional - used for automatic delivery calculations</p>}
             </div>
             
-            <div className={`flex gap-3 ${compact ? "pt-2" : "pt-4"}`}>
-                {onCancel && <Button variant="secondary" className="flex-1" size={compact ? "sm" : "md"} onClick={onCancel}>Cancel</Button>}
-                <Button className={`flex-1 bg-primary dark:bg-primary hover:opacity-90 dark:hover:bg-primary/90 shadow-primary/10 dark:shadow-none ${compact ? "h-10" : "h-14"}`} size={compact ? "sm" : "md"} onClick={handleSubmit}>{submitLabel}</Button>
+            <div className={`flex flex-col sm:flex-row gap-4 ${compact ? "pt-4" : "pt-6"}`}>
+                {onCancel && <Button variant="secondary" className="flex-1 h-12 sm:h-14" size={compact ? "sm" : "md"} onClick={onCancel}>Cancel</Button>}
+                <Button className={`flex-[2] bg-primary dark:bg-primary hover:opacity-90 dark:hover:bg-primary/90 shadow-lg shadow-primary/10 dark:shadow-none h-12 sm:h-14`} size={compact ? "sm" : "md"} onClick={handleSubmit}>{submitLabel}</Button>
             </div>
         </div>
     );

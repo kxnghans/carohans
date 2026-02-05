@@ -15,7 +15,7 @@ export default function AdminHelpPage() {
             items: [
                 {
                     label: "The Order Lifecycle",
-                    content: "Orders transition through: Pending -> Approved -> Active -> Completed. Row buttons advance statuses and trigger stock updates."
+                    content: "Orders transition through: Pending -> Approved -> Active -> Completed. Use the dedicated expansion buttons to access item details and audit logs."
                 },
                 {
                     label: "Self-Healing Totals",
@@ -54,8 +54,8 @@ export default function AdminHelpPage() {
                     content: "Stock levels adjust automatically. 'On Field' values reflect gear currently with clients and unavailable for new bookings."
                 },
                 {
-                    label: "Asset Customization",
-                    content: "Click any inventory icon to change its symbol or color. This helps categorize gear visually for staff."
+                    label: "Smart Customization",
+                    content: "Click any icon to customize its symbol or color. The system intelligently shows Account Icons for staff and Inventory Icons for equipment."
                 }
             ]
         },
@@ -104,6 +104,22 @@ export default function AdminHelpPage() {
                 {
                     label: "Data Slicing",
                     content: "Use category and status filters to isolate specific performance segments (e.g., 'Furniture' revenue vs 'Decor')."
+                }
+            ]
+        },
+        {
+            title: "Responsive Interface",
+            icon: Icons.SlidersHorizontal,
+            color: "text-primary",
+            bg: "bg-primary/10",
+            items: [
+                {
+                    label: "Operational Filters",
+                    content: "Advanced slicers adapt to your screen. Use the 2-column mobile layout for quick access or the 1-row desktop view for full oversight."
+                },
+                {
+                    label: "Action Mobility",
+                    content: "Primary actions like 'Search' and 'New Order' are centered and optimized for thumb-reach on mobile devices."
                 }
             ]
         },
