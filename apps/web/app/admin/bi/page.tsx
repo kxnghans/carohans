@@ -11,7 +11,6 @@ import type { ComponentType } from 'react';
 import { useAppStore } from '../../context/AppContext';
 import { StatCard } from '../../components/dashboard/StatCard';
 import { Card } from '../../components/ui/Card';
-import { ScrollableContainer } from '../../components/common/ScrollableContainer';
 import { formatCurrency, calculateMetrics } from '../../utils/helpers';
 
 const Pie = RechartsPie as unknown as ComponentType<{
@@ -442,18 +441,24 @@ export default function AdminBIPage() {
   }, [categoryFilteredData, inventory]);
 
   // 8. Discount Performance
-  const discountUsageData = useMemo(() => {
-      return discounts
-        .map(d => ({ name: d.code, value: d.usageCount || 0 }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 10);
+  const discountCountsByCategory = useMemo(() => {
+    const map: Record<string, number> = { 'One-Time': 0, 'Periodic': 0, 'Unlimited': 0 };
+    discounts.forEach(d => {
+        const cat = d.duration_type === 'one_time' ? 'One-Time' : 
+                    d.duration_type === 'period' ? 'Periodic' : 'Unlimited';
+        map[cat] = (map[cat] || 0) + (d.usageCount || 0);
+    });
+    return Object.entries(map).map(([name, value]) => ({ name, value }));
   }, [discounts]);
 
-  const discountImpactData = useMemo(() => {
-      return discounts
-        .map(d => ({ name: d.name, value: d.totalImpact || 0 }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 10);
+  const discountRevenueByCategory = useMemo(() => {
+    const map: Record<string, number> = { 'One-Time': 0, 'Periodic': 0, 'Unlimited': 0 };
+    discounts.forEach(d => {
+        const cat = d.duration_type === 'one_time' ? 'One-Time' : 
+                    d.duration_type === 'period' ? 'Periodic' : 'Unlimited';
+        map[cat] = (map[cat] || 0) + (d.totalImpact || 0);
+    });
+    return Object.entries(map).map(([name, value]) => ({ name, value }));
   }, [discounts]);
 
   const filteredTrends = useMemo(() => {
@@ -627,12 +632,11 @@ export default function AdminBIPage() {
       {/* STRATEGIC SLICERS */}
       <Card className="bg-surface border-border p-5 shadow-sm overflow-visible relative">
         <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>
-        <ScrollableContainer innerClassName="lg:overflow-visible" className="lg:overflow-visible">
-          <div className="flex items-end gap-3 sm:gap-6 min-w-max lg:min-w-0 lg:flex-nowrap w-full">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-x-5 gap-y-8 items-end w-full">
             
             {/* Time Range */}
-            <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
-             <span className="text-theme-body text-muted uppercase tracking-widest ml-1">Time Range</span>
+            <div className="flex flex-col gap-2.5 col-span-2 md:col-span-1">
+             <span className="text-theme-body text-muted uppercase tracking-widest ml-1 font-semibold">Time Range</span>
              <div className="flex p-1 bg-background rounded-xl h-[38px] items-center w-full">
                {['7D', '30D', '90D', '1Y', 'All'].map(range => (
                  <button key={range} onClick={() => setTimeRange(range === 'All' ? 'All Time' : range)} className={`flex-1 h-full rounded-lg text-theme-body transition-all ${timeRange === (range === 'All' ? 'All Time' : range) ? 'bg-surface text-primary shadow-sm' : 'text-muted hover:text-foreground'}`}>{range}</button>
@@ -662,17 +666,16 @@ export default function AdminBIPage() {
           />
 
           {/* Reset Action */}
-          <div className="flex-none">
+          <div className="col-span-2 md:col-span-3 xl:col-span-1 flex justify-center xl:justify-end mt-2">
             <button 
               onClick={resetFilters}
-              className="h-[38px] px-6 bg-primary dark:bg-primary text-primary-text rounded-xl text-theme-body font-black uppercase tracking-widest hover:bg-primary dark:hover:bg-primary/90 transition-all shadow-lg shadow-primary/10 dark:shadow-none active:scale-[0.98] whitespace-nowrap"
+              className="h-[38px] px-6 bg-primary dark:bg-primary text-primary-text rounded-xl text-theme-body font-black uppercase tracking-widest hover:bg-primary dark:hover:bg-primary/90 transition-all shadow-lg shadow-primary/10 dark:shadow-none active:scale-[0.98] whitespace-nowrap w-full sm:w-fit"
             >
               Reset Filters
             </button>
           </div>
         </div>
-      </ScrollableContainer>
-    </Card>
+      </Card>
 
       {/* KPI CARDS */}
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
@@ -890,8 +893,8 @@ export default function AdminBIPage() {
         <Card className="border-border bg-surface flex flex-col">
           <div className="flex justify-between items-start mb-6">
             <div>
-                <h3 className="text-theme-title font-bold text-foreground mb-1">Promotion Adoption</h3>
-                <p className="text-theme-body text-muted">Redemptions by discount code</p>
+                <h3 className="text-theme-title font-bold text-foreground mb-1">Discount Counts by Category</h3>
+                <p className="text-theme-body text-muted">Redemptions by duration type</p>
             </div>
             <div className="p-2 bg-secondary/10 border border-secondary/20 rounded-xl text-secondary shadow-sm">
                 <Tag className="w-5 h-5" />
@@ -900,9 +903,15 @@ export default function AdminBIPage() {
           <div className="h-[260px] w-full relative min-h-[260px] outline-none" style={{ width: '100%', height: 260 }}>
             {isMounted ? (
             <ResponsiveContainer width="100%" height="100%">
-                <BarChart layout="vertical" data={discountUsageData} margin={{ left: 30, right: 30 }}>
+                <BarChart layout="vertical" data={discountCountsByCategory} margin={{ left: 20, right: 40, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--color-border)" />
-                    <XAxis type="number" hide />
+                    <XAxis 
+                        type="number" 
+                        tick={{ fill: 'var(--color-muted)', fontSize: 10 }}
+                        axisLine={false}
+                        tickLine={false}
+                        label={{ value: 'Redemptions', position: 'insideBottom', offset: -10, style: { fontSize: 10, fontWeight: 700, fill: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' } }}
+                    />
                     <YAxis 
                       dataKey="name" 
                       type="category" 
@@ -910,6 +919,7 @@ export default function AdminBIPage() {
                       axisLine={false} 
                       tickLine={false} 
                       tick={{ fill: 'var(--color-muted)', fontSize: 12, fontWeight: 500 }} 
+                      label={{ value: 'Category', angle: -90, position: 'insideLeft', offset: -10, style: { textAnchor: 'middle', fill: 'var(--color-muted)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' } }}
                     />
                     <RechartsTooltip 
                         content={<CustomTooltip />} 
@@ -933,8 +943,8 @@ export default function AdminBIPage() {
         <Card className="border-border bg-surface flex flex-col">
           <div className="flex justify-between items-start mb-6">
             <div>
-                <h3 className="text-theme-title font-bold text-foreground mb-1">Revenue Forgone</h3>
-                <p className="text-theme-body text-muted">Financial impact of active promotions</p>
+                <h3 className="text-theme-title font-bold text-foreground mb-1">Discount Revenue Offered</h3>
+                <p className="text-theme-body text-muted">Financial impact by duration category</p>
             </div>
             <div className="p-2 bg-error/10 border border-error/20 rounded-xl text-error shadow-sm">
                 <TrendingDown className="w-5 h-5" />
@@ -943,9 +953,15 @@ export default function AdminBIPage() {
           <div className="h-[260px] w-full relative min-h-[260px] outline-none" style={{ width: '100%', height: 260 }}>
             {isMounted ? (
             <ResponsiveContainer width="100%" height="100%">
-                <BarChart layout="vertical" data={discountImpactData} margin={{ left: 30, right: 30 }}>
+                <BarChart layout="vertical" data={discountRevenueByCategory} margin={{ left: 20, right: 60, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--color-border)" />
-                    <XAxis type="number" hide />
+                    <XAxis 
+                        type="number" 
+                        tick={{ fill: 'var(--color-muted)', fontSize: 10 }}
+                        axisLine={false}
+                        tickLine={false}
+                        label={{ value: 'Impact (¢)', position: 'insideBottom', offset: -10, style: { fontSize: 10, fontWeight: 700, fill: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' } }}
+                    />
                     <YAxis 
                       dataKey="name" 
                       type="category" 
@@ -953,6 +969,7 @@ export default function AdminBIPage() {
                       axisLine={false} 
                       tickLine={false} 
                       tick={{ fill: 'var(--color-muted)', fontSize: 12, fontWeight: 500 }} 
+                      label={{ value: 'Category', angle: -90, position: 'insideLeft', offset: -10, style: { textAnchor: 'middle', fill: 'var(--color-muted)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' } }}
                     />
                     <RechartsTooltip 
                         content={<CustomTooltip />} 

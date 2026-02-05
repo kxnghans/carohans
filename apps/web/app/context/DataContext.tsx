@@ -5,15 +5,15 @@ import { BusinessSettings } from '../types/context';
 import { calculateMetrics } from '../utils/helpers';
 import { submitOrderToSupabase } from '../services/orderService';
 import { fetchInventoryFromSupabase } from '../services/inventoryService';
-import { updateClientProfile as updateClientProfileService } from '../services/clientService';
 import { fetchSettingsFromSupabase, updateSettingsInSupabase } from '../services/settingsService';
 import { fetchDiscountsWithStats } from '../services/discountService';
 import { getInventoryCached } from '../actions/inventory';
-import { getClients } from '../actions/clients';
+import { getClients, getClientProfileAction, updateClientProfileAction, getClientOrdersAction, OrderRecord } from '../actions/clients';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { useUI } from './UIContext';
 import { encodeOrderId } from '../utils/idHandler';
+import { getUserFriendlyErrorMessage } from '../utils/errorMapping';
 
 export interface DataContextType {
   inventory: InventoryItem[];
@@ -122,33 +122,47 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('carohans_cart', JSON.stringify(cartToSave));
   }, [cart]);
 
-  const fetchOrders = useCallback(async (role?: 'admin' | 'client', email?: string) => {
-    let query = supabase
-      .from('orders')
-      .select(`
-        id, client_name, phone, email, status, start_date, end_date, total_amount, amount_paid, 
-        penalty_amount, deposit_paid, closed_at, return_status, item_integrity, 
-        discount_name, discount_type, discount_value,
-        order_items (
-          inventory_id,
-          quantity,
-          unit_price,
-          returned_qty,
-          lost_qty,
-          damaged_qty
-        )
-      `)
-      .order('created_at', { ascending: false });
+  const fetchOrders = useCallback(async (role?: 'admin' | 'client', email?: string, clientId?: number) => {
+    let ordersData: OrderRecord[] = [];
 
-    if (role === 'client' && email) {
-      query = query.eq('email', email);
+    if (role === 'client' && clientId) {
+      // Securely fetch via server action for custom sessions (bypasses RLS)
+      const result = await getClientOrdersAction(clientId);
+      if (result.success) {
+        ordersData = result.data || [];
+      }
+    } else {
+      // Admin or standard Supabase user
+      let query = supabase
+        .from('orders')
+        .select(`
+          id, client_id, client_name, phone, email, status, start_date, end_date, total_amount, amount_paid, 
+          penalty_amount, deposit_paid, closed_at, return_status, item_integrity, 
+          discount_name, discount_type, discount_value,
+          order_items (
+            inventory_id,
+            quantity,
+            unit_price,
+            returned_qty,
+            lost_qty,
+            damaged_qty
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (role === 'client' && email) {
+        query = query.eq('email', email);
+      }
+
+      const { data, error } = await query;
+      if (!error) {
+        ordersData = (data as unknown) as OrderRecord[] || [];
+      }
     }
 
-    const { data, error } = await query;
-
-    if (!error) {
+    if (ordersData.length >= 0) {
       const today = new Date().toISOString().split('T')[0] ?? '';
-      const mapped: Order[] = (data || []).map(o => {
+      const mapped: Order[] = ordersData.map(o => {
         let status = o.status;
         
         // Auto-transition: If Approved and pickup date is reached, treat as Active
@@ -221,26 +235,49 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       let currentRole: 'admin' | 'client' | undefined = undefined;
 
+      let emailForOrders = user?.email;
+      let clientIdForOrders: number | undefined = undefined;
+
       if (user) {
           // Fetch Role
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
+          const role = user.user_metadata?.role || 'client'; // Default to client if metadata present
+          currentRole = role as 'admin' | 'client';
           
-          currentRole = profile?.role as 'admin' | 'client';
+          if (!currentRole && user.id) {
+               // Fallback to Supabase Profile check if not in metadata
+               const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+               currentRole = profile?.role as 'admin' | 'client';
+          }
+          
           setUserRole(currentRole);
 
           // If client, pre-fill portal form data
-          if (profile?.role === 'client') {
-              const { data: client } = await supabase
-                .from('clients')
-                .select('first_name, last_name, username, phone, email, address, image, color')
-                .eq('user_id', user.id)
-                .single();
+          if (currentRole === 'client') {
+              const clientId = user.user_metadata?.clientId;
+              
+              let client;
+              
+              if (clientId) {
+                  // Custom session - Use server action for bypass RLS
+                  const result = await getClientProfileAction(clientId);
+                  if (result.success) client = result.data;
+              } else {
+                  // Standard Supabase Auth
+                  const { data, error } = await supabase
+                    .from('clients')
+                    .select('id, first_name, last_name, username, phone, email, address, image, color')
+                    .eq('user_id', user.id)
+                    .single();
+                  if (!error) client = data;
+              }
               
               if (client) {
+                  emailForOrders = client.email || emailForOrders; // PRIORITIZE client record email
+                  clientIdForOrders = client.id;
                   setPortalFormData(prev => ({
                       ...prev,
                       firstName: client.first_name || '',
@@ -261,7 +298,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           getInventoryCached(),
           getClients(),
           fetchDiscountsWithStats(),
-          fetchOrders(currentRole, user?.email) // Updates internal state directly
+          fetchOrders(currentRole, emailForOrders, clientIdForOrders) // Updates internal state directly
       ]);
       
       setInventory(invData);
@@ -311,19 +348,24 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       await fetchData();
     } catch (error) {
       console.error('Error submitting order:', error);
-      showNotification("Failed to submit order", "error");
+      showNotification(getUserFriendlyErrorMessage(error, "Order"), "error");
     }
   };
 
   const updateProfile = async (details: PortalFormData) => {
       try {
           if (!user) return;
-          await updateClientProfileService(user.id, details);
+          
+          const clientId = user.user_metadata?.clientId;
+          const result = await updateClientProfileAction({ clientId, userId: user.id }, details);
+          
+          if (!result.success) throw new Error(result.error);
+          
           showNotification("Profile updated successfully!");
           await fetchData();
       } catch (error) {
           console.error('Error updating profile:', error);
-          showNotification("Failed to update profile", "error");
+          showNotification(getUserFriendlyErrorMessage(error, "Profile update"), "error");
       }
   };
 

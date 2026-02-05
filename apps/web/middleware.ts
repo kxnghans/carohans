@@ -116,6 +116,12 @@ export async function middleware(request: NextRequest) {
     if (request.nextUrl.pathname === '/portal/inventory') {
         return response
     }
+    
+    // Check for custom client session cookie
+    const clientSession = request.cookies.get('client_session')?.value;
+    if (clientSession) {
+        return response;
+    }
 
     if (!user) {
       const redirectUrl = new URL('/login', request.url)
@@ -126,6 +132,12 @@ export async function middleware(request: NextRequest) {
 
   // 3. Prevent logged-in users from accessing login/signup
   if (['/login', '/signup'].includes(request.nextUrl.pathname)) {
+      // Check for custom client session cookie
+      const clientSession = request.cookies.get('client_session')?.value;
+      if (clientSession) {
+          return NextResponse.redirect(new URL('/portal/inventory', request.url))
+      }
+
       if (user) {
            // Redirect to appropriate dashboard based on role
            const role = await getUserRole(user.id, user.user_metadata);

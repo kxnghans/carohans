@@ -139,7 +139,34 @@ export const calculateMetrics = (orders: Order[]): Metrics => {
   const activeRentals = orders.filter(o => o.status === 'Active' && o.endDate >= today).length;
 
   const avgOrderValue = totalRevenue / (orders.length || 1);
-  const revenueGrowth = 12.5;
+
+  // Calculate Revenue Growth (Dynamic: Last 30d vs Previous 30d)
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+  const sixtyDaysAgo = new Date(now.getTime() - (60 * 24 * 60 * 60 * 1000));
+
+  const currentPeriodRevenue = orders.reduce((sum, o) => {
+    const orderDate = new Date(o.startDate);
+    if (orderDate >= thirtyDaysAgo && orderDate <= now) {
+      return sum + (o.totalAmount || 0);
+    }
+    return sum;
+  }, 0);
+
+  const previousPeriodRevenue = orders.reduce((sum, o) => {
+    const orderDate = new Date(o.startDate);
+    if (orderDate >= sixtyDaysAgo && orderDate < thirtyDaysAgo) {
+      return sum + (o.totalAmount || 0);
+    }
+    return sum;
+  }, 0);
+
+  let revenueGrowth = 0;
+  if (previousPeriodRevenue > 0) {
+    revenueGrowth = ((currentPeriodRevenue - previousPeriodRevenue) / previousPeriodRevenue) * 100;
+  } else if (currentPeriodRevenue > 0) {
+    revenueGrowth = 100; 
+  }
 
   // Calculate Average Duration
   const totalDuration = orders.reduce((sum, o) => {
@@ -185,4 +212,70 @@ export const generateSecureCode = (length = 8) => {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
+};
+
+/**
+ * Returns consistent styling for icons based on a theme color class.
+ * Handles both the background container and the icon color.
+ */
+export const getIconStyle = (colorClass: string | undefined | null, options?: { noBorder?: boolean, noBackground?: boolean }) => {
+  const bgClass = options?.noBackground ? 'bg-transparent' : '';
+  
+  if (!colorClass) {
+    return {
+      container: `${bgClass || 'bg-primary/10 dark:bg-black/30'} text-primary ${options?.noBorder ? 'border-transparent' : 'border-indigo-100 dark:border-white/5'}`,
+      icon: 'text-primary'
+    };
+  }
+
+  // Base mapping for semantic colors
+  if (colorClass.includes('primary')) {
+    return {
+      container: `${bgClass || 'bg-primary/10 dark:bg-primary/20'} ${options?.noBorder ? 'border-transparent' : 'border-primary/20'} text-primary`,
+      icon: 'text-primary'
+    };
+  }
+  if (colorClass.includes('secondary')) {
+    return {
+      container: `${bgClass || 'bg-secondary/10 dark:bg-secondary/20'} ${options?.noBorder ? 'border-transparent' : 'border-secondary/20'} text-secondary`,
+      icon: 'text-secondary'
+    };
+  }
+  if (colorClass.includes('error') || colorClass.includes('red')) {
+    return {
+      container: `${bgClass || 'bg-error/10 dark:bg-error/20'} ${options?.noBorder ? 'border-transparent' : 'border-error/20'} text-error`,
+      icon: 'text-error'
+    };
+  }
+  if (colorClass.includes('success') || colorClass.includes('green')) {
+    return {
+      container: `${bgClass || 'bg-success/10 dark:bg-success/20'} ${options?.noBorder ? 'border-transparent' : 'border-success/20'} text-success`,
+      icon: 'text-success'
+    };
+  }
+  if (colorClass.includes('warning') || colorClass.includes('gold') || colorClass.includes('yellow')) {
+    return {
+      container: `${bgClass || 'bg-warning/10 dark:bg-warning/20'} ${options?.noBorder ? 'border-transparent' : 'border-warning/20'} text-warning`,
+      icon: 'text-warning'
+    };
+  }
+  if (colorClass.includes('accent-primary') || colorClass.includes('blue')) {
+    return {
+      container: `${bgClass || 'bg-accent-primary/10 dark:bg-accent-primary/20'} ${options?.noBorder ? 'border-transparent' : 'border-accent-primary/20'} text-accent-primary`,
+      icon: 'text-accent-primary'
+    };
+  }
+  if (colorClass.includes('muted') || colorClass.includes('gray') || colorClass.includes('slate')) {
+    return {
+      container: `${bgClass || 'bg-muted/10 dark:bg-white/10'} ${options?.noBorder ? 'border-transparent' : 'border-muted/20'} text-muted`,
+      icon: 'text-muted'
+    };
+  }
+
+  // Fallback for specific tailwind colors like text-pink-500
+  const colorName = colorClass.split('-')[1] || 'slate';
+  return {
+    container: `${bgClass || `bg-${colorName}-50 dark:bg-${colorName}-900/20`} ${options?.noBorder ? 'border-transparent' : `border-${colorName}-100 dark:border-${colorName}-800/30`} ${colorClass.replace('text-', 'text-')}`,
+    icon: colorClass
+  };
 };

@@ -10,7 +10,7 @@ interface SlicerProps {
 }
 
 export const SlicerContainer = ({ label, children, className = "" }: SlicerProps) => (
-    <div className={`flex flex-col gap-2 ${className}`}>
+    <div className={`flex flex-col gap-2.5 ${className}`}>
         <label className="text-[10px] font-black text-muted uppercase tracking-[0.15em] ml-1">{label}</label>
         {children}
     </div>

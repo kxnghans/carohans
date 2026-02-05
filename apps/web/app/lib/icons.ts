@@ -79,13 +79,15 @@ import {
   Settings,
   ShoppingBag,
   LocalOffer,
-  FileDownload
+  FileDownload,
+  PersonAdd
 } from '@mui/icons-material';
 
 // --- SYSTEM ICONS (Replacements for Lucide) ---
 export const Icons = {
   Users: Group,
   User: Person,
+  UserPlus: PersonAdd,
   Calendar: CalendarMonth,
   DollarSign: AttachMoney,
   ShoppingCart: ShoppingCart,
@@ -171,4 +173,23 @@ export const InventoryIcons: Record<string, React.ComponentType<{ className?: st
   Video: Videocam,
   Music: Piano,
   Party: Celebration
+};
+
+// --- ACCOUNT PICKER ICONS ---
+export const AccountIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  User: Person,
+  Group: Group,
+  Business: AccountBalanceWallet,
+  Shield: Security,
+  Key: VpnKey,
+  Globe: Language,
+  Star: AutoAwesome,
+  Work: Inventory2,
+  Contact: Phone,
+  Target: TrackChanges,
+  Activity: Timeline,
+  Info: Info,
+  Settings: Settings,
+  Verified: Check,
+  VIP: Celebration
 };

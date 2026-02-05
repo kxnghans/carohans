@@ -312,7 +312,7 @@ export const InvoiceModal = ({
                   <tr className="border-b-2 border-border">
                     <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest">Description</th>
                     <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest text-center">Quantity</th>
-                    <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest text-right">Unit Price</th>
+                    <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest text-right">Daily Rate</th>
                     <th className="py-3 text-theme-caption font-bold text-foreground uppercase tracking-widest text-right">Line Total</th>
                   </tr>
                 </thead>

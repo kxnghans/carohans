@@ -249,7 +249,7 @@ export const InventoryTable = ({
             <input 
                 type="text" 
                 placeholder="Filter by name or category..." 
-                className="w-full pl-10 pr-10 py-2 bg-surface border border-border rounded-xl text-theme-label outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all shadow-sm"
+                className="w-full pl-10 pr-10 py-2 bg-surface border border-border rounded-xl text-theme-label outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all shadow-sm text-center"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -295,7 +295,7 @@ export const InventoryTable = ({
               onClick={() => requestSort('price')}
             >
               <div className="flex items-center justify-end gap-2">
-                Rate
+                Daily Rate
                 <SortIcon column="price" sortConfig={sortConfig} />
               </div>
             </th>
@@ -304,7 +304,7 @@ export const InventoryTable = ({
               onClick={() => requestSort('replacementCost')}
             >
               <div className="flex items-center justify-end gap-2">
-                Replacement
+                Replacement Cost
                 <SortIcon column="replacementCost" sortConfig={sortConfig} />
               </div>
             </th>

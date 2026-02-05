@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Icons } from '../../lib/icons';
 import { Order, Client, InventoryItem } from '../../types';
 import { Card } from '../../components/ui/Card';
@@ -15,6 +16,7 @@ import { DateRangeModal } from '../../components/modals/DateRangeModal';
 import { ClientSelector } from '../../components/modals/ClientSelector';
 import { Button } from '../../components/ui/Button';
 import { searchOrders, updateOrderStatusToSupabase } from '../../services/orderService';
+import { getUserFriendlyErrorMessage } from '../../utils/errorMapping';
 
 interface ExtendedOrder extends Order {
   cart: (InventoryItem & { qty: number; lostQty?: number; damagedQty?: number })[];
@@ -23,6 +25,7 @@ interface ExtendedOrder extends Order {
 
 export default function AdminOverviewPage() {
   const { Truck, LayoutDashboard, ClipboardList, AlertOctagon, Check, Search, Plus, Loader2, Filter, CreditCard } = Icons;
+  const router = useRouter();
   const { 
     orders, setOrders, clients, showNotification, inventory, 
     latePenaltyPerDay, portalFormData, setPortalFormData, createOrderStep, setCreateOrderStep 
@@ -94,9 +97,8 @@ export default function AdminOverviewPage() {
             const results = await searchOrders(searchQuery, filters, 25);
             setDashboardOrders(results);
         } catch (e) { 
-            const error = e as Error;
-            console.error("Search failed:", error.message); 
-            showNotification(error.message || "Failed to search orders", "error");
+            console.error("Search failed:", e); 
+            showNotification(getUserFriendlyErrorMessage(e, "Order search"), "error");
         }
         finally { setIsSearching(false); }
     };
@@ -134,7 +136,7 @@ export default function AdminOverviewPage() {
       console.error("Status update failed:", e);
       // 3. ROLLBACK on failure
       setOrders(previousOrders);
-      showNotification("Failed to update status. Reverting change.", "error");
+      showNotification(getUserFriendlyErrorMessage(e, "Status update"), "error");
     }
   };
 
@@ -209,9 +211,9 @@ export default function AdminOverviewPage() {
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* ACTION BAR */}
-            <div className="flex justify-between items-end gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
               <div className="flex flex-col gap-1">
                 <h2 className="text-theme-title text-foreground tracking-tight">
                   {isAnyFilterActive ? "Order History" : "Recent Orders"}
@@ -219,35 +221,44 @@ export default function AdminOverviewPage() {
                 <p className="text-theme-caption text-muted mt-1">Showing {dashboardOrders.length} records</p>
               </div>
               
-              <div className="flex items-center gap-3">
-                 <Button variant="secondary" className={`font-bold h-[44px] transition-all ${showSlicers ? 'bg-foreground text-background border-foreground shadow-inner' : ''}`} onClick={() => setShowSlicers(!showSlicers)}>
-                    <Filter className="w-4 h-4 mr-2" /> {showSlicers ? 'Hide Slicers' : 'All Filters'}
-                 </Button>
-                 <div className="relative group w-80">
+              <div className="flex flex-col md:flex-row items-center gap-3 w-full lg:w-auto">
+                 {/* Search Bar - Full row on mobile */}
+                 <div className="relative group w-full md:w-80">
                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
                    <input 
                      type="text" 
                      placeholder="ID or Client Name..." 
-                     className="w-full pl-11 pr-4 py-2.5 h-[44px] bg-surface border border-border rounded-xl text-theme-body font-medium outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all shadow-sm"
+                     className="w-full pl-12 pr-12 py-2.5 h-[44px] bg-surface border border-border rounded-xl text-theme-body font-medium outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all shadow-sm text-center"
                      value={searchQuery}
                      onChange={(e) => setSearchQuery(e.target.value)}
                    />
                    {isSearching && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary animate-spin" />}
                  </div>
-                 <Button 
-                   variant="primary" 
-                   className="font-bold h-[44px] shadow-lg shadow-primary/20" 
-                   onClick={() => window.location.href = '/admin/inventory?mode=order'}
-                 >
-                   <Plus className="w-4 h-4 mr-2" /> NEW ORDER
-                 </Button>
+
+                 {/* Action Buttons - Side-by-side on mobile */}
+                 <div className="flex items-center gap-3 w-full md:w-auto">
+                    <Button 
+                        variant="secondary" 
+                        className={`flex-1 md:flex-none font-bold h-[44px] px-6 transition-all ${showSlicers ? 'bg-foreground text-background border-foreground shadow-inner' : ''}`} 
+                        onClick={() => setShowSlicers(!showSlicers)}
+                    >
+                        <Filter className="w-4 h-4 mr-2" /> {showSlicers ? 'Hide' : 'Filters'}
+                    </Button>
+                    <Button 
+                        variant="primary" 
+                        className="flex-1 md:flex-none font-bold h-[44px] px-6 shadow-lg shadow-primary/20 whitespace-nowrap" 
+                        onClick={() => router.push('/admin/inventory?mode=order')}
+                    >
+                        <Plus className="w-4 h-4 mr-2" /> NEW ORDER
+                    </Button>
+                 </div>
               </div>
             </div>
 
             {showSlicers && (
                 <Card className="p-6 bg-surface border-border/60 shadow-lg animate-in slide-in-from-top-2 duration-300 relative overflow-visible">
-                    <div className="flex flex-wrap items-end gap-5">
-                        <SlicerContainer label="Order IDs" className="flex-1 min-w-[140px]">
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-x-5 gap-y-8 items-end">
+                        <SlicerContainer label="Order IDs">
                             <input 
                                 className="w-full h-11 bg-background border border-border rounded-xl px-4 text-theme-body font-mono font-bold outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all placeholder:font-sans placeholder:font-semibold placeholder:text-muted/50 shadow-sm" 
                                 placeholder="ORDER ID" 
@@ -261,7 +272,6 @@ export default function AdminOverviewPage() {
                             value={filters.status}
                             options={statusOptions}
                             onChange={(val) => setFilters({...filters, status: val})}
-                            className="flex-1 min-w-[180px]"
                         />
 
                         <SelectSlicer 
@@ -269,10 +279,9 @@ export default function AdminOverviewPage() {
                             value={filters.return_status}
                             options={varianceOptions}
                             onChange={(val) => setFilters({...filters, return_status: val})}
-                            className="flex-1 min-w-[140px]"
                         />
 
-                        <SlicerContainer label="Pickup Range" className="flex-1 min-w-[160px]">
+                        <SlicerContainer label="Pickup Range">
                             <button 
                                 className="w-full h-11 bg-background border border-border rounded-xl px-4 text-left text-theme-body font-bold flex items-center justify-between group hover:border-primary focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none shadow-sm" 
                                 onClick={() => setRangeModalType('pickup')}
@@ -284,7 +293,7 @@ export default function AdminOverviewPage() {
                             </button>
                         </SlicerContainer>
 
-                        <SlicerContainer label="Return Range" className="flex-1 min-w-[160px]">
+                        <SlicerContainer label="Return Range">
                             <button 
                                 className="w-full h-11 bg-background border border-border rounded-xl px-4 text-left text-theme-body font-bold flex items-center justify-between group hover:border-primary focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none shadow-sm" 
                                 onClick={() => setRangeModalType('return')}
@@ -302,19 +311,18 @@ export default function AdminOverviewPage() {
                             value={filters.total_value}
                             onOperatorChange={(op) => setFilters({...filters, total_operator: op})}
                             onValueChange={(val) => setFilters({...filters, total_value: val})}
-                            className="flex-[1.2] min-w-[200px]"
                         />
 
-                        <div className="flex items-end h-11 ml-auto">
+                        <div className="flex items-end h-11 col-span-2 md:col-span-3 xl:col-span-1 justify-center xl:justify-end mt-2">
                             <Button 
                                 variant="primary" 
-                                className="h-11 px-8 text-theme-subtitle uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95" 
+                                className="h-11 px-6 text-theme-subtitle uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95 w-fit whitespace-nowrap" 
                                 onClick={() => { 
                                     setSearchQuery(''); 
                                     setFilters({status:'All', return_status:'All', id:'', pickup_start:'', pickup_end:'', return_start:'', return_end:'', total_operator:'gt', total_value:''}); 
                                 }}
                             >
-                                RESET
+                                RESET FILTERS
                             </Button>
                         </div>
                     </div>

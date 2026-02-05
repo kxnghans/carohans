@@ -100,7 +100,7 @@ export interface Client {
 export interface PortalFormData {
     firstName: string;
     lastName: string;
-    username: string;
+    username?: string;
     phone: string;
     email: string;
     address?: string;

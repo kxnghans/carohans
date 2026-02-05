@@ -2,7 +2,7 @@
 
 import { useState, Fragment } from 'react';
 import { Icons } from '../../lib/icons';
-import { getStatusColor, getStatusDescription, formatCurrency, formatDate, getDurationDays, calculateOrderTotal } from '../../utils/helpers';
+import { getStatusColor, getStatusDescription, formatCurrency, formatDate, getDurationDays, calculateOrderTotal, getIconStyle } from '../../utils/helpers';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Order, InventoryItem } from '../../types';
@@ -80,38 +80,42 @@ export const OrderTable = ({
     const router = useRouter();
     const statuses = ['Pending', 'Approved', 'Active', 'Late', 'Settlement', 'Completed', 'Rejected', 'Canceled'];
 
-    const toggleExpand = async (orderId: number) => {
+    const toggleExpand = (orderId: number) => {
         if (expandedOrderId === orderId) {
             setExpandedOrderId(null);
         } else {
             setExpandedOrderId(orderId);
-            
-            const order = orders.find(o => o.id === orderId);
-            if (order && order.items.length === 0 && (order.itemCount || 0) > 0 && !lazyOrderItems[orderId]) {
-                try {
-                    const { data, error } = await import('../../lib/supabase').then(m => m.supabase
-                        .from('orders')
-                        .select(`order_items (inventory_id, quantity, unit_price, returned_qty, lost_qty, damaged_qty, inventory (name, category, image, color))`)
-                        .eq('id', orderId)
-                        .single()
-                    );
-                    if (data && !error) {
-                        const result = data as unknown as OrderQueryResult & { order_items: { inventory: InventoryItem }[] };
-                        if (result.order_items) {
-                            const mappedItems = result.order_items.map((oi) => ({
-                                inventoryId: oi.inventory_id,
-                                qty: oi.quantity,
-                                price: Number(oi.unit_price),
-                                returnedQty: oi.returned_qty,
-                                lostQty: oi.lost_qty,
-                                damagedQty: oi.damaged_qty,
-                                _fallback: oi.inventory
-                            })) as { inventoryId: number; qty: number; price: number; returnedQty?: number; lostQty?: number; damagedQty?: number; _fallback?: Partial<InventoryItem> }[];
-                            setLazyOrderItems(prev => ({ ...prev, [orderId]: mappedItems }));
-                        }
+            loadOrderDetails(orderId);
+        }
+    };
+
+    const loadOrderDetails = async (orderId: number) => {
+        const order = orders.find(o => o.id === orderId);
+        if (order && order.items.length === 0 && (order.itemCount || 0) > 0 && !lazyOrderItems[orderId]) {
+            try {
+                const { supabase: supabaseClient } = await import('../../lib/supabase');
+                const { data, error } = await supabaseClient
+                    .from('orders')
+                    .select(`order_items (inventory_id, quantity, unit_price, returned_qty, lost_qty, damaged_qty, inventory (name, category, image, color))`)
+                    .eq('id', orderId)
+                    .single()
+                ;
+                if (data && !error) {
+                    const result = data as unknown as OrderQueryResult & { order_items: { inventory: InventoryItem }[] };
+                    if (result.order_items) {
+                        const mappedItems = result.order_items.map((oi) => ({
+                            inventoryId: oi.inventory_id,
+                            qty: oi.quantity,
+                            price: Number(oi.unit_price),
+                            returnedQty: oi.returned_qty,
+                            lostQty: oi.lost_qty,
+                            damagedQty: oi.damaged_qty,
+                            _fallback: oi.inventory
+                        })) as { inventoryId: number; qty: number; price: number; returnedQty?: number; lostQty?: number; damagedQty?: number; _fallback?: Partial<InventoryItem> }[];
+                        setLazyOrderItems(prev => ({ ...prev, [orderId]: mappedItems }));
                     }
-                } catch (e) { console.error("Failed to load order details", e); }
-            }
+                }
+            } catch (e) { console.error("Failed to load order details", e); }
         }
     };
 
@@ -263,86 +267,103 @@ export const OrderTable = ({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                        {orders.map((order) => (
-                            <Fragment key={order.id}>
-                                <tr className="hover:bg-background/40 transition-colors group cursor-pointer" onClick={() => toggleExpand(order.id)}>
-                                    <td className="p-4 pl-6"><span className="text-theme-body-bold text-foreground">{order.publicId || encodeOrderId(order.id)}</span></td>
-                                    <td className="p-4 text-center"><div className="flex flex-col items-center gap-1"><span title={getStatusDescription(order.status)} className={`text-theme-body px-3 py-1 rounded-full border-2 ${getStatusColor(order.status)} uppercase tracking-tighter shadow-sm inline-block min-w-[95px] cursor-help font-semibold`}>{order.status}</span></div></td>
-                                    <td className="p-4 text-theme-body text-muted"><div className="hidden sm:block">{formatDate(order.startDate)} - {formatDate(order.closedAt || order.endDate)}</div><div className="sm:hidden flex flex-col items-start w-max"><span>{formatDate(order.startDate)}</span><span className="w-full text-center leading-none my-0.5">-</span><span>{formatDate(order.closedAt || order.endDate)}</span></div></td>
-                                    {isAdmin && (
-                                        <td className="p-4 text-center">
-                                            <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-                                                <div className="flex gap-1.5">
-                                                    {order.status === 'Pending' && (
-                                                        <>
-                                                            <button onClick={() => onUpdateStatus?.(order.id, 'Rejected')} className="px-3 py-1.5 bg-status-rejected text-primary-text rounded-xl text-theme-body font-semibold uppercase tracking-tight hover:opacity-90 transition-all shadow-sm flex items-center gap-1.5" title="Reject Order">
-                                                                <Icons.X className="w-3.5 h-3.5" />
-                                                                <span className="hidden sm:inline">Reject</span>
-                                                            </button>
-                                                            <button onClick={() => onUpdateStatus?.(order.id, 'Approved')} className="px-3 py-1.5 bg-status-approved text-primary-text rounded-xl text-theme-body font-semibold uppercase tracking-tight hover:opacity-90 transition-all shadow-sm flex items-center gap-1.5" title="Approve Order">
-                                                                <Icons.Check className="w-3.5 h-3.5" />
-                                                                <span className="hidden sm:inline">Approve</span>
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                    {order.status === 'Approved' && (
-                                                        <div className="flex gap-1.5">
-                                                            <button onClick={() => onUpdateStatus?.(order.id, 'Pending')} className="px-3 py-1.5 bg-status-pending text-primary-text rounded-xl text-theme-body font-semibold uppercase tracking-tight hover:opacity-90 transition-all shadow-sm flex items-center gap-1.5" title="Move back to Pending">
-                                                                <Undo className="w-3.5 h-3.5" />
-                                                                <span className="hidden sm:inline">Pull Back</span>
-                                                            </button>
-                                                            <button onClick={() => onUpdateStatus?.(order.id, 'Active')} className="px-3 py-1.5 bg-status-active text-primary-text rounded-xl text-theme-body font-semibold uppercase tracking-tight hover:opacity-90 transition-all shadow-sm flex items-center gap-1.5" title="Dispatch Pickup">
-                                                                <Truck className="w-3.5 h-3.5" />
-                                                                <span className="hidden sm:inline">Dispatch</span>
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                    {(order.status === 'Active' || order.status === 'Late' || order.status === 'Settlement') && (
-                                                        <button onClick={() => onUpdateStatus?.(order.id, 'Completed')} className="px-3 py-1.5 bg-status-completed text-primary-text rounded-xl text-theme-body font-semibold uppercase tracking-tight hover:opacity-90 transition-all shadow-sm flex items-center gap-1.5" title="Complete Return">
-                                                            <ReturnIcon className="w-3.5 h-3.5" />
-                                                            <span className="hidden sm:inline">Return</span>
-                                                        </button>
-                                                    )}
-                                                    {['Completed', 'Rejected', 'Canceled'].includes(order.status) && (
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-theme-caption font-bold text-muted uppercase italic px-3 py-1 bg-background border border-border rounded-lg shadow-sm">
-                                                                Closed
-                                                            </span>
-                                                            <button 
-                                                                onClick={(e) => { e.stopPropagation(); setStatusEditOrder(order); setSelectedStatus(order.status); }}
-                                                                className="p-1.5 hover:bg-primary/10 text-muted hover:text-primary rounded-lg transition-all active:scale-90 border border-transparent hover:border-primary/20"
-                                                                title="Update Status"
-                                                            >
-                                                                <Pencil className="w-3.5 h-3.5" />
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
+                        {orders.map((order) => {
+                            const isExpanded = expandedOrderId === order.id;
+                            return (
+                                <Fragment key={order.id}>
+                                    <tr 
+                                        className="hover:bg-background/40 transition-colors group cursor-default"
+                                    >
+                                        <td className="p-4 pl-6">
+                                            <div className="flex items-center gap-3">
+                                                <button 
+                                                    onClick={() => toggleExpand(order.id)}
+                                                    className={`p-1 rounded-lg transition-all ${isExpanded ? 'bg-primary/10 text-primary rotate-90' : 'hover:bg-surface text-muted'}`}
+                                                >
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </button>
+                                                <span className="text-theme-body-bold text-foreground">{order.publicId || encodeOrderId(order.id)}</span>
                                             </div>
                                         </td>
-                                    )}
-                                    <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
-                                        <button 
-                                            onClick={() => handleViewInvoiceEnsureItems(order)}
-                                            className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-xl bg-surface hover:bg-background text-muted text-theme-body transition-all shadow-sm group-hover:border-slate-300 mx-auto"
-                                            title="View Invoice"
-                                        >
-                                            <Printer className="w-4 h-4" /> Invoice
-                                        </button>
-                                    </td>
-                                    <td className="p-4 text-right">
-                                        <div className="flex flex-col">
-                                            <span className="text-theme-title text-foreground">{formatCurrency(order.totalAmount)}</span>
-                                            <span className="text-theme-caption text-muted">{order.items.length || order.itemCount || 0} items</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 pr-6 text-right">
-                                        <div className={`transition-transform duration-200 ${expandedOrderId === order.id ? 'rotate-90' : ''}`}>
-                                            <ChevronRight className={`w-5 h-5 ${expandedOrderId === order.id ? 'text-secondary dark:text-warning' : 'text-muted'}`} />
-                                        </div>
-                                    </td>
-                                </tr>
-                                {expandedOrderId === order.id && (
+                                        <td className="p-4 text-center"><div className="flex flex-col items-center gap-1"><span title={getStatusDescription(order.status)} className={`text-theme-body px-3 py-1 rounded-full border-2 ${getStatusColor(order.status)} uppercase tracking-tighter shadow-sm inline-block min-w-[95px] cursor-help font-semibold`}>{order.status}</span></div></td>
+                                        <td className="p-4 text-theme-body text-muted"><div className="hidden sm:block">{formatDate(order.startDate)} - {formatDate(order.closedAt || order.endDate)}</div><div className="sm:hidden flex flex-col items-start w-max"><span>{formatDate(order.startDate)}</span><span className="w-full text-center leading-none my-0.5">-</span><span>{formatDate(order.closedAt || order.endDate)}</span></div></td>
+                                        {isAdmin && (
+                                            <td className="p-4 text-center">
+                                                <div className="flex items-center justify-center">
+                                                    <div className="flex gap-1.5">
+                                                        {order.status === 'Pending' && (
+                                                            <>
+                                                                <button onClick={(e) => { e.stopPropagation(); onUpdateStatus?.(order.id, 'Rejected'); }} className="px-3 py-1.5 bg-status-rejected text-primary-text rounded-xl text-theme-body font-semibold uppercase tracking-tight hover:opacity-90 transition-all shadow-sm flex items-center gap-1.5" title="Reject Order">
+                                                                    <Icons.X className="w-3.5 h-3.5" />
+                                                                    <span className="hidden sm:inline">Reject</span>
+                                                                </button>
+                                                                <button onClick={(e) => { e.stopPropagation(); onUpdateStatus?.(order.id, 'Approved'); }} className="px-3 py-1.5 bg-status-approved text-primary-text rounded-xl text-theme-body font-semibold uppercase tracking-tight hover:opacity-90 transition-all shadow-sm flex items-center gap-1.5" title="Approve Order">
+                                                                    <Icons.Check className="w-3.5 h-3.5" />
+                                                                    <span className="hidden sm:inline">Approve</span>
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                        {order.status === 'Approved' && (
+                                                            <div className="flex gap-1.5">
+                                                                <button onClick={(e) => { e.stopPropagation(); onUpdateStatus?.(order.id, 'Pending'); }} className="px-3 py-1.5 bg-status-pending text-primary-text rounded-xl text-theme-body font-semibold uppercase tracking-tight hover:opacity-90 transition-all shadow-sm flex items-center gap-1.5" title="Move back to Pending">
+                                                                    <Undo className="w-3.5 h-3.5" />
+                                                                    <span className="hidden sm:inline">Pull Back</span>
+                                                                </button>
+                                                                <button onClick={(e) => { e.stopPropagation(); onUpdateStatus?.(order.id, 'Active'); }} className="px-3 py-1.5 bg-status-active text-primary-text rounded-xl text-theme-body font-semibold uppercase tracking-tight hover:opacity-90 transition-all shadow-sm flex items-center gap-1.5" title="Dispatch Pickup">
+                                                                    <Truck className="w-3.5 h-3.5" />
+                                                                    <span className="hidden sm:inline">Dispatch</span>
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                        {(order.status === 'Active' || order.status === 'Late' || order.status === 'Settlement') && (
+                                                            <button onClick={(e) => { e.stopPropagation(); onUpdateStatus?.(order.id, 'Completed'); }} className="px-3 py-1.5 bg-status-completed text-primary-text rounded-xl text-theme-body font-semibold uppercase tracking-tight hover:opacity-90 transition-all shadow-sm flex items-center gap-1.5" title="Complete Return">
+                                                                <ReturnIcon className="w-3.5 h-3.5" />
+                                                                <span className="hidden sm:inline">Return</span>
+                                                            </button>
+                                                        )}
+                                                        {['Completed', 'Rejected', 'Canceled'].includes(order.status) && (
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-theme-caption font-bold text-muted uppercase italic px-3 py-1 bg-background border border-border rounded-lg shadow-sm">
+                                                                    Closed
+                                                                </span>
+                                                                <button 
+                                                                    onClick={(e) => { e.stopPropagation(); setStatusEditOrder(order); setSelectedStatus(order.status); }}
+                                                                    className="p-1.5 hover:bg-primary/10 text-muted hover:text-primary rounded-lg transition-all active:scale-90 border border-transparent hover:border-primary/20"
+                                                                    title="Update Status"
+                                                                >
+                                                                    <Pencil className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        )}
+                                        <td className="p-4 text-center">
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); handleViewInvoiceEnsureItems(order); }}
+                                                className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-xl bg-surface hover:bg-background text-muted text-theme-body transition-all shadow-sm group-hover:border-slate-300 mx-auto"
+                                                title="View Invoice"
+                                            >
+                                                <Printer className="w-4 h-4" /> Invoice
+                                            </button>
+                                        </td>
+                                        <td className="p-4 text-right">
+                                            <div className="flex flex-col">
+                                                <span className="text-theme-title text-foreground">{formatCurrency(order.totalAmount)}</span>
+                                                <span className="text-theme-caption text-muted">{order.items.length || order.itemCount || 0} items</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-4 pr-6 text-right">
+                                            <button 
+                                                onClick={() => toggleExpand(order.id)}
+                                                className={`p-2 rounded-full transition-all ${isExpanded ? 'bg-primary/10 text-primary' : 'hover:bg-surface text-muted'}`}
+                                            >
+                                                <ChevronRight className={`w-5 h-5 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {isExpanded && (
                                     <tr className="bg-background/20">
                                         <td colSpan={isAdmin ? 7 : 6} className="p-0">
                                             <div className="p-6 animate-in slide-in-from-top-2 duration-200">
@@ -353,9 +374,9 @@ export const OrderTable = ({
                                                                 <tr className="bg-background border-b border-border text-theme-body text-muted uppercase tracking-widest">
                                                                     <th className="p-3 pl-6">Item Details</th>
                                                                     <th className="p-3">Category</th>
-                                                                    <th className="p-3 text-right">Repl. Cost</th>
+                                                                    <th className="p-3 text-right">Replacement Cost</th>
                                                                     <th className="p-3 text-right">Qty</th>
-                                                                    <th className="p-3 text-right">Rate</th>
+                                                                    <th className="p-3 text-right">Daily Rate</th>
                                                                     <th className="p-3 text-right">Duration</th>
                                                                     <th className="p-3 text-right pr-6">Subtotal</th>
                                                                 </tr>
@@ -370,7 +391,15 @@ export const OrderTable = ({
                                                                         <tr key={idx} className="hover:bg-background/50 transition-colors">
                                                                             <td className="p-3 pl-6">
                                                                                 <div className="flex items-center gap-3">
-                                                                                    <DynamicIcon iconString={invItem?.image} color={invItem?.color} className="w-5 h-5" fallback={<span>📦</span>} />
+                                                                                    <div className={`rounded-lg flex items-center justify-center border-none transition-all ${getIconStyle(invItem?.color, { noBorder: true, noBackground: true }).container}`}>
+                                                                                        <DynamicIcon 
+                                                                                            iconString={invItem?.image} 
+                                                                                            color={invItem?.color} 
+                                                                                            variant="table" 
+                                                                                            forceUpdate={invItem}
+                                                                                            fallback={<span>📦</span>} 
+                                                                                        />
+                                                                                    </div>
                                                                                     <div className="flex flex-col">
                                                                                         <span className="text-theme-body-bold text-foreground">{invItem?.name || `Item #${item.inventoryId}`}</span>
                                                                                         {((item.lostQty ?? 0) > 0 || (item.damagedQty ?? 0) > 0) && (
@@ -412,7 +441,14 @@ export const OrderTable = ({
                                                                                     rows.push(
                                                                                         <tr key={`lost-${i}`} className="bg-error/5 hover:bg-error/10 transition-colors">
                                                                                             <td className="p-3 pl-6 flex items-center gap-3">
-                                                                                                <DynamicIcon iconString={invItem?.image} color={invItem?.color} className="w-4 h-4" />
+                                                                                                <div className={`rounded-lg flex items-center justify-center border-none transition-all ${getIconStyle(invItem?.color, { noBorder: true, noBackground: true }).container}`}>
+                                                                                                    <DynamicIcon 
+                                                                                                        iconString={invItem?.image} 
+                                                                                                        color={invItem?.color} 
+                                                                                                        variant="table" 
+                                                                                                        forceUpdate={invItem}
+                                                                                                    />
+                                                                                                </div>
                                                                                                 <span className="text-theme-body font-medium">{invItem?.name} (Lost)</span>
                                                                                             </td>
                                                                                             <td className="p-3 text-theme-body text-muted">Asset Integrity</td>
@@ -428,7 +464,14 @@ export const OrderTable = ({
                                                                                     rows.push(
                                                                                         <tr key={`dmg-${i}`} className="bg-warning/5 hover:bg-warning/10 transition-colors">
                                                                                             <td className="p-3 pl-6 flex items-center gap-3">
-                                                                                                <DynamicIcon iconString={invItem?.image} color={invItem?.color} className="w-4 h-4" />
+                                                                                                <div className={`rounded-lg flex items-center justify-center border-none transition-all ${getIconStyle(invItem?.color, { noBorder: true, noBackground: true }).container}`}>
+                                                                                                    <DynamicIcon 
+                                                                                                        iconString={invItem?.image} 
+                                                                                                        color={invItem?.color} 
+                                                                                                        variant="table" 
+                                                                                                        forceUpdate={invItem}
+                                                                                                    />
+                                                                                                </div>
                                                                                                 <span className="text-theme-body font-medium">{invItem?.name} (Damaged)</span>
                                                                                             </td>
                                                                                             <td className="p-3 text-theme-body text-muted">Asset Integrity</td>
@@ -492,50 +535,73 @@ export const OrderTable = ({
                                                                                                                 )}
                                                                 {/* GRAND TOTAL ROW */}
                                                                 <tr className="bg-background/50 border-t border-border">
-                                                                    <td colSpan={6} className="p-4 pl-6 text-right text-theme-body-bold text-foreground uppercase tracking-tighter">
-                                                                        Grand Total
-                                                                    </td>
-                                                                    <td className="p-4 text-right pr-6 text-theme-title text-foreground font-black">
-                                                                        {formatCurrency(order.totalAmount)}
+                                                                    <td colSpan={7} className="p-4 md:p-6">
+                                                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                                                            <div className="flex items-center gap-3 bg-background border border-border rounded-xl px-4 py-3 w-full md:w-fit shadow-sm hover:border-primary/20 hover:shadow-md transition-all cursor-default">
+                                                                                <div className={`rounded-lg flex items-center justify-center transition-all ${getIconStyle(undefined).container}`}>
+                                                                                    <DynamicIcon 
+                                                                                        iconString={null} 
+                                                                                        variant="table" 
+                                                                                        fallback={<Icons.User className="w-4 h-4" />} 
+                                                                                    />
+                                                                                </div>
+                                                                                <div className="flex flex-col">
+                                                                                    <span className="text-theme-subtitle text-foreground leading-none mb-1">{order.clientName}</span>
+                                                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-theme-body text-muted leading-tight">
+                                                                                        <span>{order.phone}</span>
+                                                                                        <span className="hidden sm:block w-1 h-1 rounded-full bg-border" />
+                                                                                        <span className="lowercase font-normal truncate max-w-[200px]">{order.email}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                            
+                                                                            <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-2 px-2">
+                                                                                <span className="text-theme-body-bold text-muted uppercase tracking-tighter">Grand Total</span>
+                                                                                <span className="text-theme-header text-foreground font-black">
+                                                                                    {formatCurrency(order.totalAmount)}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
                                                                     </td>
                                                                 </tr>
 
                                                                 {/* SUMMARY FOOTER ROW */}
                                                                 <tr className="bg-primary/5 dark:bg-white/5 border-t border-border">
-                                                                    <td colSpan={7} className="p-6">
-                                                                        <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
+                                                                    <td colSpan={7} className="p-6 md:p-8">
+                                                                        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-8">
                                                                             {/* DATES WRAPPER (Left) */}
-                                                                            <div className="flex flex-wrap gap-8 text-[10px] uppercase font-bold text-muted tracking-widest">
-                                                                                <div className="flex flex-col">
+                                                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-6 text-[10px] uppercase font-bold text-muted tracking-widest">
+                                                                                <div className="flex flex-col gap-1">
                                                                                     <span>Pickup Date</span>
                                                                                     <span className="text-theme-body text-foreground font-semibold">{formatDate(order.startDate)}</span>
                                                                                 </div>
-                                                                                <div className="flex flex-col">
+                                                                                <div className="flex flex-col gap-1">
                                                                                     <span>Planned Return</span>
                                                                                     <span className="text-theme-body text-foreground font-semibold">{formatDate(order.endDate)}</span>
                                                                                 </div>
-                                                                                <div className="flex flex-col">
+                                                                                <div className="flex flex-col gap-1">
                                                                                     <span>Actual Return</span>
                                                                                     <span className="text-theme-body text-foreground font-semibold">{order.closedAt ? formatDate(order.closedAt) : '—'}</span>
                                                                                 </div>
-                                                                                                                            <div className="flex flex-col">
-                                                                                                                                    <span>Return Variance</span>
-                                                                                                                                    <span className={`text-theme-body font-semibold uppercase ${
-                                                                                                                                        !order.closedAt ? 'text-muted italic' :
-                                                                                                                                        order.returnStatus?.toLowerCase() === 'early' ? 'text-secondary' :
-                                                                                                                                        order.returnStatus?.toLowerCase() === 'late' ? 'text-error' :
-                                                                                                                                        order.returnStatus?.toLowerCase() === 'on time' ? 'text-status-completed' :
-                                                                                                                                        'text-muted italic'
-                                                                                                                                    }`}>
-                                                                                                                                        {order.closedAt ? (order.returnStatus || '—') : '—'}
-                                                                                                                                    </span>
-                                                                                                                                </div>                                                                            </div>
+                                                                                <div className="flex flex-col gap-1">
+                                                                                    <span>Return Variance</span>
+                                                                                    <span className={`text-theme-body font-semibold uppercase ${
+                                                                                        !order.closedAt ? 'text-muted italic' :
+                                                                                        order.returnStatus?.toLowerCase() === 'early' ? 'text-secondary' :
+                                                                                        order.returnStatus?.toLowerCase() === 'late' ? 'text-error' :
+                                                                                        order.returnStatus?.toLowerCase() === 'on time' ? 'text-status-completed' :
+                                                                                        'text-muted italic'
+                                                                                    }`}>
+                                                                                        {order.closedAt ? (order.returnStatus || '—') : '—'}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
                                                                             
                                                                             <Button 
                                                                                 onClick={() => handleModifyOrder(order)} 
                                                                                 variant="primary" 
-                                                                                size="sm" 
-                                                                                className="font-bold px-8 shadow-md hover:scale-105 transition-all w-full sm:w-auto"
+                                                                                size="md" 
+                                                                                className="font-bold px-10 py-4 shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all w-full lg:w-auto"
                                                                             >
                                                                                 <Pencil className="w-4 h-4 mr-2" /> Modify Order
                                                                             </Button>
@@ -551,7 +617,8 @@ export const OrderTable = ({
                                     </tr>
                                 )}
                             </Fragment>
-                        ))}
+                        );
+                        })}
                     </tbody>
                 </table>
             </ScrollableContainer>

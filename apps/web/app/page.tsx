@@ -54,7 +54,7 @@ export default function LandingPage() {
                 <User className="w-10 h-10" />
               </div>
               <div>
-                <h3 className="text-theme-title text-foreground">Client Login</h3>
+                <h3 className="text-theme-title text-foreground">Client Portal</h3>
                 <p className="text-muted text-theme-body">Access your orders & profile</p>
               </div>
             </div>

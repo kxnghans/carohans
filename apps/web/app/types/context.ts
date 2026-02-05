@@ -31,6 +31,7 @@ export interface AppContextType {
   setPortalFormData: React.Dispatch<React.SetStateAction<PortalFormData>>;
   submitOrder: (details: PortalFormData, discountCode?: string) => Promise<void>;
   loading: boolean;
+  fetchData: (silent?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (details: PortalFormData) => Promise<void>;
   latePenaltyPerDay: number;
