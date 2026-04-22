@@ -255,7 +255,7 @@ const FilterDropdown = ({ label, options, selected, onToggle }: {
 };
 
 export default function AdminBIPage() {
-  const { clients, orders, inventory, discounts } = useAppStore();
+  const { clients, orders, inventory, discounts, fetchData } = useAppStore();
   const { Users, Cash, BarChart: BarIcon, Package, Calendar, ChevronRight, Tag, TrendingDown } = Icons;
 
   // Filters State
@@ -263,13 +263,13 @@ export default function AdminBIPage() {
   const [categoryFilter, setCategoryFilter] = useState<string[]>(['All']);
   const [statusFilter, setStatusFilter] = useState<string[]>(['All']);
   const [volumeRange, setVolumeRange] = useState('12');
-  
+
   // New BI Filters
   const [returnStatusFilter, setReturnStatusFilter] = useState<string[]>(['All']);
   const [integrityFilter, setIntegrityFilter] = useState<string[]>(['All']);
   const [usageType, setUsageType] = useState<'Categories' | 'Items'>('Categories');
   const [isMounted, setIsMounted] = useState(false);
-
+  const [isRefreshing, setIsRefreshing] = useState(false);
   useEffect(() => {
     const timer = setTimeout(() => setIsMounted(true), 0);
     return () => clearTimeout(timer);
@@ -626,7 +626,17 @@ export default function AdminBIPage() {
           <h1 className="text-theme-header text-foreground tracking-tight">Insights</h1>
           <p className="text-muted text-theme-body">Real-time performance metrics and strategic outlook.</p>
         </div>
-        <button onClick={() => window.location.reload()} className="p-2 hover:bg-background rounded-lg transition-colors text-muted"><Icons.MoreHorizontal className="w-5 h-5" /></button>
+        <button 
+          onClick={async () => {
+            setIsRefreshing(true);
+            await fetchData(false);
+            setIsRefreshing(false);
+          }} 
+          disabled={isRefreshing}
+          className="p-2 hover:bg-background rounded-lg transition-colors text-muted disabled:opacity-50"
+        >
+          {isRefreshing ? <Icons.Loader2 className="w-5 h-5 animate-spin" /> : <Icons.MoreHorizontal className="w-5 h-5" />}
+        </button>
       </div>
 
       {/* STRATEGIC SLICERS */}

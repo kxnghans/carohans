@@ -29,6 +29,16 @@ To provide CaroHans Ventures with a robust web application that manages the full
 *   **Styling:** Tailwind CSS 4.0
 *   **Deployment:** Cloudflare (via OpenNext)
 
+### 2.1 Supabase Ecosystem (Dual Project Strategy)
+To ensure operational isolation and security, the system utilizes two independent Supabase projects:
+
+1.  **Primary ERMS Project (`yyelfynriosztsellphi`):**
+    *   **Role:** Handles all core business logic, including authentication, inventory management, orders, and financial data.
+    *   **Connectivity:** Real-time enabled for live dashboard updates.
+2.  **Bug Reporting & Monitoring (`tsdbcatbcixdokdhxhxj`):**
+    *   **Role:** Dedicated repository for application bug reports, error logs, and system health metrics.
+    *   **Isolation:** Ensures that business data remains unaffected during intensive error logging or debugging sessions.
+
 ---
 
 ## 3. User Personas & Access Control

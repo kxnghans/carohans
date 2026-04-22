@@ -42,6 +42,7 @@ interface ClientRecord {
 
 export interface OrderRecord {
     id: number;
+    client_id: number;
     client_name: string;
     phone: string;
     email: string;

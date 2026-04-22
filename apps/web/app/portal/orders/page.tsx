@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { DateRangeModal } from '../../components/modals/DateRangeModal';
 import { Order, InventoryItem, Client, OrderItem } from '../../types';
+import { getSimplifiedStatus } from '../../utils/helpers';
 
 export default function PortalOrdersPage() {
   const { orders, loading, inventory } = useAppStore();
@@ -31,8 +32,6 @@ export default function PortalOrdersPage() {
     { value: 'Pending', label: 'PENDING' },
     { value: 'Approved', label: 'APPROVED' },
     { value: 'Active', label: 'ACTIVE' },
-    { value: 'Late', label: 'OVERDUE' },
-    { value: 'Settlement', label: 'SETTLEMENT' },
     { value: 'Completed', label: 'COMPLETED' },
     { value: 'Rejected', label: 'REJECTED' },
     { value: 'Canceled', label: 'CANCELED' }
@@ -70,7 +69,7 @@ export default function PortalOrdersPage() {
     }
 
     if (filters.status !== 'All') {
-        result = result.filter(o => o.status === filters.status);
+        result = result.filter(o => getSimplifiedStatus(o.status) === filters.status);
     }
 
     if (filters.return_status !== 'All') {

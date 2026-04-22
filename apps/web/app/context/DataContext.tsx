@@ -173,6 +173,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         return {
           id: o.id,
           publicId: encodeOrderId(o.id),
+          clientId: o.client_id,
           clientName: o.client_name,
           phone: o.phone,
           email: o.email,
@@ -230,7 +231,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             }
         }
       } catch (e) {
-        console.error("Failed to fetch settings", e);
+        console.error("Failed to fetch settings:", e instanceof Error ? {
+            message: e.message,
+            name: e.name,
+            stack: e.stack,
+            ...(e as any)
+        } : e);
       }
 
       let currentRole: 'admin' | 'client' | undefined = undefined;

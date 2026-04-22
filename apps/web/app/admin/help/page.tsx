@@ -134,6 +134,22 @@ export default function AdminHelpPage() {
                     content: "Promote clients to Admin or demote users in 'System Access'. Only Admins can edit inventory and override statuses."
                 }
             ]
+        },
+        {
+            title: "Bug Reporting & Health",
+            icon: Icons.Bug,
+            color: "text-error",
+            bg: "bg-error/10",
+            items: [
+                {
+                    label: "System Monitoring",
+                    content: "The system utilizes a dedicated Supabase project (tsdbcatbcixdokdhxhxj) for error logs and bug reports, ensuring main business data remains clean."
+                },
+                {
+                    label: "Reporting Bugs",
+                    content: "Use the '/bug' command or the integrated feedback tools to report issues. These are instantly routed to the monitoring database for review."
+                }
+            ]
         }
     ];
 

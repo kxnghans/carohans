@@ -77,14 +77,22 @@ npx @next/codemod@canary middleware-to-proxy .
 
 ## 4. Environment Variables & Secrets
 
-### 4.1 Required Variables
-*   **`NEXT_PUBLIC_SUPABASE_URL`**: The API URL for your Supabase project.
-*   **`NEXT_PUBLIC_SUPABASE_ANON_KEY`**: The anonymous public key for Supabase.
+### 4.1 Required Variables (Dual-Project)
+
+#### Primary ERMS Project (`yyelfynriosztsellphi`)
+*   **`NEXT_PUBLIC_SUPABASE_URL`**: The API URL for your primary Supabase project.
+*   **`NEXT_PUBLIC_SUPABASE_ANON_KEY`**: The anonymous public key for the primary project.
+*   **`SUPABASE_SERVICE_ROLE_KEY`**: (Secret) The service role key for administrative tasks.
+
+#### Bug Reporting Project (`tsdbcatbcixdokdhxhxj`)
+*   **`NEXT_PUBLIC_BUG_REPORTS_SUPABASE_URL`**: The API URL for the dedicated bug reporting project.
+*   **`NEXT_PUBLIC_BUG_REPORTS_SUPABASE_ANON_KEY`**: The anonymous public key for the bug reporting project.
+*   **`BUG_REPORTS_SUPABASE_SERVICE_ROLE_KEY`**: (Secret) The service role key for administrative logging tasks.
 
 ### 4.2 Management
 *   **Dashboard:** Add variables in **Workers & Pages** > **[Project Name]** > **Settings** > **Variables and Secrets**.
 *   **Static Bundling:** Variables prefixed with `NEXT_PUBLIC_` are bundled at **build time**. You must trigger a new build/deploy after changing these.
-*   **Local Dev:** Use a `.dev.vars` file in `apps/web/` for secrets. **Do not commit this file.**
+*   **Local Dev:** Use a `.env.local` file in `apps/web/` for secrets. **Do not commit this file to GitHub.**
 
 ---
 

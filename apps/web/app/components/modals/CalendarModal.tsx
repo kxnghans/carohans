@@ -1,19 +1,25 @@
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Icons } from '../../lib/icons';
 import { Button } from '../ui/Button';
 import { useScrollLock } from '../../hooks/useScrollLock';
+import { useAppStore } from '../../context/AppContext';
+import { Blackout, fetchBlackoutsFromSupabase, addBlackoutToSupabase, deleteBlackoutFromSupabase } from '../../services/calendarService';
 
 export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
-  const { X, ChevronLeft, ChevronRight, Calendar: CalendarIcon, Trash2 } = Icons;
-  const [viewDate, setViewDate] = useState(new Date(2026, 1, 1)); // Feb 2026
+  const { X, ChevronLeft, ChevronRight, Calendar: CalendarIcon, Trash2, Info, Loader2 } = Icons;
+  const { showNotification } = useAppStore();
+  
+  const [viewDate, setViewDate] = useState(new Date());
   const [selectionMode, setSelectionMode] = useState<'individual' | 'range'>('individual');
-  const [blockedDates, setBlockedDates] = useState<string[]>(['2026-02-05', '2026-02-12', '2026-02-19', '2026-02-26', '2026-02-27', '2026-02-28']);
+  const [blackouts, setBlackouts] = useState<Blackout[]>([]);
   const [pendingDates, setPendingDates] = useState<string[]>([]);
   const [rangeAnchor, setRangeAnchor] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const monthYear = viewDate.toLocaleString('default', { month: 'long', year: 'numeric' });
   const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
@@ -21,36 +27,37 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
 
   useScrollLock(isOpen);
 
-  // --- Smart Grouping Logic ---
-  const groupedBlockedDates = useMemo(() => {
-    if (blockedDates.length === 0) return [];
-    
-    const sorted = [...blockedDates].sort();
-    const groups: string[][] = [];
-    let currentGroup: string[] = [];
+  const loadBlackouts = useCallback(async () => {
+    if (!isOpen) return;
+    try {
+      setLoading(true);
+      const data = await fetchBlackoutsFromSupabase();
+      setBlackouts(data);
+    } catch (error) {
+      console.error("Failed to load blackouts:", error);
+      showNotification("Failed to load blackout dates.", "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [isOpen, showNotification]);
 
-    sorted.forEach((dateStr) => {
-      if (currentGroup.length === 0) {
-        currentGroup.push(dateStr);
-      } else {
-        const prevDateStr = currentGroup[currentGroup.length - 1];
-        if (!prevDateStr) return;
-        const prevDate = new Date(prevDateStr);
-        const currDate = new Date(dateStr);
-        const diffTime = Math.abs(currDate.getTime() - prevDate.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  useEffect(() => {
+    loadBlackouts();
+  }, [loadBlackouts]);
 
-        if (diffDays === 1) {
-          currentGroup.push(dateStr);
-        } else {
-          groups.push(currentGroup);
-          currentGroup = [dateStr];
-        }
+  const blockedDates = useMemo(() => {
+    const dates: string[] = [];
+    blackouts.forEach(b => {
+      const start = new Date(b.start_date);
+      const end = new Date(b.end_date);
+      const current = new Date(start);
+      while (current <= end) {
+        dates.push(current.toISOString().split('T')[0] ?? '');
+        current.setDate(current.getDate() + 1);
       }
     });
-    if (currentGroup.length > 0) groups.push(currentGroup);
-    return groups;
-  }, [blockedDates]);
+    return Array.from(new Set(dates));
+  }, [blackouts]);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0);
@@ -69,7 +76,7 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
 
   const formatDateDisplay = (dateStr: string) => {
     const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const formatDate = (day: number) => {
@@ -85,8 +92,15 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
     setViewDate(new Date());
   };
 
-  const unblockGroup = (group: string[]) => {
-    setBlockedDates(prev => prev.filter(d => !group.includes(d)));
+  const handleDeleteBlackout = async (id: number) => {
+    try {
+      await deleteBlackoutFromSupabase(id);
+      showNotification("Blackout period removed.", "success");
+      loadBlackouts();
+    } catch (error) {
+      console.error("Failed to delete blackout:", error);
+      showNotification("Failed to remove blackout period.", "error");
+    }
   };
 
   const handleDateClick = (dateStr: string) => {
@@ -100,11 +114,14 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
       if (rangeAnchor === null) {
         setRangeAnchor(dateStr);
       } else {
-        const start = new Date(rangeAnchor < dateStr ? rangeAnchor : dateStr);
-        const end = new Date(rangeAnchor < dateStr ? dateStr : rangeAnchor);
+        const start = rangeAnchor < dateStr ? rangeAnchor : dateStr;
+        const end = rangeAnchor < dateStr ? dateStr : rangeAnchor;
+        
         const newRange: string[] = [];
         const current = new Date(start);
-        while (current <= end) {
+        const endDateObj = new Date(end);
+        
+        while (current <= endDateObj) {
           const s = current.toISOString().split('T')[0] ?? '';
           if (!blockedDates.includes(s)) newRange.push(s);
           current.setDate(current.getDate() + 1);
@@ -115,17 +132,58 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
     }
   };
 
-  const getDayClass = (dateStr: string) => {
-    if (blockedDates.includes(dateStr)) return "bg-error/5 text-muted/40 cursor-not-allowed line-through";
-    if (rangeAnchor === dateStr) return "bg-indigo-800 text-primary-text ring-2 ring-indigo-300 ring-offset-2 z-10 scale-105";
-    if (pendingDates.includes(dateStr)) return "bg-primary text-primary-text shadow-sm";
-    return "hover:bg-muted/10 text-foreground";
+  const handleBlockSelected = async () => {
+    if (pendingDates.length === 0) return;
+    
+    setIsSubmitting(true);
+    try {
+      const sorted = [...pendingDates].sort();
+      const ranges: { start: string, end: string }[] = [];
+      
+      if (sorted.length > 0) {
+        let currentStart = sorted[0] ?? '';
+        let currentEnd = sorted[0] ?? '';
+        
+        for (let i = 1; i < sorted.length; i++) {
+          const prevDate = new Date(currentEnd);
+          const currDateStr = sorted[i] ?? '';
+          const currDate = new Date(currDateStr);
+          const diff = Math.ceil((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (diff === 1) {
+            currentEnd = currDateStr;
+          } else {
+            ranges.push({ start: currentStart, end: currentEnd });
+            currentStart = currDateStr;
+            currentEnd = currDateStr;
+          }
+        }
+        ranges.push({ start: currentStart, end: currentEnd });
+      }
+
+      await Promise.all(ranges.map(r => addBlackoutToSupabase(r.start, r.end, "Manual Blackout")));
+      
+      showNotification(`${pendingDates.length} days blocked successfully.`, "success");
+      setPendingDates([]);
+      setRangeAnchor(null);
+      loadBlackouts();
+    } catch (error) {
+      console.error("Failed to add blackouts:", error);
+      showNotification("Failed to add blackout dates.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleBlockSelected = () => {
-    setBlockedDates(prev => [...prev, ...pendingDates]);
-    setPendingDates([]);
-    setRangeAnchor(null);
+  const getDayClass = (dateStr: string) => {
+    const isBlocked = blockedDates.includes(dateStr);
+    const isPending = pendingDates.includes(dateStr);
+    const isAnchor = rangeAnchor === dateStr;
+
+    if (isBlocked) return "bg-error/5 text-muted/40 cursor-not-allowed line-through";
+    if (isAnchor) return "bg-primary/20 text-primary ring-2 ring-primary ring-offset-2 z-10 scale-105";
+    if (isPending) return "bg-primary text-primary-text shadow-md shadow-primary/20 scale-105";
+    return "hover:bg-primary/5 text-foreground";
   };
 
   return createPortal(
@@ -133,7 +191,6 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
       className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
-      {/* Increased max-width for side-by-side layout */}
       <div 
         className="bg-surface rounded-3xl shadow-2xl w-full max-w-lg lg:max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 my-auto border border-border"
         onClick={(e) => e.stopPropagation()}
@@ -181,7 +238,7 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
                     <h3 className="text-theme-title text-foreground w-40 text-center">{monthYear}</h3>
                     <button 
                       onClick={handleToday} 
-                      className="flex items-center gap-1.5 text-theme-body bg-status-active text-white dark:text-background px-4 py-2 rounded-full hover:opacity-90 transition-all active:scale-95 border border-status-active shadow-sm"
+                      className="flex items-center gap-1.5 text-theme-body bg-primary/10 text-primary px-4 py-2 rounded-full hover:bg-primary/20 transition-all active:scale-95 border border-primary/10 shadow-sm font-bold"
                     >
                       Today
                     </button>
@@ -191,7 +248,7 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
 
               <div className="grid grid-cols-7 gap-3 md:gap-2 mb-2">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-                  <div key={d} className="text-theme-caption text-muted text-center">{d}</div>
+                  <div key={d} className="text-theme-caption text-muted text-center font-black uppercase tracking-widest">{d}</div>
                 ))}
               </div>
 
@@ -200,7 +257,6 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const day = i + 1;
                   const dateStr = formatDate(day);
-                  const hasEvent = ['2026-02-15', '2026-02-16', '2026-02-20'].includes(dateStr);
                   const isBlocked = blockedDates.includes(dateStr);
                   const isPending = pendingDates.includes(dateStr);
 
@@ -208,83 +264,99 @@ export const CalendarModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: (
                     <button
                       key={day}
                       onClick={() => handleDateClick(dateStr)}
-                      className={`aspect-square rounded-xl flex flex-col items-center justify-center text-theme-label font-semibold transition-all relative ${getDayClass(dateStr)}`}
+                      className={`aspect-square rounded-xl flex flex-col items-center justify-center text-theme-label font-bold transition-all relative border border-transparent ${getDayClass(dateStr)}`}
                     >
-                      <span>{day}</span>
-                      {hasEvent && !isPending && !isBlocked && <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1"></div>}
-                      {isBlocked && <div className="w-1.5 h-1.5 rounded-full bg-error mt-1 shadow-[0_0_4px_rgba(239,68,68,0.4)]"></div>}
+                      <span className="text-lg">{day}</span>
+                      {isBlocked && (
+                          <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-error shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
+                      )}
+                      {isPending && (
+                          <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>
+                      )}
                     </button>
                   );
                 })}
               </div>
               
               <div className="mt-6 text-center">
-                  <p className="text-theme-caption text-muted bg-background/50 inline-block px-3 py-1 rounded-full border border-border">
+                  <p className="text-theme-caption text-muted bg-background/50 inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border">
+                      <Info className="w-3.5 h-3.5 text-primary" />
                       {selectionMode === 'individual' ? "Tap dates to select" : rangeAnchor ? "Select end date" : "Select start date"}
                   </p>
               </div>
             </div>
           </div>
 
-          {/* RIGHT: BLOCKED DATES LIST (Sidebar on Desktop, Bottom on Mobile) */}
-          <div className="w-full lg:w-80 bg-background/30 flex flex-col min-h-[200px] lg:min-h-0">
-             <div className="p-4 border-b border-border bg-background/50">
-                <h4 className="text-theme-subtitle text-foreground flex items-center gap-2">
-                    Blocked Periods
-                    <span className="bg-muted/20 text-muted text-[10px] px-1.5 py-0.5 rounded-full">{groupedBlockedDates.length}</span>
+          {/* RIGHT: BLOCKED DATES LIST */}
+          <div className="w-full lg:w-80 bg-background/30 flex flex-col min-h-[300px] lg:min-h-0">
+             <div className="p-4 border-b border-border bg-background/50 flex items-center justify-between">
+                <h4 className="text-theme-subtitle text-foreground font-black uppercase tracking-tight flex items-center gap-2">
+                    Active Blackouts
                 </h4>
+                <span className="bg-muted/10 text-muted text-[10px] font-black px-2 py-0.5 rounded-full">{blackouts.length}</span>
              </div>
              
-             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                {groupedBlockedDates.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-muted gap-2">
-                        <CalendarIcon className="w-8 h-8 opacity-20" />
-                        <p className="text-theme-caption">No dates blocked yet.</p>
+             <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                {loading ? (
+                    <div className="h-full flex flex-col items-center justify-center text-muted gap-2 opacity-40">
+                        <Loader2 className="w-8 h-8 animate-spin" />
+                        <p className="text-theme-caption font-bold uppercase tracking-widest">Loading...</p>
+                    </div>
+                ) : blackouts.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-muted gap-2 opacity-40">
+                        <CalendarIcon className="w-8 h-8" />
+                        <p className="text-theme-caption font-bold uppercase tracking-widest">No active blackouts</p>
                     </div>
                 ) : (
-                    groupedBlockedDates.map((group, idx) => {
-                        const isRange = group.length > 1;
-                        const date1 = group[0] ?? '';
-                        const date2 = group[group.length - 1] ?? '';
-                        const label = isRange 
-                            ? `${formatDateDisplay(date1)} - ${formatDateDisplay(date2)}`
-                            : formatDateDisplay(date1);
-                        
-                        return (
-                            <div key={idx} className="group flex items-center justify-between bg-surface p-3 rounded-xl border border-border hover:border-primary/30 hover:shadow-sm transition-all">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-1 h-8 rounded-full ${isRange ? 'bg-primary' : 'bg-slate-400'}`}></div>
-                                    <div>
-                                        <p className="text-theme-body-bold text-foreground">{label}</p>
-                                        {isRange && <p className="text-theme-caption text-muted">{group.length} days</p>}
-                                    </div>
+                    blackouts.map((b) => (
+                        <div key={b.id} className="group flex items-center justify-between bg-surface p-3 rounded-xl border border-border hover:border-error/30 transition-all">
+                            <div className="flex items-center gap-3">
+                                <div className="w-1 h-8 rounded-full bg-error/40 group-hover:bg-error transition-colors"></div>
+                                <div>
+                                    <p className="text-theme-body-bold text-foreground text-xs leading-tight">
+                                        {b.start_date === b.end_date 
+                                            ? formatDateDisplay(b.start_date)
+                                            : `${formatDateDisplay(b.start_date)} - ${formatDateDisplay(b.end_date)}`}
+                                    </p>
+                                    <p className="text-[10px] text-muted font-bold uppercase tracking-wider mt-1">{b.reason || 'Global Blackout'}</p>
                                 </div>
-                                <button 
-                                    onClick={() => unblockGroup(group)}
-                                    className="p-2 text-muted hover:text-error hover:bg-error/10 rounded-lg transition-colors"
-                                    title="Remove block"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
                             </div>
-                        )
-                    })
+                            <button 
+                                onClick={() => handleDeleteBlackout(b.id)}
+                                className="p-2 text-muted hover:text-error hover:bg-error/10 rounded-lg transition-colors"
+                                title="Remove blackout"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ))
                 )}
              </div>
 
              {/* FOOTER ACTIONS */}
-             <div className="p-4 bg-surface border-t border-border flex gap-2">
-                <Button 
-                    variant="secondary" 
-                    className="flex-1 text-error border-error/20 hover:bg-error/5 hover:border-error/30 transition-all" 
-                    onClick={() => { setPendingDates([]); setRangeAnchor(null); }} 
-                    disabled={pendingDates.length === 0}
-                >
-                    <Trash2 className="w-4 h-4 mr-1" /> Clear
-                </Button>
-                <Button variant="primary" className="flex-[2] dark:bg-primary dark:hover:bg-primary/90 dark:text-primary-text" onClick={handleBlockSelected} disabled={pendingDates.length === 0}>
-                    {pendingDates.length > 0 ? `Block ${pendingDates.length} Days` : 'Block Selected'}
-                </Button>
+             <div className="p-4 bg-surface border-t border-border space-y-3">
+                <div className="flex items-center justify-between px-1">
+                    <span className="text-[10px] text-muted font-black uppercase tracking-widest">Selected Days</span>
+                    <span className="text-primary font-black">{pendingDates.length}</span>
+                </div>
+                <div className="flex gap-2">
+                    <Button 
+                        variant="secondary" 
+                        className="flex-1 rounded-xl h-12 font-black uppercase tracking-widest text-[10px]" 
+                        onClick={() => { setPendingDates([]); setRangeAnchor(null); }} 
+                        disabled={pendingDates.length === 0 || isSubmitting}
+                    >
+                        Clear
+                    </Button>
+                    <Button 
+                        variant="primary" 
+                        className="flex-[2] rounded-xl h-12 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20" 
+                        onClick={handleBlockSelected} 
+                        disabled={pendingDates.length === 0 || isSubmitting}
+                    >
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Block Selection'}
+                    </Button>
+                </div>
             </div>
           </div>
 

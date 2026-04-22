@@ -30,6 +30,7 @@ export interface OrderItem {
 export interface Order {
     id: number;
     publicId?: string;
+    clientId?: number;
     clientName: string;
     phone: string;
     email: string;

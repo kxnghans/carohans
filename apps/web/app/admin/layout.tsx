@@ -5,11 +5,12 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Icons } from '../lib/icons';
 import { Button } from '../components/ui/Button';
-import { CalendarModal } from '../components/modals/CalendarModal';
 import { ContactModal } from '../components/modals/ContactModal';
 import { ClientSelector } from '../components/modals/ClientSelector';
 import { NotificationToast } from '../components/common/NotificationToast';
 import { MobileNav } from '../components/layout/MobileNav';
+import { BugReportModal } from '../components/modals/BugReportModal';
+import { CalendarModal } from '../components/modals/CalendarModal';
 import { useAppStore } from '../context/AppContext';
 import { Client } from '../types';
 
@@ -29,9 +30,10 @@ export default function AdminLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { logout, theme, setTheme, clients, setPortalFormData } = useAppStore();
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isClientSelectorOpen, setIsClientSelectorOpen] = useState(false);
+  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const {
     LayoutDashboard,
@@ -43,7 +45,8 @@ export default function AdminLayout({
     ExternalLink,
     Menu,
     Info,
-    Shield
+    Shield,
+    Bug
   } = Icons;
 
   const cycleTheme = () => {
@@ -142,6 +145,7 @@ export default function AdminLayout({
                 />
             )}
             <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
+            <BugReportModal isOpen={isBugReportOpen} onClose={() => setIsBugReportOpen(false)} />
             <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} />
 
             {/* THEME TOGGLE (Always Visible) */}
@@ -209,6 +213,7 @@ export default function AdminLayout({
             { label: 'Client Portal', icon: ExternalLink, onClick: () => setIsClientSelectorOpen(true) },
             { label: 'Contact Business', icon: Phone, onClick: () => setIsContactOpen(true) },
             { label: 'Block Calendar', icon: CalendarIcon, onClick: () => setIsCalendarOpen(true) },
+            { label: 'Report a Bug', icon: Bug, onClick: () => setIsBugReportOpen(true) },
         ]}
         footer={
             <button

@@ -37,6 +37,7 @@ export default function AdminOverviewPage() {
   const [dashboardOrders, setDashboardOrders] = useState<Order[]>([]);
   const [showSlicers, setShowSlicers] = useState(false);
   const [rangeModalType, setRangeModalType] = useState<'pickup' | 'return' | null>(null);
+  const [currentLimit, setCurrentLimit] = useState(25);
 
   const statusOptions = [
     { value: 'All', label: 'ALL' },
@@ -94,7 +95,7 @@ export default function AdminOverviewPage() {
     const fetchOrders = async () => {
         setIsSearching(true);
         try {
-            const results = await searchOrders(searchQuery, filters, 25);
+            const results = await searchOrders(searchQuery, filters, currentLimit);
             setDashboardOrders(results);
         } catch (e) { 
             console.error("Search failed:", e); 
@@ -110,7 +111,7 @@ export default function AdminOverviewPage() {
         };
     }
     return undefined;
-  }, [searchQuery, filters, mounted, showNotification]);
+  }, [searchQuery, filters, mounted, showNotification, currentLimit]);
 
   const metrics = useMemo(() => calculateMetrics(orders), [orders]);
 
@@ -348,15 +349,30 @@ export default function AdminOverviewPage() {
                     </Button>
                 </div>
             ) : (
-                <OrderTable 
-                  orders={dashboardOrders} 
-                  inventory={inventory} 
-                  isAdmin={true} 
-                  onUpdateStatus={handleUpdateStatus} 
-                  onViewInvoice={handleViewInvoice}
-                  sortConfig={null}
-                  requestSort={() => {}}
-                />
+                <>
+                  <OrderTable 
+                    orders={dashboardOrders} 
+                    inventory={inventory} 
+                    isAdmin={true} 
+                    onUpdateStatus={handleUpdateStatus} 
+                    onViewInvoice={handleViewInvoice}
+                    sortConfig={null}
+                    requestSort={() => {}}
+                  />
+
+                  {/* LOAD MORE BUTTON */}
+                  {dashboardOrders.length >= currentLimit && currentLimit < 200 && (
+                      <div className="flex justify-center pt-8 pb-12">
+                          <Button 
+                              variant="secondary" 
+                              className="px-10 h-11 rounded-2xl shadow-sm hover:shadow-md transition-all border-border bg-surface text-theme-body font-semibold"
+                              onClick={() => setCurrentLimit(prev => Math.min(prev + 25, 200))}
+                          >
+                              <Icons.ChevronDown className="w-4 h-4 mr-2" /> View More History
+                          </Button>
+                      </div>
+                  )}
+                </>
             )}
           </div>
         </>

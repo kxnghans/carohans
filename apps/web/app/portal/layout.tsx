@@ -8,6 +8,7 @@ import { useAppStore } from '../context/AppContext';
 import { InventoryItem } from '../types';
 import { InvoiceModal, DiscountInfo } from '../components/modals/InvoiceModal';
 import { ContactModal } from '../components/modals/ContactModal';
+import { BugReportModal } from '../components/modals/BugReportModal';
 import { NotificationToast } from '../components/common/NotificationToast';
 import { ScrollableContainer } from '../components/common/ScrollableContainer';
 import { MobileNav } from '../components/layout/MobileNav';
@@ -31,8 +32,9 @@ export default function PortalLayout({
   const { cart, portalFormData, submitOrder, showNotification, logout, user, userRole, theme, setTheme, modifyingOrderId, cancelModification } = useAppStore();
   const [showInvoice, setShowInvoice] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
+  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { Package, ClipboardList, User, ShoppingCart, LogOut, Phone, LayoutDashboard, X, Menu, Info } = Icons;
+  const { Package, ClipboardList, User, ShoppingCart, LogOut, Phone, LayoutDashboard, X, Menu, Info, Bug } = Icons;
 
   const cycleTheme = () => {
     if (theme === 'system') setTheme('light');
@@ -77,7 +79,7 @@ export default function PortalLayout({
           showNotification("Planned return date cannot be earlier than the pickup date.", "error");
           return;
       }
-      
+
       if (missing.length > 0) {
           showNotification(`Please provide: ${missing.join(', ')}`, 'error');
       } else if (cart.length === 0) {
@@ -180,6 +182,7 @@ export default function PortalLayout({
                </button>
 
                <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
+               <BugReportModal isOpen={isBugReportOpen} onClose={() => setIsBugReportOpen(false)} />
 
                {/* THEME TOGGLE (Always Visible) */}
                <button 
@@ -279,6 +282,7 @@ export default function PortalLayout({
           navItems={[...navItems, { href: '/portal/help', label: 'Help', icon: Info }]}
           actions={[
               { label: 'Contact Business', icon: Phone, onClick: () => setIsContactOpen(true) },
+              { label: 'Report a Bug', icon: Bug, onClick: () => setIsBugReportOpen(true) },
               ...(userRole === 'admin' ? [{ label: 'Admin Dashboard', icon: LayoutDashboard, onClick: () => router.push('/admin/overview') }] : []),
           ]}
           footer={

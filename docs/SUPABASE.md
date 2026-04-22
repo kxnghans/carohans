@@ -6,9 +6,34 @@
 
 ---
 
-## 1. Database Schema
+## 1. Dual-Project Architecture
 
-### 1.1 `profiles` Table
+To ensure operational isolation, security, and data integrity, the CaroHans Ventures ERMS utilizes two independent Supabase projects:
+
+### 1.1 Primary ERMS Project (`yyelfynriosztsellphi`)
+*   **Role:** The core business engine.
+*   **Data:** Handles all production data (Inventory, Clients, Orders, Authentication, Financials).
+*   **Performance:** Optimized for low-latency queries and real-time updates for the Admin Dashboard and Client Portal.
+*   **Schema:** Defined in `docs/backend.md`.
+
+### 1.2 Bug Reporting & Monitoring Project (`tsdbcatbcixdokdhxhxj`)
+*   **Role:** Dedicated monitoring and debugging repository.
+*   **Data:** Stores application error logs, bug reports, system health metrics, and user feedback.
+*   **Isolation:** Prevents high-volume error logging from impacting the performance or connection pool of the primary business database.
+*   **IMMUTABLE SCHEMA:** This project's schema is managed independently and **MUST NOT** be modified by the ERMS project. Any changes to the ERMS application must strictly adhere to the existing table structures in this monitoring database to avoid breaking reporting workflows.
+
+#### 1.2.1 Core Monitoring Schema (Immutable)
+*   **`public.bug_reports`**: Main repository for application failures and user feedback.
+    *   `id`, `app_id`, `email`, `first_name`, `last_name`, `description`, `severity`, `status`.
+*   **`public.contacts`**: Handles general inquiries and portal support requests.
+    *   `id`, `email`, `phone`, `message`, `type`, `status`, `first_name`, `last_name`, `source`, `app_id`.
+*   **`public.sync_metadata`**: Tracking for synchronization operations between projects.
+
+---
+
+## 2. Database Schema (Primary Project)
+
+### 2.1 `profiles` Table
 Manages user roles and system access.
 *   `id`: `uuid` (References `auth.users.id`)
 *   `role`: `text` (Allowed: `admin`, `client`)

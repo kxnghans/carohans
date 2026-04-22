@@ -62,6 +62,14 @@ export const getStatusDescription = (status: string) => {
   }
 };
 
+export const getSimplifiedStatus = (status: string) => {
+  switch (status) {
+    case 'Late': return 'Active';
+    case 'Settlement': return 'Pending';
+    default: return status;
+  }
+};
+
 export const getReturnStatusColor = (status: string | undefined) => {
   switch (status) {
     case 'Early': return 'bg-accent-primary text-white border-accent-primary dark:bg-accent-primary dark:text-background dark:border-accent-primary shadow-sm';

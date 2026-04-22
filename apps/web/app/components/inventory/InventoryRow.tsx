@@ -195,14 +195,19 @@ export const InventoryRow = ({
 
             <td className="p-4 text-right">
                 <span 
-                    className={`inline-block px-2.5 py-1 rounded-full text-theme-label font-semibold border ${
+                    title={isAdmin ? 
+                        ((item.availableStock ?? item.stock) <= 0 ? "No stock available" : 
+                         (item.availableStock ?? item.stock) < item.stock ? "Partially booked" : "Full stock available") :
+                        ((item.availableStock ?? item.stock) <= 0 ? "Out of stock" : "Available")
+                    }
+                    className={`inline-block px-2.5 py-1 rounded-full text-theme-label font-semibold border transition-colors ${
                         (item.availableStock ?? item.stock) <= 0 
                         ? 'bg-error/10 text-error border-error/20' 
-                        : (!isAdmin && (item.availableStock ?? item.stock) > 0)
-                            ? 'bg-success/10 text-success border-success/20'
+                        : (!isAdmin)
+                            ? 'bg-success/10 text-success border-success/20' // Portal: Binary (Green if > 0)
                             : (item.availableStock ?? item.stock) < item.stock 
-                                ? 'bg-warning/10 text-warning border-warning/20'
-                                : 'bg-success/10 text-success border-success/20'
+                                ? 'bg-warning/10 text-warning border-warning/20' // Admin: Partial (Yellow)
+                                : 'bg-success/10 text-success border-success/20' // Admin: Full (Green)
                     }`}
                 >
                     {item.availableStock ?? item.stock}

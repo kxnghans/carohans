@@ -97,6 +97,22 @@ export default function PortalHelpPage() {
                     content: `Late penalties of ${formatCurrency(latePenaltyPerDay)} apply daily if gear is not returned on time, unless a modification request is sent and approved.`
                 }
             ]
+        },
+        {
+            title: "Support & Feedback",
+            icon: Icons.HelpCircle,
+            color: "text-primary",
+            bg: "bg-primary/10",
+            items: [
+                {
+                    label: "Reporting Issues",
+                    content: "Encountered a bug or have feedback? Use the 'Contact' page or reporting tools. All reports are logged securely in our monitoring system."
+                },
+                {
+                    label: "Response Time",
+                    content: "Our team reviews all logs daily to ensure system stability and address any user experience obstacles."
+                }
+            ]
         }
     ];
 

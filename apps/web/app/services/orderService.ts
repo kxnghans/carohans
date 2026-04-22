@@ -301,6 +301,7 @@ export const searchOrders = async (
 
     interface OrderRow {
         id: number;
+        client_id: number;
         client_name: string;
         phone: string;
         email: string;
@@ -324,6 +325,7 @@ export const searchOrders = async (
     return (data as OrderRow[] || []).map((o) => ({
         id: o.id,
         publicId: encodeOrderId(o.id),
+        clientId: o.client_id,
         clientName: o.client_name,
         phone: o.phone,
         email: o.email,
@@ -378,6 +380,7 @@ export const getOrderDetails = async (orderId: number): Promise<Order | null> =>
     return {
         id: data.id,
         publicId: encodeOrderId(data.id),
+        clientId: data.client_id,
         clientName: data.client_name || data.client_id || '',
         phone: data.phone || '',
         email: data.email || '',

@@ -326,18 +326,36 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string | null
+          email: string | null
+          first_name: string | null
           id: string
+          last_name: string | null
+          phone: string | null
           role: string
+          updated_at: string | null
+          username: string | null
         }
         Insert: {
           created_at?: string | null
+          email?: string | null
+          first_name?: string | null
           id: string
+          last_name?: string | null
+          phone?: string | null
           role: string
+          updated_at?: string | null
+          username?: string | null
         }
         Update: {
           created_at?: string | null
+          email?: string | null
+          first_name?: string | null
           id?: string
+          last_name?: string | null
+          phone?: string | null
           role?: string
+          updated_at?: string | null
+          username?: string | null
         }
         Relationships: []
       }
@@ -377,37 +395,31 @@ export type Database = {
           }
       get_email_for_login: { Args: { login_input: string }; Returns: string }
       is_admin: { Args: never; Returns: boolean }
-      process_order_return:
-        | {
-            Args: {
-              p_amount_paid: number
-              p_closed_at: string
-              p_item_integrity: string
-              p_items: Json
-              p_order_id: number
-              p_penalty_amount: number
-              p_return_status: string
-              p_status: string
-              p_total_amount: number
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_amount_paid: number
-              p_closed_at: string
-              p_item_integrity: string
-              p_items: Json
-              p_order_id: number
-              p_penalty_amount: number
-              p_return_status: string
-              p_status: string
-              p_total_amount: number
-            }
-            Returns: undefined
-          }
+      process_order_return: {
+        Args: {
+          p_amount_paid: number
+          p_closed_at: string
+          p_discount_code?: string
+          p_discount_name?: string
+          p_discount_type?: Database["public"]["Enums"]["discount_value_type"]
+          p_discount_value?: number
+          p_item_integrity: string
+          p_items: Json
+          p_order_id: number
+          p_penalty_amount: number
+          p_return_status: string
+          p_status: string
+          p_total_amount: number
+        }
+        Returns: undefined
+      }
       search_orders: {
-        Args: { p_filters?: Json; p_limit?: number; p_search_term?: string }
+        Args: {
+          p_exact_id?: number
+          p_filters?: Json
+          p_limit?: number
+          p_search_term?: string
+        }
         Returns: {
           amount_paid: number
           client_id: number
@@ -415,11 +427,12 @@ export type Database = {
           closed_at: string
           deposit_paid: boolean
           discount_name: string
-          discount_type: string
+          discount_type: Database["public"]["Enums"]["discount_value_type"]
           discount_value: number
           email: string
           end_date: string
           id: number
+          item_count: number
           item_integrity: string
           penalty_amount: number
           phone: string
@@ -429,38 +442,26 @@ export type Database = {
           total_amount: number
         }[]
       }
-      submit_order:
-        | {
-            Args: {
-              p_client_id: number
-              p_client_name: string
-              p_email: string
-              p_end_date: string
-              p_items: Json
-              p_order_id?: number
-              p_phone: string
-              p_start_date: string
-              p_total_amount: number
-            }
-            Returns: number
-          }
-        | {
-            Args: {
-              p_client_id: number
-              p_client_name: string
-              p_email: string
-              p_end_date: string
-              p_items: Json
-              p_order_id?: number
-              p_phone: string
-              p_start_date: string
-              p_total_amount: number
-            }
-            Returns: number
-          }
+      submit_order: {
+        Args: {
+          p_client_id: number
+          p_client_name: string
+          p_email: string
+          p_end_date: string
+          p_items: Json
+          p_order_id?: number
+          p_phone: string
+          p_start_date: string
+          p_total_amount: number
+        }
+        Returns: number
+      }
     }
     Enums: {
-      [_ in never]: never
+      approval_strategy_type: "auto" | "manual"
+      discount_duration_type: "one_time" | "period" | "unlimited"
+      discount_value_type: "fixed" | "percentage"
+      promotion_status: "active" | "expired" | "upcoming"
     }
     CompositeTypes: {
       [_ in never]: never

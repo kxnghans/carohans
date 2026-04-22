@@ -48,6 +48,7 @@ export const InventoryTable = ({
 }: InventoryTableProps) => {
   const { Plus, Search, X } = Icons;
   const [searchQuery, setSearchQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(50);
   const [editingCell, setEditingCell] = useState<{ id: number, field: string } | null>(null);
   const [editValue, setEditValue] = useState<string | number | undefined>(undefined);
   const [showDiscardWarning, setShowDiscardWarning] = useState(false);
@@ -91,12 +92,22 @@ export const InventoryTable = ({
     return sortableItems;
   }, [filteredData, sortConfig]);
 
+  const paginatedData = useMemo(() => {
+      return sortedData.slice(0, visibleCount);
+  }, [sortedData, visibleCount]);
+
+  const handleViewMore = () => {
+    setVisibleCount(prev => {
+        if (prev < 200) return prev + 50;
+        return prev + 20;
+    });
+  };
+
   const requestSort = (key: keyof InventoryItem) => {
     if (sortConfig && sortConfig.key === key) {
       if (sortConfig.direction === 'asc') {
         setSortConfig({ key, direction: 'desc' });
       } else {
-        // Return to manual sort
         setSortConfig({ key: 'sortOrder', direction: 'asc' });
       }
     } else {
@@ -110,12 +121,9 @@ export const InventoryTable = ({
   }, [data]);
 
   useEffect(() => {
-    if (!isEditMode) {
-        const timer = setTimeout(() => setDeleteMode('ask'), 0);
-        return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [isEditMode]);
+    const saved = sessionStorage.getItem('inventory_delete_pref');
+    if (saved === 'auto') setDeleteMode('auto');
+  }, []);
 
   const startEditing = (id: number, field: string, value: string | number) => {
     if (!isAdmin || !isEditMode) return;
@@ -143,22 +151,17 @@ export const InventoryTable = ({
   const handleAddItem = (index: number) => {
     if (!setInventory || !isEditMode) return;
     
-    // Calculate new sortOrder based on neighbors in sortedData
     let newSortOrder: number;
     const prevItem = sortedData[index];
     const nextItem = sortedData[index + 1];
 
     if (!prevItem && !nextItem) {
-        // Empty table
         newSortOrder = 10;
     } else if (!prevItem) {
-        // Insert at very top
         newSortOrder = (nextItem?.sortOrder || 10) / 2;
     } else if (!nextItem) {
-        // Insert at very bottom
         newSortOrder = prevItem.sortOrder + 10;
     } else {
-        // Insert between two items
         newSortOrder = (prevItem.sortOrder + nextItem.sortOrder) / 2;
     }
 
@@ -177,10 +180,7 @@ export const InventoryTable = ({
         isNew: true
       };
       
-      // We want to insert it in the right place in the state array too, 
-      // although the sortOrder will handle the visual positioning on next render.
       const newData = [...prev];
-      // Find the index in the original array that matches the visual position
       const stateIndex = prev.findIndex(item => item.id === (prevItem?.id || nextItem?.id));
       const finalInsertIndex = !prevItem ? 0 : stateIndex + 1;
       
@@ -205,7 +205,6 @@ export const InventoryTable = ({
            } else {
                setInventory((prev) => prev.map((i) => {
                    if (i.id === currentItem.id) {
-                       // eslint-disable-next-line @typescript-eslint/no-unused-vars
                        const { isNew, ...rest } = i as TableItem; 
                        return rest as InventoryItem; 
                    }
@@ -229,6 +228,7 @@ export const InventoryTable = ({
           onDelete(pendingDeleteId);
           if (autoAcceptSession) {
               setDeleteMode('auto');
+              sessionStorage.setItem('inventory_delete_pref', 'auto');
           }
           setPendingDeleteId(null);
       }
@@ -263,72 +263,75 @@ export const InventoryTable = ({
             )}
         </div>
         <p className="text-theme-caption text-muted font-medium">
-            Showing {filteredData.length} of {data.length} items
+            Showing {Math.min(visibleCount, filteredData.length)} of {filteredData.length} items
         </p>
     </div>
-    <ScrollableContainer className="mb-8">
+    <ScrollableContainer className="mb-8 overflow-visible">
       <table className="w-full text-left border-collapse min-w-[1000px]">
-        <thead><tr className="bg-background/50 border-b border-border">
-            <th
-              className="p-4 pl-6 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] cursor-pointer group hover:bg-surface transition-colors"
-              onClick={() => requestSort('name')}
-            >
-              <div className="flex items-center">
-                <div className="w-12 shrink-0" />
-                <div className="ml-4 flex items-center gap-2">
-                  Item Details
-                  <SortIcon column="name" sortConfig={sortConfig} />
-                </div>
-              </div>
-            </th>
-            <th
-              className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] cursor-pointer group hover:bg-surface transition-colors"
-              onClick={() => requestSort('category')}
-            >
-              <div className="flex items-center gap-2">
-                Category
-                <SortIcon column="category" sortConfig={sortConfig} />
-              </div>
-            </th>
-            <th
-              className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
-              onClick={() => requestSort('price')}
-            >
-              <div className="flex items-center justify-end gap-2">
-                Daily Rate
-                <SortIcon column="price" sortConfig={sortConfig} />
-              </div>
-            </th>
-            <th
-              className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
-              onClick={() => requestSort('replacementCost')}
-            >
-              <div className="flex items-center justify-end gap-2">
-                Replacement Cost
-                <SortIcon column="replacementCost" sortConfig={sortConfig} />
-              </div>
-            </th>
-            {isAdmin && (
-              <th
-                className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
-                onClick={() => requestSort('stock')}
-              >
-                <div className="flex items-center justify-end gap-2">
-                  Total Stock
-                  <SortIcon column="stock" sortConfig={sortConfig} />
-                </div>
-              </th>
-            )}
-            <th
-              className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right"
-              title="Real-time availability based on selected dates (or today if none selected)"
-            >
-              Available
-            </th>
-            {showOrderColumn && <th className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right">Order</th>}
-            {isEditMode && <th className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-left pr-6">Action</th>}
-          </tr></thead>
-        <tbody className="divide-y divide-border">{sortedData.map((item, index) => (
+        <thead className="sticky top-0 z-20 bg-surface/95 backdrop-blur-md shadow-sm">
+            <tr className="border-b border-border">
+                <th
+                  className="p-4 pl-6 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] cursor-pointer group hover:bg-surface transition-colors"
+                  onClick={() => requestSort('name')}
+                >
+                  <div className="flex items-center">
+                    <div className="w-12 shrink-0" />
+                    <div className="ml-4 flex items-center gap-2">
+                      Item Details
+                      <SortIcon column="name" sortConfig={sortConfig} />
+                    </div>
+                  </div>
+                </th>
+                <th
+                  className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] cursor-pointer group hover:bg-surface transition-colors"
+                  onClick={() => requestSort('category')}
+                >
+                  <div className="flex items-center gap-2">
+                    Category
+                    <SortIcon column="category" sortConfig={sortConfig} />
+                  </div>
+                </th>
+                <th
+                  className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
+                  onClick={() => requestSort('price')}
+                >
+                  <div className="flex items-center justify-end gap-2">
+                    Daily Rate
+                    <SortIcon column="price" sortConfig={sortConfig} />
+                  </div>
+                </th>
+                <th
+                  className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
+                  onClick={() => requestSort('replacementCost')}
+                >
+                  <div className="flex items-center justify-end gap-2">
+                    Replacement Cost
+                    <SortIcon column="replacementCost" sortConfig={sortConfig} />
+                  </div>
+                </th>
+                {isAdmin && (
+                  <th
+                    className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right cursor-pointer group hover:bg-surface transition-colors"
+                    onClick={() => requestSort('stock')}
+                  >
+                    <div className="flex items-center justify-end gap-2">
+                      Total Stock
+                      <SortIcon column="stock" sortConfig={sortConfig} />
+                    </div>
+                  </th>
+                )}
+                <th
+                  className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right"
+                  title="Real-time availability based on selected dates (or today if none selected)"
+                >
+                  Available
+                </th>
+                {showOrderColumn && <th className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-right">Order</th>}
+                {isEditMode && <th className="p-4 text-theme-caption font-semibold text-muted uppercase tracking-[0.15em] text-left pr-6">Action</th>}
+            </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+          {paginatedData.map((item, index) => (
               <React.Fragment key={item.id}>
                 <InventoryRow 
                     item={item}
@@ -369,7 +372,7 @@ export const InventoryTable = ({
               </React.Fragment>
           ))}
           
-          {isAdmin && isEditMode && isManualSort && (
+          {isAdmin && isEditMode && isManualSort && sortedData.length <= visibleCount && (
              <tr 
                 onClick={() => handleAddItem(sortedData.length - 1)}
                 className="group cursor-pointer border-t border-dashed border-border hover:bg-primary/5 transition-all h-[73px]"
@@ -386,6 +389,18 @@ export const InventoryTable = ({
           )}
         </tbody>
       </table>
+
+      {sortedData.length > visibleCount && (
+          <div className="p-8 flex justify-center border-t border-border bg-background/20">
+              <button 
+                  onClick={handleViewMore}
+                  className="group flex items-center gap-3 px-8 py-3 bg-surface border-2 border-primary/20 rounded-2xl text-primary font-black uppercase tracking-widest text-xs hover:bg-primary hover:text-primary-text hover:border-primary transition-all shadow-lg shadow-primary/5 active:scale-95"
+              >
+                  <Plus className="w-4 h-4 transition-transform group-hover:rotate-90" />
+                  View More ({sortedData.length - visibleCount} remaining)
+              </button>
+          </div>
+      )}
     </ScrollableContainer>
 
     <ConfirmDialog 

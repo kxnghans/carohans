@@ -67,6 +67,8 @@ out
 core
 [Cc]onfig.local
 [Ll]ocal.settings.json
+helper.js
+all_schema.sql
 
 # Temporary / Assets
 apps/web/image.png

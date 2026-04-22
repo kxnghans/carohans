@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, Fragment } from 'react';
+import { useState, Fragment, useMemo } from 'react';
 import { Icons } from '../../lib/icons';
-import { getStatusColor, getStatusDescription, formatCurrency, formatDate, getDurationDays, calculateOrderTotal, getIconStyle } from '../../utils/helpers';
+import { getStatusColor, getStatusDescription, formatCurrency, formatDate, getDurationDays, calculateOrderTotal, getIconStyle, getSimplifiedStatus } from '../../utils/helpers';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Order, InventoryItem } from '../../types';
@@ -47,11 +47,12 @@ export const OrderTable = ({
     sortConfig,
     requestSort
 }: OrderTableProps) => {
-    const { ChevronRight, Printer, Undo, Truck, ReturnIcon, Pencil } = Icons;
+    const { ChevronRight, Printer, Undo, Truck, ReturnIcon, Pencil, Plus } = Icons;
     const { setModifyingOrderId, setCart, setPortalFormData, showNotification, setOrders, latePenaltyPerDay } = useAppStore();
     const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
     const [statusEditOrder, setStatusEditOrder] = useState<Order | null>(null);
     const [selectedStatus, setSelectedStatus] = useState<string>('');
+    const [visibleCount, setVisibleCount] = useState(50);
     
     interface OrderItemRow {
         inventory_id: number;
@@ -67,7 +68,6 @@ export const OrderTable = ({
         order_items: OrderItemRow[];
     }
 
-    // Local state for lazy-loaded items
     const [lazyOrderItems, setLazyOrderItems] = useState<Record<number, { 
         inventoryId: number; 
         qty: number; 
@@ -79,6 +79,17 @@ export const OrderTable = ({
 
     const router = useRouter();
     const statuses = ['Pending', 'Approved', 'Active', 'Late', 'Settlement', 'Completed', 'Rejected', 'Canceled'];
+
+    const paginatedOrders = useMemo(() => {
+        return orders.slice(0, visibleCount);
+    }, [orders, visibleCount]);
+
+    const handleViewMore = () => {
+        setVisibleCount(prev => {
+            if (prev < 200) return prev + 50;
+            return prev + 20;
+        });
+    };
 
     const toggleExpand = (orderId: number) => {
         if (expandedOrderId === orderId) {
@@ -244,11 +255,11 @@ export const OrderTable = ({
 
     return (
         <>
-        <Card noPadding className="overflow-hidden border-border shadow-sm">
+        <Card noPadding className="overflow-visible border-border shadow-sm">
             <ScrollableContainer>
                 <table className="w-full text-left border-collapse min-w-[800px]">
-                    <thead>
-                        <tr className="border-b border-border bg-background/50 text-theme-caption">
+                    <thead className="sticky top-0 z-20 bg-surface/95 backdrop-blur-md shadow-sm">
+                        <tr className="border-b border-border text-theme-caption">
                             <th className="p-4 pl-6 text-theme-body text-muted uppercase tracking-widest cursor-pointer hover:bg-surface transition-colors" onClick={() => requestSort('id')}>
                                 <div className="flex items-center gap-2">Order ID <SortIcon column="id" sortConfig={sortConfig} /></div>
                             </th>
@@ -267,7 +278,7 @@ export const OrderTable = ({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                        {orders.map((order) => {
+                        {paginatedOrders.map((order) => {
                             const isExpanded = expandedOrderId === order.id;
                             return (
                                 <Fragment key={order.id}>
@@ -285,7 +296,16 @@ export const OrderTable = ({
                                                 <span className="text-theme-body-bold text-foreground">{order.publicId || encodeOrderId(order.id)}</span>
                                             </div>
                                         </td>
-                                        <td className="p-4 text-center"><div className="flex flex-col items-center gap-1"><span title={getStatusDescription(order.status)} className={`text-theme-body px-3 py-1 rounded-full border-2 ${getStatusColor(order.status)} uppercase tracking-tighter shadow-sm inline-block min-w-[95px] cursor-help font-semibold`}>{order.status}</span></div></td>
+                                        <td className="p-4 text-center">
+                                            <div className="flex flex-col items-center gap-1">
+                                                <span 
+                                                    title={getStatusDescription(order.status)} 
+                                                    className={`text-theme-body px-3 py-1 rounded-full border-2 ${getStatusColor(isAdmin ? order.status : getSimplifiedStatus(order.status))} uppercase tracking-tighter shadow-sm inline-block min-w-[95px] cursor-help font-semibold`}
+                                                >
+                                                    {isAdmin ? order.status : getSimplifiedStatus(order.status)}
+                                                </span>
+                                            </div>
+                                        </td>
                                         <td className="p-4 text-theme-body text-muted"><div className="hidden sm:block">{formatDate(order.startDate)} - {formatDate(order.closedAt || order.endDate)}</div><div className="sm:hidden flex flex-col items-start w-max"><span>{formatDate(order.startDate)}</span><span className="w-full text-center leading-none my-0.5">-</span><span>{formatDate(order.closedAt || order.endDate)}</span></div></td>
                                         {isAdmin && (
                                             <td className="p-4 text-center">
@@ -421,10 +441,8 @@ export const OrderTable = ({
                                                                     );
                                                                 })}
                                                                 
-                                                                {/* PENALTY & DISCOUNT SECTION */}
                                                                 {(order.penaltyAmount ?? 0) > 0 && (
                                                                     <>
-                                                                        {/* HEADER: LOST & DAMAGED */}
                                                                         <tr className="bg-background border-y border-border text-theme-body text-muted uppercase tracking-widest">
                                                                             <th colSpan={3} className="p-3 pl-6">Lost and Damaged Penalties</th>
                                                                             <th className="p-3 text-right">Qty</th>
@@ -486,7 +504,6 @@ export const OrderTable = ({
                                                                                 return rows;
                                                                             });
                                                                         })()}
-                                                                        {/* HEADER: LATE PENALTIES */}
                                                                         <tr className="bg-background border-y border-border text-theme-body text-muted uppercase tracking-widest">
                                                                             <th colSpan={3} className="p-3 pl-6">Late Penalties</th>
                                                                             <th className="p-3 text-right">Days Late</th>
@@ -516,7 +533,6 @@ export const OrderTable = ({
                                                                     </>
                                                                 )}
 
-                                                                {/* DISCOUNT SECTION - ADMIN ONLY */}
                                                                 {isAdmin && (
                                                                     <tr className="border-t border-border">
                                                                         <td colSpan={7} className="p-0">
@@ -525,15 +541,14 @@ export const OrderTable = ({
                                                                                 onApply={(form) => handleApplySync(order, form)} 
                                                                                 onClear={() => handleClearDiscount(order)} 
                                                                                 variant="compact" 
-                                                                                                                                initialDiscount={{ name: order.discountName || '', type: order.discountType as 'fixed' | 'percentage' || 'fixed', value: order.discountValue || 0, code: '' }} 
-                                                                                                                                isConfirmedInitial={!!order.discountName}
-                                                                                                                                showNotification={showNotification} 
-                                                                                                                                readOnly={['Completed', 'Settlement', 'Rejected', 'Canceled'].includes(order.status)}
-                                                                                                                            />
-                                                                                                                        </td>
-                                                                                                                    </tr>
-                                                                                                                )}
-                                                                {/* GRAND TOTAL ROW */}
+                                                                                initialDiscount={{ name: order.discountName || '', type: order.discountType as 'fixed' | 'percentage' || 'fixed', value: order.discountValue || 0, code: '' }} 
+                                                                                isConfirmedInitial={!!order.discountName}
+                                                                                showNotification={showNotification} 
+                                                                                readOnly={['Completed', 'Settlement', 'Rejected', 'Canceled'].includes(order.status)}
+                                                                            />
+                                                                        </td>
+                                                                    </tr>
+                                                                )}
                                                                 <tr className="bg-background/50 border-t border-border">
                                                                     <td colSpan={7} className="p-4 md:p-6">
                                                                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -565,11 +580,9 @@ export const OrderTable = ({
                                                                     </td>
                                                                 </tr>
 
-                                                                {/* SUMMARY FOOTER ROW */}
                                                                 <tr className="bg-primary/5 dark:bg-white/5 border-t border-border">
                                                                     <td colSpan={7} className="p-6 md:p-8">
                                                                         <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-8">
-                                                                            {/* DATES WRAPPER (Left) */}
                                                                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-6 text-[10px] uppercase font-bold text-muted tracking-widest">
                                                                                 <div className="flex flex-col gap-1">
                                                                                     <span>Pickup Date</span>
@@ -621,6 +634,18 @@ export const OrderTable = ({
                         })}
                     </tbody>
                 </table>
+
+                {orders.length > visibleCount && (
+                    <div className="p-8 flex justify-center border-t border-border bg-background/20">
+                        <button 
+                            onClick={handleViewMore}
+                            className="group flex items-center gap-3 px-8 py-3 bg-surface border-2 border-primary/20 rounded-2xl text-primary font-black uppercase tracking-widest text-xs hover:bg-primary hover:text-primary-text hover:border-primary transition-all shadow-lg shadow-primary/5 active:scale-95"
+                        >
+                            <Plus className="w-4 h-4 transition-transform group-hover:rotate-90" />
+                            View More ({orders.length - visibleCount} remaining)
+                        </button>
+                    </div>
+                )}
             </ScrollableContainer>
         </Card>
 
