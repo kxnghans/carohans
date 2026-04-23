@@ -19,6 +19,10 @@
 - [ ] Verification & Stability <!-- id: 13 -->
   - [ ] Apply New Migrations to Supabase (if connectivity allows) <!-- id: 18 -->
   - [ ] Final Stability Check (pnpm build) <!-- id: 17 -->
+- [ ] Cloudflare Build Fix & Middleware Migration <!-- id: 200 -->
+  - [x] Make Supabase client initialization resilient during build time <!-- id: 201 -->
+  - [x] Maintain `middleware.ts` (Next.js 16 `proxy.ts` is incompatible with current Cloudflare adapter) <!-- id: 202 -->
+  - [ ] Verify build stability locally (`pnpm build:pages`) <!-- id: 203 -->
 
 ## Completed Fixes
 - [x] Investigate `DataContext.tsx` and `settingsService.ts` for error handling <!-- id: 0 -->
