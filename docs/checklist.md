@@ -18,11 +18,12 @@
   - [x] Verify `inventoryService.ts` usage of `get_available_stock` <!-- id: 107 -->
 - [ ] Verification & Stability <!-- id: 13 -->
   - [ ] Apply New Migrations to Supabase (if connectivity allows) <!-- id: 18 -->
-  - [ ] Final Stability Check (pnpm build) <!-- id: 17 -->
-- [ ] Cloudflare Build Fix & Middleware Migration <!-- id: 200 -->
-  - [x] Make Supabase client initialization resilient during build time (Fix @supabase/ssr empty string error) <!-- id: 201 -->
-  - [x] Maintain `middleware.ts` (Next.js 16 `proxy.ts` is incompatible with current Cloudflare adapter) <!-- id: 202 -->
+  - [x] Final Stability Check (pnpm build) <!-- id: 17 -->
+- [x] Cloudflare Build Fix & Middleware Maintenance <!-- id: 200 -->
+  - [x] Respect `GEMINI.md` directive: Do NOT rename `middleware.ts` to `proxy.ts` <!-- id: 204 -->
+  - [x] Fix `@supabase/ssr` build-time error in `supabase-bugs.ts` and ensure placeholders are robust <!-- id: 201 -->
   - [x] Verify build stability locally (`pnpm build:pages`) <!-- id: 203 -->
+  - [x] Ensure `middleware.ts` uses `experimental-edge` runtime as required <!-- id: 202 -->
 
 ## Completed Fixes
 - [x] Investigate `DataContext.tsx` and `settingsService.ts` for error handling <!-- id: 0 -->

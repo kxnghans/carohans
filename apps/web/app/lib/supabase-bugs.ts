@@ -15,6 +15,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
  * Public Supabase client for the bug reporting project.
  */
 export const supabaseBugs = createClient(
-  supabaseUrl || '',
-  supabaseAnonKey || ''
+  supabaseUrl || 'https://placeholder-bugs.supabase.co',
+  supabaseAnonKey || 'placeholder-key'
 );

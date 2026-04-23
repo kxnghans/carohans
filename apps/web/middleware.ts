@@ -32,8 +32,8 @@ export async function middleware(request: NextRequest) {
   })
 
   const supabase = createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
+    supabaseUrl || 'https://placeholder-url.supabase.co',
+    supabaseAnonKey || 'placeholder-key',
     {
       cookies: {
         get(name: string) {
