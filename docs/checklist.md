@@ -23,7 +23,12 @@
 - [ ] **Environment Variable Audit**: Finalize `NEXT_PUBLIC_` variable injection in the Cloudflare Dashboard to replace build-time placeholders.
 - [ ] **Successful Pages Build**: Achieve a clean `pnpm build:pages` execution without filesystem permission failures.
 
-### Phase 3: Final Deployment & Quality Assurance
+### Phase 3: Middleware & Edge Deep-Dive
+- [x] **Verify Middleware Edge Runtime**: Confirmed `apps/web/middleware.ts` correctly exports `runtime = 'experimental-edge'`.
+- [x] **Document Edge Constraints**: Added technical rationale to `docs/cloudflarepages.md`.
+- [x] **Analyze Proxy Migration Impact**: Corrected contradictions in `README.md` and `apps/web/README.md`; confirmed `middleware.ts` remains the current standard for Cloudflare compatibility.
+
+### Phase 4: Final Deployment & Quality Assurance
 - [ ] **Production Deployment**: Execute `pnpm pages:deploy` (or alias) to push the `.open-next` bundle to Cloudflare.
 - [ ] **End-to-End Authentication Check**: Verify middleware-redirect logic for Admin and Portal routes on the live domain.
 - [ ] **Real-time Verification**: Confirm Supabase real-time subscriptions are active for core inventory and order tables in the production build.

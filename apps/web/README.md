@@ -20,9 +20,8 @@ This is the main web application for the CaroHans Ventures Event Rental Manageme
 *   **Styling:** Tailwind CSS 4
 *   **Deployment:** Cloudflare Pages (OpenNext)
 
-## Migration to Proxy.ts
-
-In accordance with Next.js 16 conventions, the project has migrated from `middleware.ts` to `proxy.ts`. This file manages authentication and route protection at the edge.
+## Edge Middleware
+The project currently utilizes `middleware.ts` with the `experimental-edge` runtime. Although Next.js 16 deprecates this in favor of `proxy.ts`, we maintain the current convention to ensure compatibility with the Cloudflare adapter (`@opennextjs/cloudflare`).
 
 ## Development
 
