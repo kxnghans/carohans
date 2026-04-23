@@ -50,28 +50,14 @@ export default defineCloudflareConfig();
 
 ---
 
-## 3. Middleware to Proxy Migration
+## 3. Middleware Compatibility (CRITICAL)
 
-Next.js 16+ has deprecated the `middleware.ts` convention in favor of `proxy.ts`. This change clarifies that the logic runs at the Edge as a network boundary (Proxy) rather than standard application middleware.
+Next.js 16+ has deprecated the `middleware.ts` convention in favor of `proxy.ts`. However, based on the foundational mandates in `GEMINI.md`, we **must not** perform this migration yet.
 
 ### 3.1 Migration Status
-*   **Current File:** `apps/web/middleware.ts` (Active, but triggers deprecation warnings).
-*   **Recommended Action:** Rename to `proxy.ts` and update the function name to `proxy`.
-
-### 3.2 Manual Migration Steps
-1. Rename `apps/web/middleware.ts` to `apps/web/proxy.ts`.
-2. Update the export:
-   ```typescript
-   // FROM
-   export function middleware(request: NextRequest) { ... }
-   // TO
-   export function proxy(request: NextRequest) { ... }
-   ```
-
-Alternatively, use the Next.js codemod:
-```bash
-npx @next/codemod@canary middleware-to-proxy .
-```
+*   **Current File:** `apps/web/middleware.ts` (Active).
+*   **Constraint:** The Cloudflare adapter (`@opennextjs/cloudflare`) currently requires the `middleware.ts` convention with `export const runtime = 'experimental-edge'` to function correctly in the production environment.
+*   **Action:** Ignore build-time deprecation warnings. Do **not** rename the file or refactor the export until the adapter provides official support for `proxy.ts`.
 
 ---
 

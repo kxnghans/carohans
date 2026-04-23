@@ -1,32 +1,29 @@
-# Backend Implementation & Integration Checklist
+# CaroHans Ventures ERMS: Execution & Context Tracker
 
-- [x] Investigate `docs/backend.md` vs current schema <!-- id: 5 -->
-- [x] Implement missing RPCs (Local SQL Migration) <!-- id: 6 -->
-  - [x] `get_email_for_login` <!-- id: 7 -->
-  - [x] `search_orders` <!-- id: 8 -->
-  - [x] `process_order_return` <!-- id: 9 -->
-- [x] Database Seeding & Real-time (Local SQL Migration) <!-- id: 10 -->
-  - [x] Seed default `signup_token` <!-- id: 11 -->
-  - [x] Enable Real-time for core tables <!-- id: 12 -->
-- [x] Logic Synchronization & Gaps <!-- id: 100 -->
-  - [x] Implement `get_available_stock` RPC migration <!-- id: 101 -->
-  - [x] Implement Client Analytics Triggers (`total_orders`, `total_spent`) <!-- id: 102 -->
-  - [x] Sync `docs/backend.md` with all current RPCs and logic <!-- id: 103 -->
-  - [x] Update `all_schema.sql` with consolidated logic <!-- id: 104 -->
-- [x] Type Safety & Integration <!-- id: 105 -->
-  - [x] Sync `apps/web/app/types/supabase.ts` with latest schema/enums <!-- id: 106 -->
-  - [x] Verify `inventoryService.ts` usage of `get_available_stock` <!-- id: 107 -->
-- [ ] Verification & Stability <!-- id: 13 -->
-  - [ ] Apply New Migrations to Supabase (if connectivity allows) <!-- id: 18 -->
-  - [x] Final Stability Check (pnpm build) <!-- id: 17 -->
-- [x] Cloudflare Build Fix & Middleware Maintenance <!-- id: 200 -->
-  - [x] Respect `GEMINI.md` directive: Do NOT rename `middleware.ts` to `proxy.ts` <!-- id: 204 -->
-  - [x] Fix `@supabase/ssr` build-time error in `supabase-bugs.ts` and ensure placeholders are robust <!-- id: 201 -->
-  - [x] Verify build stability locally (`pnpm build:pages`) <!-- id: 203 -->
-  - [x] Ensure `middleware.ts` uses `experimental-edge` runtime as required <!-- id: 202 -->
+## Summary of Completed Milestones
+*   **Backend Architecture Alignment**: Audited `docs/backend.md` against current schema and resolved logic gaps.
+*   **Database Logic Implementation**: Successfully implemented core RPCs (`get_email_for_login`, `search_orders`, `process_order_return`, `get_available_stock`) and automated triggers for client analytics.
+*   **Logic Consolidation**: Updated `all_schema.sql` and `docs/backend.md` to serve as the unified source of truth for database logic.
+*   **Type System Integration**: Synchronized `apps/web/app/types/supabase.ts` with the latest schema and enums; verified `inventoryService.ts` integration.
+*   **Middleware Stabilization**: Honored `GEMINI.md` directive to maintain `middleware.ts` for Cloudflare compatibility while utilizing `experimental-edge` runtime.
+*   **Runtime Error Handling**: Fixed build-time errors in `supabase-bugs.ts` and improved error logging in `DataContext.tsx` for production observability.
+*   **Knowledge Base Sync**: Aligned `docs/cloudflarepages.md` with foundational project mandates.
+*   **Local Build Stability**: Verified standard build integrity via `pnpm build`.
 
-## Completed Fixes
-- [x] Investigate `DataContext.tsx` and `settingsService.ts` for error handling <!-- id: 0 -->
-- [x] Reproduce/Analyze the "Failed to fetch settings {}" error <!-- id: 1 -->
-- [x] Check/Fix RLS policies for `settings` table <!-- id: 2 -->
-- [x] Improve error logging in `DataContext.tsx` to show more detail <!-- id: 3 -->
+---
+
+## Active Roadmap: To-Do Items
+
+### Phase 1: Database Deployment
+- [ ] **Apply Migrations to Production**: Execute SQL migrations on the live Supabase instance to sync local logic enhancements.
+- [ ] **Verify RLS Integrity**: Perform an audit of RLS policies for the `settings` table and core inventory tables in the production environment.
+
+### Phase 2: Production Build & Environment Stabilization
+- [ ] **Resolve Windows Symlink Issue**: Address `EPERM` error in `opennextjs-cloudflare` by enabling Developer Mode or running in WSL/Admin context.
+- [ ] **Environment Variable Audit**: Finalize `NEXT_PUBLIC_` variable injection in the Cloudflare Dashboard to replace build-time placeholders.
+- [ ] **Successful Pages Build**: Achieve a clean `pnpm build:pages` execution without filesystem permission failures.
+
+### Phase 3: Final Deployment & Quality Assurance
+- [ ] **Production Deployment**: Execute `pnpm pages:deploy` (or alias) to push the `.open-next` bundle to Cloudflare.
+- [ ] **End-to-End Authentication Check**: Verify middleware-redirect logic for Admin and Portal routes on the live domain.
+- [ ] **Real-time Verification**: Confirm Supabase real-time subscriptions are active for core inventory and order tables in the production build.
