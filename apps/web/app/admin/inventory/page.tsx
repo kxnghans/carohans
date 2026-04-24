@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Icons } from '../../lib/icons';
 import { InventoryTable } from '../../components/inventory/InventoryTable';
+import { InventoryGrid } from '../../components/inventory/InventoryGrid';
+import { InventoryDetailModal } from '../../components/modals/InventoryDetailModal';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useAppStore } from '../../context/AppContext';
@@ -15,7 +17,7 @@ import { DiscountManager } from '../../components/common/DiscountManager';
 import { getUserFriendlyErrorMessage } from '../../utils/errorMapping';
 
 function InventoryPageContent() {
-  const { Plus, Check, X, Pencil, Loader2, Calendar } = Icons;
+  const { Plus, Check, X, Pencil, Loader2, Calendar, LayoutList, LayoutGrid, Search, LayoutDashboard } = Icons;
   const { 
     inventory, setInventory, cart, setCart, clients, submitOrder, showNotification, 
     loading, modifyingOrderId, portalFormData, setPortalFormData,
@@ -28,8 +30,21 @@ function InventoryPageContent() {
   const [orderDates, setOrderDates] = useState({ start: '', end: '', discountCode: '' });
   const [showClientSelector, setShowClientSelector] = useState(false);
   const [showReview, setShowReview] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedItemForDetail, setSelectedItemForDetail] = useState<InventoryItem | null>(null);
 
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const savedMode = localStorage.getItem('inventoryViewMode') as 'list' | 'grid';
+    if (savedMode) setViewMode(savedMode);
+  }, []);
+
+  const handleViewModeChange = (mode: 'list' | 'grid') => {
+    setViewMode(mode);
+    localStorage.setItem('inventoryViewMode', mode);
+  };
 
   useEffect(() => {
     if (searchParams.get('mode') === 'order') {
@@ -172,17 +187,28 @@ function InventoryPageContent() {
     }
   };
 
+  const filteredData = useMemo(() => {
+    if (!searchQuery) return inventory;
+    const q = searchQuery.toLowerCase();
+    return inventory.filter(item => 
+      item.name.toLowerCase().includes(q) || 
+      item.category.toLowerCase().includes(q)
+    );
+  }, [inventory, searchQuery]);
+
   const selectedClient = clients.find(c => c.id.toString() === selectedClientId);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-theme-header font-bold tracking-tight text-foreground flex items-center gap-3">
-            <Icons.LayoutDashboard className="w-8 h-8 text-primary" />
-            Inventory & Logistics
-          </h1>
-          <p className="text-theme-body text-muted font-medium mt-1">Manage equipment stock levels and operational availability.</p>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-theme-header font-bold tracking-tight text-foreground flex items-center gap-3">
+              <LayoutDashboard className="w-8 h-8 text-primary" />
+              Inventory & Logistics
+            </h1>
+          </div>
+          <p className="text-theme-body text-muted font-medium">Manage equipment stock levels and operational availability.</p>
         </div>
         <div className="flex items-center gap-3">
            {/* EDIT MODE TOGGLE */}
@@ -325,15 +351,56 @@ function InventoryPageContent() {
         </div>
       )}
 
-      <Card noPadding>
+      <Card noPadding={viewMode === 'list'}>
+        <div className="p-4 border-b border-border bg-background/50 flex items-center justify-between gap-4">
+            <div className="relative flex-1 max-w-sm group">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
+                <input 
+                    type="text" 
+                    placeholder="Filter by name or category..." 
+                    className="w-full pl-10 pr-10 py-2 bg-surface border border-border rounded-xl text-theme-label outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all shadow-sm text-center"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                    <button 
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-full transition-colors"
+                    >
+                        <X className="w-3 h-3 text-muted" />
+                    </button>
+                )}
+            </div>
+            <div className="flex items-center gap-4">
+                <div className="flex items-center bg-surface border border-border p-1 rounded-xl print:hidden">
+                  <button 
+                    onClick={() => handleViewModeChange('list')}
+                    className={`p-1 rounded-lg transition-all ${viewMode === 'list' ? 'bg-primary text-primary-text shadow-md' : 'text-muted hover:text-foreground'}`}
+                    title="List View"
+                  >
+                    <LayoutList className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => handleViewModeChange('grid')}
+                    className={`p-1 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-primary text-primary-text shadow-md' : 'text-muted hover:text-foreground'}`}
+                    title="Grid View"
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="text-theme-caption text-muted font-medium">
+                    Showing {filteredData.length} of {inventory.length} items
+                </p>
+            </div>
+        </div>
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted">
             <Loader2 className="w-8 h-8 animate-spin" />
             <p className="text-theme-body font-medium">Fetching inventory...</p>
           </div>
-        ) : (
+        ) : viewMode === 'list' ? (
           <InventoryTable
-            data={inventory}
+            data={filteredData}
             isAdmin={!isOrderMode} 
             isEditMode={isEditMode} 
             onDelete={handleDeleteItem} 
@@ -341,9 +408,31 @@ function InventoryPageContent() {
             onAddToCart={addToCart}
             cart={cart}
             showOrderColumn={isOrderMode}
+            onOpenDetail={setSelectedItemForDetail}
+          />
+        ) : (
+          <InventoryGrid 
+            data={filteredData}
+            isAdmin={!isOrderMode}
+            isEditMode={isEditMode}
+            onAddToCart={addToCart}
+            cart={cart}
+            onOpenDetail={setSelectedItemForDetail}
+            setInventory={setInventory}
           />
         )}
       </Card>
+
+      <InventoryDetailModal 
+        isOpen={!!selectedItemForDetail}
+        item={selectedItemForDetail}
+        items={filteredData}
+        onItemChange={setSelectedItemForDetail}
+        onClose={() => setSelectedItemForDetail(null)}
+        isAdmin={!isOrderMode}
+        onAddToCart={addToCart}
+        cartQty={cart.find(c => c.id === selectedItemForDetail?.id)?.qty || 0}
+      />
 
       {showClientSelector && (
         <ClientSelector 

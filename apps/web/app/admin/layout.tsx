@@ -164,7 +164,7 @@ export default function AdminLayout({
 
       <main className="max-w-[1440px] mx-auto p-4 md:p-8">
         {/* ADMIN NAVIGATION (Desktop Only) */}
-        <div className="hidden lg:flex flex-wrap items-center gap-2 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="hidden lg:flex flex-wrap items-center gap-2 mb-6 pb-4 pt-2 -mt-2 sticky top-[88px] z-30 bg-background/95 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-500">
           {navItems.map((tab) => {
              const isActive = pathname === tab.href;
              return (

@@ -1,5 +1,13 @@
 import { Order, Metrics } from '../types';
 
+export const STORAGE_BASE_URL = 'https://yyelfynriosztsellphi.supabase.co/storage/v1/object/public/assets/';
+
+export const getImageUrl = (imagePath: string | undefined | null) => {
+  if (!imagePath) return null;
+  if (imagePath.startsWith('http')) return imagePath;
+  return `${STORAGE_BASE_URL}${imagePath}`;
+};
+
 export const formatCurrency = (amount: number | undefined | null) => {
   if (amount === undefined || amount === null || isNaN(amount)) return '¢0';
   
@@ -36,12 +44,12 @@ export const formatDate = (dateString: string | undefined | null) => {
 
 export const getStatusColor = (status: string) => {
   switch (status) {
-    case 'Pending': return 'bg-status-pending text-white border-status-pending dark:bg-status-pending dark:text-background dark:border-status-pending';
-    case 'Approved': return 'bg-status-approved text-white border-status-approved dark:bg-status-approved dark:text-background dark:border-status-approved';
+    case 'Pending': return 'bg-status-pending text-foreground border-status-pending dark:bg-status-pending dark:text-background dark:border-status-pending';
+    case 'Approved': return 'bg-status-approved text-foreground border-status-approved dark:bg-status-approved dark:text-background dark:border-status-approved';
     case 'Active': return 'bg-status-active text-white border-status-active dark:bg-status-active dark:text-background dark:border-status-active';
     case 'Late': return 'bg-status-late text-white border-status-late dark:bg-status-late dark:text-white dark:border-status-late';
     case 'Completed': return 'bg-status-completed text-white border-status-completed dark:bg-status-completed dark:text-background dark:border-status-completed';
-    case 'Settlement': return 'bg-secondary text-white border-secondary dark:bg-status-settlement dark:text-background dark:border-status-settlement';
+    case 'Settlement': return 'bg-secondary text-foreground border-secondary dark:bg-status-settlement dark:text-background dark:border-status-settlement';
     case 'Rejected': return 'bg-status-rejected text-white border-status-rejected dark:bg-status-rejected dark:text-background dark:border-status-rejected';
     case 'Canceled': return 'bg-status-canceled text-white border-status-canceled dark:bg-status-canceled dark:text-background dark:border-status-canceled';
     default: return 'bg-background text-muted border-border';

@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react';
 import { Icons, InventoryIcons, AccountIcons } from '../../lib/icons';
+import { getImageUrl } from '../../utils/helpers';
 
 interface DynamicIconProps {
   iconString: string | null | undefined;
@@ -58,6 +59,20 @@ export const DynamicIcon = ({
   // Handle case where it might be a system icon name without "icon:" prefix
   const SystemIcon = (Icons as Record<string, React.ComponentType<{ className?: string }>>)[iconString];
   if (SystemIcon) return renderIcon(SystemIcon);
+
+  // Handle image filenames (e.g., "chair.png")
+  if (iconString.includes('.') || iconString.startsWith('http')) {
+    const imageUrl = getImageUrl(iconString);
+    return (
+      <div key={renderKey} className={`flex items-center justify-center shrink-0 overflow-hidden ${finalContainerClass}`}>
+        <img 
+          src={imageUrl || ''} 
+          alt="icon" 
+          className={`w-full h-full object-contain ${v.icon.includes('87.5%') ? 'scale-[0.875]' : ''}`} 
+        />
+      </div>
+    );
+  }
 
   // Handle standard icons or emoji strings
   return (

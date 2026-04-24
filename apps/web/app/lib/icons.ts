@@ -82,7 +82,12 @@ import {
   FileDownload,
   PersonAdd,
   BugReport,
-  Send
+  Send,
+  ViewList,
+  ViewModule,
+  Fullscreen,
+  ImageNotSupported,
+  SettingsApplications
 } from '@mui/icons-material';
 
 // --- SYSTEM ICONS (Replacements for Lucide) ---
@@ -118,6 +123,7 @@ export const Icons = {
   FileText: Description,
   Ban: Block,
   Loader2: Autorenew,
+  RefreshCw: Autorenew,
   Undo: Undo,
   ReturnIcon: AssignmentReturn,
   Shield: Security,
@@ -154,7 +160,12 @@ export const Icons = {
   Tag: LocalOffer,
   Download: FileDownload,
   Bug: BugReport,
-  Send: Send
+  Send: Send,
+  LayoutList: ViewList,
+  LayoutGrid: ViewModule,
+  Maximize2: Fullscreen,
+  ImageOff: ImageNotSupported,
+  Settings2: SettingsApplications
 };
 
 import React from 'react';

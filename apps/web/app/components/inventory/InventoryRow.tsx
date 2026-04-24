@@ -23,6 +23,7 @@ interface InventoryRowProps {
     activePickerId: number | null;
     setActivePickerId: (id: number | null) => void;
     handleIconChange: (id: number, data: { image: string, color: string }) => void;
+    onOpenDetail?: (item: InventoryItem) => void;
 }
 
 export const InventoryRow = ({
@@ -42,7 +43,8 @@ export const InventoryRow = ({
     handleRowBlur,
     activePickerId,
     setActivePickerId,
-    handleIconChange
+    handleIconChange,
+    onOpenDetail
 }: InventoryRowProps) => {
     const { Minus, Plus, Trash2 } = Icons;
     const { showNotification } = useUI();
@@ -51,19 +53,32 @@ export const InventoryRow = ({
     const isFieldEditing = (field: string) => 
         editingCell?.id === item.id && editingCell?.field === field;
 
+    const handleDetailClick = () => {
+        // Only trigger if not in edit mode OR if clicking specific non-editable areas
+        if (isEditMode) return;
+        onOpenDetail?.(item);
+    };
+
     return (
         <tr
             id={`row-${item.id}`}
-            className={`group transition-colors ${isNew ? 'bg-primary/10/60 dark:bg-indigo-900/20 border-l-4 border-indigo-400' : 'hover:bg-background/50'}`}
+            className={`group transition-colors ${isNew ? 'bg-primary/10/60 dark:bg-indigo-900/20 border-l-4 border-indigo-400' : 'hover:bg-background/50'} cursor-pointer`}
             tabIndex={isNew ? 0 : -1} 
             onBlur={handleRowBlur}
+            onClick={handleDetailClick}
         >
             <td className="p-4 pl-6">
                 <div className="flex items-center">
                     <div className="w-12 shrink-0 flex justify-start relative">
                         <div 
-                            onClick={() => isEditMode && setActivePickerId(activePickerId === item.id ? null : item.id)}
-                            className={`rounded-lg flex items-center justify-center border-none transition-all ${getIconStyle(item.color, { noBorder: true, noBackground: true }).container} ${isEditMode ? 'cursor-pointer hover:scale-110 active:scale-95 transition-transform' : ''}`}
+                            onClick={(e) => {
+                                if (isEditMode) {
+                                    e.stopPropagation();
+                                    setActivePickerId(activePickerId === item.id ? null : item.id);
+                                }
+                                // If not edit mode, let it bubble to row click
+                            }}
+                            className={`rounded-lg flex items-center justify-center border-none transition-all ${getIconStyle(item.color, { noBorder: true, noBackground: true }).container} hover:scale-110 active:scale-95 transition-transform`}
                         >
                             <DynamicIcon 
                                 iconString={item.image} 
@@ -74,12 +89,14 @@ export const InventoryRow = ({
                             />
                         </div>
                         {activePickerId === item.id && (
-                            <IconColorPicker 
-                                currentIcon={item.image || "📦"}
-                                currentColor={item.color || ""}
-                                onChange={(data) => handleIconChange(item.id, data)}
-                                onClose={() => setActivePickerId(null)}
-                            />
+                            <div onClick={(e) => e.stopPropagation()}>
+                                <IconColorPicker 
+                                    currentIcon={item.image || "📦"}
+                                    currentColor={item.color || ""}
+                                    onChange={(data) => handleIconChange(item.id, data)}
+                                    onClose={() => setActivePickerId(null)}
+                                />
+                            </div>
                         )}
                     </div>
                     <div className="ml-4 flex-1">
@@ -90,11 +107,17 @@ export const InventoryRow = ({
                                 onChange={(e) => setEditValue(e.target.value)}
                                 onBlur={handleSave}
                                 onKeyDown={handleKeyDown}
+                                onClick={(e) => e.stopPropagation()}
                                 autoFocus
                             />
                         ) : (
                             <span 
-                                onClick={() => startEditing(item.id, 'name', item.name)}
+                                onClick={(e) => {
+                                    if (isAdmin && isEditMode) {
+                                        e.stopPropagation();
+                                        startEditing(item.id, 'name', item.name);
+                                    }
+                                }}
                                 className={`text-theme-label font-semibold ${isNew && item.name === 'Enter Name' ? 'text-indigo-400 italic' : 'text-foreground'} ${isAdmin && isEditMode ? 'cursor-text hover:text-primary' : ''}`}
                             >
                                 {item.name}
@@ -112,6 +135,7 @@ export const InventoryRow = ({
                         onChange={(e) => setEditValue(e.target.value)}
                         onBlur={handleSave}
                         onKeyDown={handleKeyDown}
+                        onClick={(e) => e.stopPropagation()}
                         autoFocus
                     >
                         {['Catering', 'Glassware', 'Furniture', 'Decor', 'Lighting', 'Cutlery', 'Electronics', 'Tents'].map(cat => (
@@ -120,7 +144,12 @@ export const InventoryRow = ({
                     </select>
                 ) : (
                     <span 
-                        onClick={() => startEditing(item.id, 'category', item.category)}
+                        onClick={(e) => {
+                            if (isAdmin && isEditMode) {
+                                e.stopPropagation();
+                                startEditing(item.id, 'category', item.category);
+                            }
+                        }}
                         className={`text-theme-label text-muted font-normal ${isAdmin && isEditMode ? 'cursor-text' : ''}`}
                     >
                         {item.category}
@@ -137,11 +166,17 @@ export const InventoryRow = ({
                         onChange={(e) => setEditValue(Number(e.target.value))}
                         onBlur={handleSave}
                         onKeyDown={handleKeyDown}
+                        onClick={(e) => e.stopPropagation()}
                         autoFocus
                     />
                 ) : (
                     <span 
-                        onClick={() => startEditing(item.id, 'price', item.price)}
+                        onClick={(e) => {
+                            if (isAdmin && isEditMode) {
+                                e.stopPropagation();
+                                startEditing(item.id, 'price', item.price);
+                            }
+                        }}
                         className={`text-theme-label font-semibold ${isNew && item.price === 0 ? 'text-indigo-400' : 'text-foreground'} ${isAdmin && isEditMode ? 'cursor-text' : ''}`}
                     >
                         {formatCurrency(item.price)}
@@ -158,11 +193,17 @@ export const InventoryRow = ({
                         onChange={(e) => setEditValue(Number(e.target.value))}
                         onBlur={handleSave}
                         onKeyDown={handleKeyDown}
+                        onClick={(e) => e.stopPropagation()}
                         autoFocus
                     />
                 ) : (
                     <span 
-                        onClick={() => startEditing(item.id, 'replacementCost', item.replacementCost)}
+                        onClick={(e) => {
+                            if (isAdmin && isEditMode) {
+                                e.stopPropagation();
+                                startEditing(item.id, 'replacementCost', item.replacementCost);
+                            }
+                        }}
                         className={`text-theme-label font-semibold ${isNew && item.replacementCost === 0 ? 'text-indigo-400' : 'text-error bg-error/10 dark:bg-rose-900/30 px-2 py-1 rounded inline-block'} ${isAdmin && isEditMode ? 'cursor-text' : ''}`}
                     >
                         {formatCurrency(item.replacementCost)}
@@ -180,12 +221,18 @@ export const InventoryRow = ({
                             onChange={(e) => setEditValue(Number(e.target.value))}
                             onBlur={handleSave}
                             onKeyDown={handleKeyDown}
+                            onClick={(e) => e.stopPropagation()}
                             autoFocus
                         />
                     ) : (
                         <span 
-                            onClick={() => startEditing(item.id, 'stock', item.stock)}
-                            className="inline-block px-2.5 py-1 rounded-full text-theme-label font-semibold cursor-text bg-background text-muted border border-border"
+                            onClick={(e) => {
+                                if (isEditMode) {
+                                    e.stopPropagation();
+                                    startEditing(item.id, 'stock', item.stock);
+                                }
+                            }}
+                            className={`inline-block px-2.5 py-1 rounded-full text-theme-label font-semibold bg-background text-muted border border-border ${isEditMode ? 'cursor-text' : ''}`}
                         >
                             {item.stock}
                         </span>
@@ -216,7 +263,7 @@ export const InventoryRow = ({
             
             {showOrderColumn && (
                 <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                         <button
                             onClick={() => onAddToCart && onAddToCart(item, -1)}
                             className="w-8 h-8 flex items-center justify-center rounded-lg bg-background text-muted hover:bg-surface border border-border transition-colors disabled:opacity-50"
@@ -261,7 +308,10 @@ export const InventoryRow = ({
             {isEditMode && (
                 <td className="p-4 text-left">
                     <button 
-                        onClick={() => onDelete && onDelete(item.id)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete && onDelete(item.id);
+                        }}
                         className="p-2 text-muted hover:text-error hover:bg-error/10 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
                     >
                         <Trash2 className="w-4 h-4" />

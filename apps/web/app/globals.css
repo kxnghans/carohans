@@ -35,7 +35,7 @@
   --status-completed: var(--success);
   --status-settlement: var(--secondary);
   --status-rejected: var(--error);
-  --status-canceled: var(--muted); /* Neutral Grey for Canceled */
+  --status-canceled: var(--error); /* Match Rejected */
 
   /* Transparent Variants */
   --status-pending-bg: color-mix(in srgb, var(--status-pending), transparent 85%);

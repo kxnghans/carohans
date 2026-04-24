@@ -26,7 +26,7 @@ export const getInventoryCached = unstable_cache(
     }));
   },
   ['inventory'],
-  { tags: ['inventory'], revalidate: false }
+  { tags: ['inventory'], revalidate: 1 }
 );
 
 export async function saveInventoryItem(item: InventoryItem) {

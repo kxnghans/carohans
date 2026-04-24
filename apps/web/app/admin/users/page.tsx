@@ -186,72 +186,81 @@ export default function AdminUsersPage() {
                 <div className="overflow-x-auto custom-scrollbar font-sans">
                     <table className="w-full text-left border-collapse animate-in fade-in slide-in-from-top-2 duration-200 min-w-[800px]">
                         <thead><tr className="border-b border-border text-theme-caption font-bold text-muted uppercase tracking-wider"><th className="p-4 pl-6">User / Email</th><th className="p-4">Username</th><th className="p-4 text-center">Role</th><th className="p-4 text-right">Access Level</th><th className="p-4 text-right pr-6">Action</th></tr></thead>
-                        <tbody className="divide-y divide-border">{data.map(user => (
-                            <tr key={user.id} className="hover:bg-background/40 transition-colors">
-                                                                                                                <td className="p-4 pl-6">
-                                                                                                                                                                                                        <div className="flex items-center gap-3">
-                                                                                                                                                                                                            <div className={`rounded-lg flex items-center justify-center border transition-all overflow-hidden ${getIconStyle(user.color).container}`}>
-                                                                                                                                                                                                                <DynamicIcon 
-                                                                                                                                                                                                                    iconString={user.image} 
-                                                                                                                                                                                                                    color={user.color} 
-                                                                                                                                                                                                                    variant="table" 
-                                                                                                                                                                                                                    forceUpdate={user}
-                                                                                                                                                                                                                    fallback={<User className={`w-3.5 h-3.5 ${user.color || 'text-muted'}`} />} 
-                                                                                                                                                                                                                />
-                                                                                                                                                                                                            </div><div><div className="text-theme-title text-foreground leading-tight font-normal">{user.clientName}</div><div className="text-theme-caption text-muted">{user.clientEmail || user.email}</div></div></div></td>                                <td className="p-4 text-theme-label font-mono text-muted">{user.username}</td>
-                                <td className="p-4 text-center">
-                                    <div className="flex flex-col items-center gap-1">
-                                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-tight border ${user.role === 'admin' ? 'bg-status-settlement-bg text-status-settlement border-status-settlement/20' : 'bg-status-completed-bg text-status-completed border-status-completed/20'}`}>
-                                            {user.role === 'admin' ? <Shield className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
-                                            {user.role}
-                                        </span>
-                                        {user.id.startsWith('offline-') && (
-                                            <span className="text-[8px] font-black text-muted opacity-50 uppercase tracking-widest">Offline</span>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="p-4">
-                                    <div className="flex justify-end">
-                                        {user.id.startsWith('offline-') ? (
-                                            <div className="px-3 py-1.5 bg-muted/5 text-muted/40 border border-muted/10 rounded-xl text-[9px] font-bold uppercase tracking-wider cursor-not-allowed italic" title="Cannot promote offline client without account">
-                                                Awaiting Signup
+                        <tbody className="divide-y divide-border">
+                            {data.map(user => (
+                                <tr key={user.id} className="hover:bg-background/40 transition-colors">
+                                    <td className="p-4 pl-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`rounded-lg flex items-center justify-center border transition-all overflow-hidden ${getIconStyle(user.color).container}`}>
+                                                <DynamicIcon 
+                                                    iconString={user.image} 
+                                                    color={user.color} 
+                                                    variant="table" 
+                                                    forceUpdate={user}
+                                                    fallback={<User className={`w-3.5 h-3.5 ${user.color || 'text-muted'}`} />} 
+                                                />
                                             </div>
-                                        ) : user.role === 'client' ? (
-                                            <button onClick={() => executeRoleUpdate(user.id, 'admin')} className="flex items-center gap-1.5 px-3 py-1.5 bg-status-active-bg text-status-active border border-status-active/20 rounded-xl text-theme-caption font-semibold uppercase tracking-tight hover:bg-status-active/20 transition-all shadow-sm group/btn">
-                                                <TrendingUp className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-                                                Promote
-                                            </button>
-                                        ) : (
-                                            <button onClick={() => { if (alwaysApproveDemote) executeRoleUpdate(user.id, 'client'); else setDemoteTarget(user); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-status-rejected-bg text-status-rejected border border-status-rejected/20 rounded-xl text-theme-caption font-semibold uppercase tracking-tight hover:bg-status-rejected/20 transition-all shadow-sm group/btn">
-                                                <TrendingDown className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-                                                Demote
-                                            </button>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="p-4 pr-6">
-                                    <div className="flex justify-end">
-                                        {user.id.startsWith('offline-') ? (
-                                            <button 
-                                                disabled
-                                                className="p-2 bg-muted/20 text-muted/40 rounded-xl cursor-not-allowed grayscale opacity-50"
-                                                title="Revoke only available for accounts"
-                                            >
-                                                <Trash2 className="w-4.5 h-4.5" />
-                                            </button>
-                                        ) : (
-                                            <button 
-                                                onClick={() => setCleanupTarget(user)}
-                                                className="p-2 bg-error text-white dark:text-background hover:opacity-90 rounded-xl transition-all shadow-lg shadow-error/20 active:scale-90"
-                                                title="Revoke Access"
-                                            >
-                                                <Trash2 className="w-4.5 h-4.5" />
-                                            </button>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}</tbody>
+                                            <div>
+                                                <div className="text-theme-title text-foreground leading-tight font-normal">{user.clientName}</div>
+                                                <div className="text-theme-caption text-muted">{user.clientEmail || user.email}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="p-4 text-theme-label font-mono text-muted">{user.username}</td>
+                                    <td className="p-4 text-center">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-tight border ${user.role === 'admin' ? 'bg-status-settlement-bg text-status-settlement border-status-settlement/20' : 'bg-status-completed-bg text-status-completed border-status-completed/20'}`}>
+                                                {user.role === 'admin' ? <Shield className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
+                                                {user.role}
+                                            </span>
+                                            {user.id.startsWith('offline-') && (
+                                                <span className="text-[8px] font-black text-muted opacity-50 uppercase tracking-widest">Offline</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="flex justify-end">
+                                            {user.id.startsWith('offline-') ? (
+                                                <div className="px-3 py-1.5 bg-muted/5 text-muted/40 border border-muted/10 rounded-xl text-[9px] font-bold uppercase tracking-wider cursor-not-allowed italic" title="Cannot promote offline client without account">
+                                                    Awaiting Signup
+                                                </div>
+                                            ) : user.role === 'client' ? (
+                                                <button onClick={() => executeRoleUpdate(user.id, 'admin')} className="flex items-center gap-1.5 px-3 py-1.5 bg-status-active-bg text-status-active border border-status-active/20 rounded-xl text-theme-caption font-semibold uppercase tracking-tight hover:bg-status-active/20 transition-all shadow-sm group/btn">
+                                                    <TrendingUp className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                                                    Promote
+                                                </button>
+                                            ) : (
+                                                <button onClick={() => { if (alwaysApproveDemote) executeRoleUpdate(user.id, 'client'); else setDemoteTarget(user); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-status-rejected-bg text-status-rejected border border-status-rejected/20 rounded-xl text-theme-caption font-semibold uppercase tracking-tight hover:bg-status-rejected/20 transition-all shadow-sm group/btn">
+                                                    <TrendingDown className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                                                    Demote
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="p-4 pr-6">
+                                        <div className="flex justify-end">
+                                            {user.id.startsWith('offline-') ? (
+                                                <button 
+                                                    disabled
+                                                    className="p-2 bg-muted/20 text-muted/40 rounded-xl cursor-not-allowed grayscale opacity-50"
+                                                    title="Revoke only available for accounts"
+                                                >
+                                                    <Trash2 className="w-4.5 h-4.5" />
+                                                </button>
+                                            ) : (
+                                                <button 
+                                                    onClick={() => setCleanupTarget(user)}
+                                                    className="p-2 bg-error text-white dark:text-background hover:opacity-90 rounded-xl transition-all shadow-lg shadow-error/20 active:scale-90"
+                                                    title="Revoke Access"
+                                                >
+                                                    <Trash2 className="w-4.5 h-4.5" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
                     </table>
                 </div>
             ))}

@@ -55,6 +55,9 @@ build
 .next/
 .open-next/
 .wrangler/
+.turbo/
+dist/
+build/
 *.pem
 *.key
 secrets.json
@@ -69,6 +72,8 @@ core
 [Ll]ocal.settings.json
 helper.js
 all_schema.sql
+*.txt
+output.txt
 
 # Temporary / Assets
 apps/web/image.png

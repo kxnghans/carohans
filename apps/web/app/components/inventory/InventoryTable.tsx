@@ -26,7 +26,7 @@ const SortIcon = ({
 };
 
 interface InventoryTableProps {
-  data: InventoryItem[];
+  data: InventoryItem[]; // This should now be the filtered data
   isAdmin?: boolean;
   isEditMode?: boolean;
   onDelete?: (id: number) => void;
@@ -34,6 +34,7 @@ interface InventoryTableProps {
   onAddToCart?: (item: InventoryItem, qty: number) => void;
   cart?: CartItem[];
   showOrderColumn?: boolean;
+  onOpenDetail?: (item: InventoryItem) => void;
 }
 
 export const InventoryTable = ({
@@ -44,10 +45,10 @@ export const InventoryTable = ({
   setInventory,
   onAddToCart,
   cart,
-  showOrderColumn = true
+  showOrderColumn = true,
+  onOpenDetail,
 }: InventoryTableProps) => {
-  const { Plus, Search, X } = Icons;
-  const [searchQuery, setSearchQuery] = useState('');
+  const { Plus } = Icons;
   const [visibleCount, setVisibleCount] = useState(50);
   const [editingCell, setEditingCell] = useState<{ id: number, field: string } | null>(null);
   const [editValue, setEditValue] = useState<string | number | undefined>(undefined);
@@ -63,19 +64,10 @@ export const InventoryTable = ({
 
   const totalCols = 5 + (isAdmin ? 1 : 0) + (showOrderColumn ? 1 : 0) + (isEditMode ? 1 : 0);
 
-  const isManualSort = sortConfig?.key === 'sortOrder' && sortConfig?.direction === 'asc' && !searchQuery;
-
-  const filteredData = useMemo(() => {
-    if (!searchQuery) return data;
-    const q = searchQuery.toLowerCase();
-    return data.filter(item => 
-      item.name.toLowerCase().includes(q) || 
-      item.category.toLowerCase().includes(q)
-    );
-  }, [data, searchQuery]);
+  const isManualSort = sortConfig?.key === 'sortOrder' && sortConfig?.direction === 'asc';
 
   const sortedData = useMemo(() => {
-    const sortableItems = [...filteredData];
+    const sortableItems = [...data];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         const aVal = a[sortConfig.key];
@@ -90,7 +82,7 @@ export const InventoryTable = ({
       });
     }
     return sortableItems;
-  }, [filteredData, sortConfig]);
+  }, [data, sortConfig]);
 
   const paginatedData = useMemo(() => {
       return sortedData.slice(0, visibleCount);
@@ -243,29 +235,6 @@ export const InventoryTable = ({
 
   return (
     <>
-    <div className="p-4 border-b border-border bg-background/50 flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-sm group">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
-            <input 
-                type="text" 
-                placeholder="Filter by name or category..." 
-                className="w-full pl-10 pr-10 py-2 bg-surface border border-border rounded-xl text-theme-label outline-none focus:ring-4 focus:ring-secondary/20 focus:border-secondary transition-all shadow-sm text-center"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
-                <button 
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-full transition-colors"
-                >
-                    <X className="w-3 h-3 text-muted" />
-                </button>
-            )}
-        </div>
-        <p className="text-theme-caption text-muted font-medium">
-            Showing {Math.min(visibleCount, filteredData.length)} of {filteredData.length} items
-        </p>
-    </div>
     <ScrollableContainer className="mb-8 overflow-visible">
       <table className="w-full text-left border-collapse min-w-[1000px]">
         <thead className="sticky top-0 z-20 bg-surface/95 backdrop-blur-md shadow-sm">
@@ -351,6 +320,7 @@ export const InventoryTable = ({
                     activePickerId={activePickerId}
                     setActivePickerId={setActivePickerId}
                     handleIconChange={handleIconChange}
+                    onOpenDetail={onOpenDetail}
                 />
                 {isAdmin && isEditMode && isManualSort && (
                   <tr className="group/separator h-0">
