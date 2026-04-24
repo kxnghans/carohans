@@ -19,7 +19,7 @@ The CaroHans system is built on a strong foundation. Our audit identified severa
 
 ## ✅ Summary of Improvements (What was fixed?)
 
-We’ve resolved 15 key issues to make the system safer and more reliable.
+We’ve resolved 17 key issues to make the system safer and more reliable.
 
 ### **1. Security: Locking the Doors**
 *   **Removed Easy Passwords:** We removed a weak, hardcoded '4614' password that was being used for signups. The system now strictly requires secure, unique tokens.
@@ -30,11 +30,14 @@ We’ve resolved 15 key issues to make the system safer and more reliable.
 *   **Faster Loading:** We optimized our database "rules" (RLS policies). This means the database doesn't have to work as hard to find your data, making the app feel snappier.
 *   **Smart Cleaning:** We removed unused "indexes" (database shortcuts) that were actually slowing down updates to the inventory.
 *   **Background Efficiency:** Orders are now filtered by the server before reaching your screen, which drastically reduces the amount of data your browser has to process.
+*   **Optimized Catalog:** Caching strategy updated to a 1-second TTL, balancing instant stock visibility with database protection.
 
 ### **3. UX & Reliability: A Better Feel**
 *   **No More Jarring Refreshes:** We removed the "hard page reloads" (flickering screens) when updating reports. Now, updates happen smoothly in the background.
 *   **7-Day Cart Persistence:** Your cart now remembers items for 7 days. If you close your browser and come back later, your selections will still be there.
 *   **Next.js 16 Stability:** We added "Suspense" boundaries to help the app load sections of the page independently, preventing the whole screen from breaking if one part is slow.
+*   **Refined Profile Editing:** The client edit form is now constrained to a centered 60% width, improving readability on large displays.
+*   **Natural SKU Entry:** The "Add New SKU" trigger is now located at the bottom of the inventory table, following standard data entry patterns.
 
 ---
 
@@ -47,7 +50,6 @@ The following items represent the final steps to reach 100% project completion.
 | **Availability Colors** | Only shows simple numbers. | Admins should see detailed "Green/Yellow/Red" statuses, while clients only see "Available/Out of Stock." | 🟠 High | Update the inventory list to use "Persona-based" coloring. |
 | **"Remember Me" Deletes** | Preference resets every page. | If an Admin clicks "Always Approve" for deleting items, the system forgets it as soon as they navigate away. | 🟡 Medium | Use temporary session storage to remember these preferences until the user logs out. |
 | **Password Spacing** | Dots are too close/far. | Password characters should be spaced just right for readability and privacy (`0.25em`). | 🟡 Medium | Adjust the "tracking" (spacing) on login and signup password boxes. |
-| **Profile Form Width** | Fills too much of the screen. | The client edit form is currently too wide, making it hard to read on large monitors. | 🔵 Low | Constraint the form width to 60% of the screen for a cleaner, centered look. |
 | **Production Speed** | Using standard port. | For maximum stability in production, the system needs to use a specific "Pooled" connection port (6543). | 🟠 High | Switch the production server settings to Port 6543 to prevent timeouts. |
 | **Portal Status Filter** | Filter shows internal jargon. | The filter dropdown shows statuses like "Approved" or "Rejected," which can be confusing for customers. | 🔵 Low | Limit student-facing filters to simple stages: "Pending", "Active", and "Completed". |
-| **SKU Creation row** | Using a separate button. | Adding new items is done via a header button rather than a natural "bottom row" in the table. | 🔵 Low | Move the "Add New SKU" trigger to the bottom of the inventory table for a more natural flow. |
+| **Windows Symlink Permission** | `OpenNext` build fails on Windows. | The build tool requires Administrator privileges or Developer Mode to create symbolic links for the Cloudflare worker. | 🟠 High | Run terminal as Administrator or use WSL for Cloudflare builds. |

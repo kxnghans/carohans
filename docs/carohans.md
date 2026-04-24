@@ -43,6 +43,8 @@ The Admin interface is a desktop-optimized "Command Center" designed for high-de
 The Client Portal is a mobile-first, simplified experience designed for self-service discovery and order tracking.
 
 ### 3.1 Seamless Discovery
+*   **Dual-View Catalog:** Clients can toggle between a high-density **List View** and a visual **Grid View**. The system persists this preference across sessions using `localStorage`.
+*   **Interactive Item Details:** A high-resolution **Detail Modal** allows clients to cycle through the entire catalog using on-screen chevrons or keyboard shortcuts, providing an "endless discovery" experience.
 *   **Binary Availability:** Unlike the Admin's 3-state view (Green/Yellow/Red), the Portal uses a binary Green (Available) or Red (Out of Stock) to simplify the customer journey.
 *   **Persistent Cart:** Cart state is versioned and persists for 7 days across devices, ensuring customers can start shopping on mobile and finish on desktop.
 
@@ -62,7 +64,8 @@ The Client Portal is a mobile-first, simplified experience designed for self-ser
 
 ### 4.2 Database & Connectivity
 *   **Connection Policy:** All production traffic uses **Port 6543** (Transaction Pooler) to prevent connection exhaustion.
-*   **Caching Strategy:** The public catalog is served via `unstable_cache` with a 1-hour TTL, revalidating only on Admin-driven updates.
+*   **Caching Strategy:** The public catalog is served via `unstable_cache` with a 1-second TTL, ensuring high data integrity while protecting the database from burst traffic.
+*   **Image Utility:** A unified `getImageUrl` helper resolves relative database paths to public CDN-backed URLs.
 
 ---
 
@@ -96,4 +99,5 @@ The Client Portal is a mobile-first, simplified experience designed for self-ser
 ---
 
 ## 7. Maintenance & Help
-The system maintains a "Live Help" system in `apps/web/app/admin/help/page.tsx` and `apps/web/app/portal/help/page.tsx`. These pages **must** be updated alongside any system changes to ensure the Knowledge Base remains the single source of truth for all users.
+The system maintains a "Live Help" system using a decoupled data architecture (`adminHelpData.ts` and `clientHelpData.ts`). This ensures that logic changes in the UI are instantly reflected in the responsive 3-column help grids. These data files **must** be updated alongside any system changes to maintain the Knowledge Base as the single source of truth.
+

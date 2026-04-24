@@ -114,7 +114,9 @@ To ensure operational isolation and security, the system utilizes two independen
 ## 5. Client Portal Requirements (`/portal`)
 
 ### 5.1 Rental Catalog (`/portal/inventory`)
-*   **Shopping Experience:** Clients can browse the catalog and add items to a persistent cart.
+*   **Dual View System:** Clients can toggle between a high-density **List View** (for rapid selection) and a visual **Grid View** (for discovery). View preference is persisted via `localStorage`.
+*   **Deep Discovery:** Integrated **Inventory Detail Modal** with "Endless Cycling" carousel. Clients can browse high-resolution images and item specs using on-screen chevrons or keyboard arrow keys without leaving the catalog.
+*   **Shopping Experience:** Clients can browse the catalog, search by name or category, and add items to a persistent cart.
 *   **Availability:** Calendar interaction to select Pickup and Return dates.
 *   **Checkout:** Seamless "Review Order" flow generating a digital invoice/quote request.
 
@@ -142,6 +144,7 @@ To ensure operational isolation and security, the system utilizes two independen
 ### 6.2 Logistics & Inventory
 *   **Atomic Order Placement:** The database performs a blocking availability check during the `submit_order` transaction.
 *   **Dynamic Availability:** Catalog "Available" counts are calculated in real-time based on existing orders for the selected dates.
+*   **Image Management:** Public assets are served via a unified `getImageUrl` utility, resolving internal storage paths to CDN-backed Supabase URLs.
 *   **Context-Aware Styling:** 
     *   **Client View:** Binary styling (Green for any available stock, Red for 0). Hides yellow warning states to simplify the browsing experience.
     *   **Admin View:** Triple-state styling (Green for full stock, Yellow for partial bookings, Red for 0).
@@ -155,10 +158,9 @@ To ensure operational isolation and security, the system utilizes two independen
 All production runtime traffic **MUST** use Port 6543 (Transaction Pooler). Port 5432 is reserved for migrations only. This prevents connection exhaustion on the free tier.
 
 ### 8.2 Caching Strategy
-*   **Inventory Catalog:** Wrap the inventory fetch logic in `unstable_cache` (or fetch with `next: { tags: ['inventory-public'] }`).
-    *   **Cache Strategy:** 1 Hour TTL.
-    *   **Revalidation:** Trigger `revalidateTag('inventory-public')` only when an Admin adds, edits, or deletes an item.
-    *   **Goal:** Serve the client portal catalog entirely from the Next.js CDN/Cache, hitting the Supabase database 0 times for read-only traffic.
+*   **Inventory Catalog:** Wrap the inventory fetch logic in `unstable_cache` (or fetch with `next: { tags: ['inventory'] }`).
+    *   **Cache Strategy:** 1 Second TTL (`revalidate: 1`) to ensure high data integrity while reducing database load for bursts of traffic.
+    *   **Goal:** Provide a near-instant user experience while ensuring that stock changes are visible almost immediately.
 *   **Orders:** No caching (Real-time required).
 
 ### 8.3 Optimistic Mutations & UX Standard
@@ -173,6 +175,8 @@ To resolve the "page reset" issue:
 ---
 
 ## 7. UX Standards & Design System
+*   **Centralized Knowledge Base:** Help content is extracted into standalone data files (`adminHelpData.ts`, `clientHelpData.ts`) to ensure content parity across the application and simplify updates.
+*   **Responsive Help Grids:** Help sections use a responsive 3-column grid on desktop and 1-column on mobile, ensuring a readable, "magazine-style" documentation experience.
 *   **Interactive Elements:** Consistent use of custom `Button` and `Card` components.
 *   **Compact Mode:** Specialized form scaling for nested/table-expansion views.
 *   **Feedback:** Global `NotificationToast` for success/error messages.
