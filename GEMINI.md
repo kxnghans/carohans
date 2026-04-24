@@ -87,4 +87,4 @@ Every icon style is managed via the `getIconStyle` helper in `helpers.ts`.
 
 The application is deployed to **Cloudflare**.
 *   **Runtime:** Edge runtime compatibility is required.
-*   **Build Tool:** `@opennextjs/cloudflare` transforms the Next.js build.
+*   **Build Tool:** `@opennextjs/cloudflare` transforms the Next js build.
