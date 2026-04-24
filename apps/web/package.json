@@ -6,6 +6,7 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "pages:build": "opennextjs-cloudflare build",
+    "pages:deploy": "wrangler deploy",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "start": "next start",
     "lint": "eslint"

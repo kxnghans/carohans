@@ -28,7 +28,12 @@
 - [x] **Document Edge Constraints**: Added technical rationale to `docs/cloudflarepages.md`.
 - [x] **Analyze Proxy Migration Impact**: Corrected contradictions in `README.md` and `apps/web/README.md`; confirmed `middleware.ts` remains the current standard for Cloudflare compatibility.
 
-### Phase 4: Final Deployment & Quality Assurance
-- [ ] **Production Deployment**: Execute `pnpm pages:deploy` (or alias) to push the `.open-next` bundle to Cloudflare.
+### Phase 4: Deployment Script Synchronization & Final QA
+- [x] **Identify Missing Command**: Confirmed `pnpm pages:deploy` is missing from `package.json` while required by Cloudflare build config.
+- [x] **Align Root Scripts**: Add `pages:deploy` to the root `package.json` as an alias for `wrangler deploy`.
+- [x] **Align App Scripts**: Add `pages:deploy` to `apps/web/package.json` for workspace consistency.
+- [x] **Verify Configuration**: Ensure root `wrangler.toml` correctly points to the `apps/web/.open-next` build output.
+- [x] **Final Build Stability**: Run `pnpm build` to verify no regressions were introduced.
+- [ ] **Production Deployment**: Execute the newly added `pnpm pages:deploy` command (to be run in CI).
 - [ ] **End-to-End Authentication Check**: Verify middleware-redirect logic for Admin and Portal routes on the live domain.
 - [ ] **Real-time Verification**: Confirm Supabase real-time subscriptions are active for core inventory and order tables in the production build.

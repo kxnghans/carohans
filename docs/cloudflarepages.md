@@ -82,14 +82,14 @@ Next.js 16+ has deprecated the `middleware.ts` convention in favor of `proxy.ts`
 
 ---
 
-## 5. Build & Deployment Workflow
+### 5. Build & Deployment Workflow
 
 Based on current CI/CD logs (`Node v22.16.0`, `pnpm v9.15.4`):
 
 | Command | Level | Description |
 | :--- | :--- | :--- |
 | `pnpm build:pages` | Root | Executes `turbo run pages:build`, which runs `opennextjs-cloudflare build`. |
-| `pnpm deploy` | Root | Deploys the `.open-next` bundle using `wrangler deploy`. |
+| `pnpm pages:deploy` | Root | Deploys the `.open-next` bundle using `wrangler deploy`. |
 | `pnpm preview` | Root | Locally simulates the Cloudflare environment. |
 
 ### 5.1 Deployment Output
