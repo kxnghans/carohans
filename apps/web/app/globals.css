@@ -8,17 +8,22 @@
 
 :root {
   /* Global Palette */
-  --primary: #0f172a;           /* Navy */
-  --secondary: #4f46e5;         /* Purple/Indigo */
-  --accent-primary: #2563eb;    /* Vibrant Blue */
-  --accent-secondary: #64748b;  /* Slate/Grey */
-  
+  --primary: #0f172a;
+  /* Navy */
+  --secondary: #4f46e5;
+  /* Purple/Indigo */
+  --accent-primary: #2563eb;
+  /* Vibrant Blue */
+  --accent-secondary: #64748b;
+  /* Slate/Grey */
+
   /* System States */
   --success: #10b981;
-  --error: #be123c;             /* Rose 700 - Old Styling Match */
+  --error: #be123c;
+  /* Rose 700 - Old Styling Match */
   --warning: #f59e0b;
   --neutral: #334155;
-  
+
   /* Neutral / UI */
   --background: #f8fafc;
   --surface: #ffffff;
@@ -31,11 +36,13 @@
   --status-pending: var(--warning);
   --status-approved: var(--accent-secondary);
   --status-active: var(--accent-primary);
-  --status-late: #f43f5e;       /* Softer Rose-Pink for Late */
+  --status-late: #f43f5e;
+  /* Softer Rose-Pink for Late */
   --status-completed: var(--success);
   --status-settlement: var(--secondary);
   --status-rejected: var(--error);
-  --status-canceled: var(--error); /* Match Rejected */
+  --status-canceled: var(--error);
+  /* Match Rejected */
 
   /* Transparent Variants */
   --status-pending-bg: color-mix(in srgb, var(--status-pending), transparent 85%);
@@ -56,7 +63,7 @@
   --color-secondary: var(--secondary);
   --color-accent-primary: var(--accent-primary);
   --color-accent-secondary: var(--accent-secondary);
-  
+
   --color-success: var(--success);
   --color-error: var(--error);
   --color-warning: var(--warning);
@@ -74,7 +81,7 @@
   --color-status-settlement: var(--status-settlement);
   --color-status-rejected: var(--status-rejected);
   --color-status-canceled: var(--status-canceled);
-  
+
   --color-status-pending-bg: var(--status-pending-bg);
   --color-status-approved-bg: var(--status-approved-bg);
   --color-status-active-bg: var(--status-active-bg);
@@ -84,7 +91,7 @@
   --color-status-canceled-bg: var(--status-canceled-bg);
 
   --color-chart-label: var(--chart-label);
-  
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -95,29 +102,41 @@
   --secondary: #6366f1;
   --accent-primary: #60a5fa;
   --accent-secondary: #94a3b8;
-  
+
   --success: #34d399;
-  --error: #fb7185;             /* Softer Rose 400 */
+  --error: #fb7185;
+  /* Softer Rose 400 */
   --warning: #fbbf24;
-  
-  --background: #080c1d;        /* Refined Deep Navy */
-  --surface: #12182b;           /* Slightly lighter surface */
+
+  --background: #080c1d;
+  /* Refined Deep Navy */
+  --surface: #12182b;
+  /* Slightly lighter surface */
   --foreground: #f8fafc;
   --primary-text: #080c1d;
   --muted: #94a3b8;
-  --border: #222d45;            /* Refined border color */
-  
+  --border: #222d45;
+  /* Refined border color */
+
   --neutral: #e2e8f0;
 
   /* Status Overrides for Dark Mode */
-  --status-pending: #fbbf24;    /* Amber 400 */
-  --status-approved: #94a3b8;   /* Slate 400 */
-  --status-active: #60a5fa;     /* Blue 400 */
-  --status-late: #f87171;       /* Red 400 */
-  --status-completed: #34d399;  /* Emerald 400 */
-  --status-settlement: #818cf8; /* Indigo 400 */
-  --status-rejected: #fb7185;   /* Rose 400 */
-  --status-canceled: #94a3b8;   /* Slate 400 */
+  --status-pending: #fbbf24;
+  /* Amber 400 */
+  --status-approved: #94a3b8;
+  /* Slate 400 */
+  --status-active: #60a5fa;
+  /* Blue 400 */
+  --status-late: #f87171;
+  /* Red 400 */
+  --status-completed: #34d399;
+  /* Emerald 400 */
+  --status-settlement: #818cf8;
+  /* Indigo 400 */
+  --status-rejected: #fb7185;
+  /* Rose 400 */
+  --status-canceled: #94a3b8;
+  /* Slate 400 */
 
   /* Chart & UI Overrides */
   --chart-label: var(--primary);
@@ -170,17 +189,19 @@
 
 @media screen and (max-width: 768px) {
   html {
-    zoom: 0.6;
+    zoom: 0.45;
   }
+
   html.home-page {
-    zoom: 0.75;
+    zoom: 0.5;
   }
 }
 
 @media screen and (min-width: 769px) and (max-width: 1024px) {
   html {
-    zoom: 0.85;
+    zoom: 0.8;
   }
+
   html.home-page {
     zoom: 0.9;
   }
@@ -252,10 +273,11 @@ input[type='number'] {
 }
 
 @media print {
+
   /* ... Print styles remain largely the same but ensure backgrounds are forced to white/transparent for paper ... */
   @page {
     size: A4;
-    margin: 20mm 5mm; 
+    margin: 20mm 5mm;
   }
 
   /* Force Light Mode Variables for Print */
@@ -266,12 +288,12 @@ input[type='number'] {
     --primary-text: #ffffff !important;
     --muted: #64748b !important;
     --border: #e2e8f0 !important;
-    
+
     --primary: #0f172a !important;
     --secondary: #4f46e5 !important;
     --accent-primary: #2563eb !important;
     --accent-secondary: #64748b !important;
-    
+
     --success: #10b981 !important;
     --error: #be123c !important;
     --warning: #f59e0b !important;
@@ -285,13 +307,13 @@ input[type='number'] {
     padding: 0 !important;
     overflow: visible !important;
     background: white !important;
-    position: static !important; 
+    position: static !important;
     zoom: 1 !important;
     color: black !important;
     color-scheme: light !important;
   }
 
-  body > *:not(.invoice-modal-overlay) {
+  body>*:not(.invoice-modal-overlay) {
     display: none !important;
     height: 0 !important;
     overflow: hidden !important;
@@ -300,7 +322,7 @@ input[type='number'] {
   .invoice-modal-overlay {
     visibility: visible !important;
     display: block !important;
-    position: static !important; 
+    position: static !important;
     width: 100% !important;
     height: auto !important;
     background: transparent !important;

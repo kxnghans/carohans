@@ -30,3 +30,9 @@
 - [ ] **Session-based Delete Preferences**: Implement temporary session storage to persist "Always Approve" delete preferences for the duration of an Admin session.
 - [ ] **Password Input Readability**: Adjust character tracking (`0.25em`) for login and signup password fields to improve legibility and privacy balance.
 - [ ] **Client-Facing Filter Simplification**: Restrict portal-side status filters to "Pending", "Active", and "Completed" to hide internal operational jargon.
+
+### Phase 4: Branding & Identity
+- [x] **Global Asset Constants**: Ensure all branding assets leverage `STORAGE_BASE_URL` from `helpers.ts`.
+- [x] **Remote Metadata Assets**: Configure `layout.tsx` to use Supabase-hosted OpenGraph images and Favicons.
+- [x] **Conflict Cleanup**: Remove legacy local `favicon.ico` to ensure metadata priority.
+- [ ] **Build Validation**: Verify that remote assets do not impact production build stability.
