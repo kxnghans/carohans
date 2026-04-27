@@ -43,6 +43,7 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         alt: 'Carohans Enterprise Resource Management',
+        type: 'image/jpeg',
       },
     ],
     locale: 'en_US',

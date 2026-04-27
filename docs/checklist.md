@@ -35,4 +35,6 @@
 - [x] **Global Asset Constants**: Ensure all branding assets leverage `STORAGE_BASE_URL` from `helpers.ts`.
 - [x] **Remote Metadata Assets**: Configure `layout.tsx` to use Supabase-hosted OpenGraph images and Favicons.
 - [x] **Conflict Cleanup**: Remove legacy local `favicon.ico` to ensure metadata priority.
-- [ ] **Build Validation**: Verify that remote assets do not impact production build stability.
+- [x] **OpenGraph Extension Verification**: Confirmed extension mismatch and added explicit `type: 'image/jpeg'` for the OG image.
+- [x] **Favicon Accessibility**: Verified Supabase URLs are public and returning correct binary data.
+- [x] **Build Validation**: Verified that remote assets do not impact production build stability via `pnpm build`.
