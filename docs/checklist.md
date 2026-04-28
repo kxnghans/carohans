@@ -38,3 +38,11 @@
 - [x] **OpenGraph Extension Verification**: Confirmed extension mismatch and added explicit `type: 'image/jpeg'` for the OG image.
 - [x] **Favicon Accessibility**: Verified Supabase URLs are public and returning correct binary data.
 - [x] **Build Validation**: Verified that remote assets do not impact production build stability via `pnpm build`.
+
+### Phase 5: Metadata & SEO Optimization
+- [x] **Title Templates**: Implement `title: { default, template }` in root layout for automatic sub-page branding.
+- [x] **MetadataBase Verification**: Ensure `metadataBase` is correctly configured for production domain.
+- [x] **Icon Specification**: Refine favicon and apple-touch-icon definitions using the centralized asset pattern.
+- [x] **Robots.ts**: Create programmatic `robots.txt` generator.
+- [x] **Sitemap.ts**: Create programmatic XML sitemap generator.
+- [x] **Dynamic Metadata Audit**: Added static metadata to key pages to leverage templates.

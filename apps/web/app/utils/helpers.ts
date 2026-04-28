@@ -2,6 +2,8 @@ import { Order, Metrics } from '../types';
 
 export const STORAGE_BASE_URL = 'https://yyelfynriosztsellphi.supabase.co/storage/v1/object/public/assets/';
 
+export const asset = (file: string): string => `${STORAGE_BASE_URL}${file}`;
+
 export const getImageUrl = (imagePath: string | undefined | null) => {
   if (!imagePath) return null;
   if (imagePath.startsWith('http')) return imagePath;

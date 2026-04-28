@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "./context/AppContext";
-import { STORAGE_BASE_URL } from "./utils/helpers";
+import { asset } from "./utils/helpers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,19 +15,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Carohans | Enterprise Resource Management",
+  title: {
+    default: "Carohans | Enterprise Resource Management",
+    template: "%s | Carohans",
+  },
   description: "Advanced digital workflow experience for modern teams.",
   metadataBase: new URL('https://carohans.com'),
   icons: {
     icon: [
       {
-        url: `${STORAGE_BASE_URL}carohans.PNG`,
+        url: asset("carohans.PNG"),
         type: 'image/png',
       },
     ],
     apple: [
       {
-        url: `${STORAGE_BASE_URL}carohans.PNG`,
+        url: asset("carohans.PNG"),
         type: 'image/png',
       },
     ],
@@ -39,11 +42,11 @@ export const metadata: Metadata = {
     siteName: 'Carohans',
     images: [
       {
-        url: `${STORAGE_BASE_URL}Carohans_opengraph.PNG`,
+        url: asset("Carohans_opengraph.PNG"),
         width: 1200,
         height: 630,
         alt: 'Carohans Enterprise Resource Management',
-        type: 'image/jpeg',
+        type: 'image/png',
       },
     ],
     locale: 'en_US',
@@ -53,7 +56,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Carohans | Enterprise Resource Management',
     description: 'Advanced digital workflow experience for modern teams.',
-    images: [`${STORAGE_BASE_URL}Carohans_opengraph.PNG`],
+    images: [asset("Carohans_opengraph.PNG")],
   },
 };
 
